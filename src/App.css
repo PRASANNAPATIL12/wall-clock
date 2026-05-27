@@ -1,0 +1,57 @@
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: 1; /* above grain & vignette */
+  overflow: hidden;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/* Each mode is a stacked layer covering the full stage, centering its own content */
+.mode-layer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 5vmin 4vmin;
+  transition:
+    opacity 720ms var(--ease-apple),
+    transform 720ms var(--ease-apple),
+    filter 720ms var(--ease-apple);
+  will-change: opacity, transform, filter;
+}
+
+.mode-layer.is-in {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
+  pointer-events: auto;
+  transition-delay: 140ms;
+}
+
+.mode-layer.is-out-up {
+  opacity: 0;
+  transform: scale(1.06);
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.mode-layer.is-out-down {
+  opacity: 0;
+  transform: scale(0.94);
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+/* The 12/24 control: liquid fade-up on mount */
+.fmt-mount {
+  animation: fmt-in 420ms var(--ease-apple) both;
+}
+
+@keyframes fmt-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}

@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f4f1ec" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e0e10" media="(prefers-color-scheme: dark)" />
+
+    <!-- Primary SEO -->
+    <title>Wall Clock — Beautiful Online Analog & Digital Clock with World Timezones</title>
+    <meta name="description" content="A minimalist online wall clock for your desktop. Smooth sweep-seconds analog and digital modes, world timezones, dark mode, fullscreen. Free, instant, no signup." />
+    <meta name="keywords" content="wall clock, online clock, web clock, browser clock, desktop clock, fullscreen clock, full screen clock, analog clock online, digital clock online, world clock, time zone clock, timezone clock, world time, minimalist clock, beautiful clock, dark mode clock, sweep seconds, sweep second clock, mechanical clock online, focus clock, productivity clock, developer clock, monospace clock, JetBrains Mono clock, large clock for monitor, clock for second monitor, clock screensaver, browser tab clock, clock UTC, UTC clock, IST clock, India time, London clock, New York clock, Tokyo clock, Paris clock, Berlin clock, Sydney clock, Singapore clock, Dubai clock, 12 hour clock, 24 hour clock" />
+    <meta name="author" content="Prasannagouda Patil" />
+    <meta name="application-name" content="Wall Clock" />
+    <meta name="apple-mobile-web-app-title" content="Wall Clock" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large" />
+    <meta name="rating" content="general" />
+    <meta name="distribution" content="global" />
+    <meta name="revisit-after" content="7 days" />
+
+    <link rel="canonical" href="https://wall-clock.vercel.app/" />
+    <link rel="alternate" hreflang="x-default" href="https://wall-clock.vercel.app/" />
+    <link rel="alternate" hreflang="en" href="https://wall-clock.vercel.app/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Wall Clock" />
+    <meta property="og:title" content="Wall Clock — Beautiful Online Analog & Digital Clock" />
+    <meta property="og:description" content="A minimalist online wall clock for your desktop. Sweep-seconds analog and digital, world timezones, dark mode, fullscreen." />
+    <meta property="og:url" content="https://wall-clock.vercel.app/" />
+    <meta property="og:image" content="https://wall-clock.vercel.app/og-image.svg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Wall Clock — a minimalist analog clock on a dark background" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Wall Clock — Beautiful Online Analog & Digital Clock" />
+    <meta name="twitter:description" content="A minimalist wall clock for your desktop. Sweep-seconds analog and digital, world timezones, dark mode, fullscreen." />
+    <meta name="twitter:image" content="https://wall-clock.vercel.app/og-image.svg" />
+    <meta name="twitter:image:alt" content="Wall Clock — a minimalist analog clock" />
+
+    <!-- Icons & manifest -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="mask-icon" href="/favicon.svg" color="#c8312b" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Performance: preconnect to Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,400&family=JetBrains+Mono:wght@200;300;400;500&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,400&family=JetBrains+Mono:wght@200;300;400;500&display=swap"
+    />
+
+    <!-- Structured data: WebApplication + WebSite + Organization + FAQ -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebApplication",
+            "@id": "https://wall-clock.vercel.app/#webapp",
+            "name": "Wall Clock",
+            "alternateName": ["Wall", "Online Wall Clock", "Browser Wall Clock"],
+            "url": "https://wall-clock.vercel.app/",
+            "description": "A minimalist online wall clock with smooth sweep-seconds analog and digital modes, world timezones, dark mode and fullscreen.",
+            "applicationCategory": "UtilitiesApplication",
+            "applicationSubCategory": "Clock",
+            "operatingSystem": "Any (Web Browser)",
+            "browserRequirements": "Requires JavaScript. Requires HTML5.",
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "featureList": [
+              "Analog clock with continuous sweep seconds",
+              "Digital clock in 12-hour and 24-hour formats",
+              "World timezones (UTC, New York, London, Tokyo, India IST, and more)",
+              "Light and dark themes",
+              "Fullscreen mode",
+              "Idle auto-hide of controls",
+              "Offline-friendly single page",
+              "No signup, no tracking"
+            ],
+            "screenshot": "https://wall-clock.vercel.app/og-image.svg",
+            "softwareVersion": "1.0",
+            "inLanguage": "en"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://wall-clock.vercel.app/#website",
+            "url": "https://wall-clock.vercel.app/",
+            "name": "Wall Clock",
+            "description": "A beautiful minimalist online wall clock.",
+            "inLanguage": "en",
+            "publisher": { "@id": "https://wall-clock.vercel.app/#org" }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://wall-clock.vercel.app/#org",
+            "name": "Wall Clock",
+            "url": "https://wall-clock.vercel.app/",
+            "logo": "https://wall-clock.vercel.app/favicon.svg"
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://wall-clock.vercel.app/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Is Wall Clock free to use?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Wall Clock is completely free, with no signup, no ads and no tracking."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Does it work offline?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. After the first load, Wall Clock runs entirely in your browser and keeps working without an internet connection."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I show another city's time?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Use the timezone selector to pick UTC, New York, London, Paris, Tokyo, India (IST), Sydney and many more."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Does it have a fullscreen mode?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Press the fullscreen button in the top-right corner to put the clock on the full screen of any monitor."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I switch between analog and digital?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Use the Analog / Digital switch in the bottom-left. In digital mode you can also choose between 12-hour and 24-hour formats."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+    <!-- Critical inline styles applied before stylesheet loads — prevents any flash of the
+         crawler-only SEO header below, and paints the page background immediately. -->
+    <style>
+      html, body { margin: 0; background: #f4f1ec; }
+      @media (prefers-color-scheme: dark) { html, body { background: #0e0e10; } }
+      .sr-only {
+        position: absolute !important;
+        width: 1px !important; height: 1px !important;
+        padding: 0 !important; margin: -1px !important;
+        overflow: hidden !important; clip: rect(0,0,0,0) !important;
+        white-space: nowrap !important; border: 0 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Semantic, screen-reader / crawler-only content. Inline styles guarantee it never paints. -->
+    <header class="sr-only" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">
+      <h1>Wall Clock — Online Analog and Digital Clock with World Timezones</h1>
+      <p>
+        Wall Clock is a beautiful, minimalist online clock for your browser, desktop or second
+        monitor. It features a smooth sweep-seconds analog face with JetBrains Mono numerals,
+        a large digital readout, light and dark themes, fullscreen mode, and a curated set of
+        world timezones including UTC, Los Angeles, Denver, Chicago, New York, São Paulo,
+        London, Paris, Berlin, Athens, Cairo, Johannesburg, Dubai, India (IST), Bangkok,
+        Singapore, Hong Kong, Shanghai, Tokyo, Seoul, Sydney and Auckland. Free, instant,
+        no signup, no tracking.
+      </p>
+    </header>
+
+    <div id="root"></div>
+    <noscript>
+      <div style="font-family: system-ui, sans-serif; padding: 2rem; text-align: center;">
+        <h1>Wall Clock</h1>
+        <p>Please enable JavaScript to view the clock.</p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

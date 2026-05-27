@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>
+    .face { fill: #131315; }
+    .ring { stroke: #2a2a2c; }
+    .hand { stroke: #ece9e2; fill: #ece9e2; }
+    .pivot { fill: #ece9e2; }
+    .second { stroke: #e0463f; }
+    @media (prefers-color-scheme: light) {
+      .face { fill: #fafaf7; }
+      .ring { stroke: rgba(26,26,26,0.18); }
+      .hand { stroke: #1a1a1a; fill: #1a1a1a; }
+      .pivot { fill: #1a1a1a; }
+      .second { stroke: #c8312b; }
+    }
+  </style>
+  <circle cx="32" cy="32" r="30" class="face"/>
+  <circle cx="32" cy="32" r="30" class="ring" fill="none" stroke-width="1"/>
+  <g class="hand" stroke-linecap="round">
+    <line x1="32" y1="6" x2="32" y2="11" stroke-width="2"/>
+    <line x1="32" y1="53" x2="32" y2="58" stroke-width="2"/>
+    <line x1="6" y1="32" x2="11" y2="32" stroke-width="2"/>
+    <line x1="53" y1="32" x2="58" y2="32" stroke-width="2"/>
+    <line x1="32" y1="32" x2="32" y2="18" stroke-width="3"/>
+    <line x1="32" y1="32" x2="46" y2="22" stroke-width="2"/>
+  </g>
+  <line x1="32" y1="32" x2="22" y2="14" class="second" stroke-width="1.2" stroke-linecap="round"/>
+  <circle cx="32" cy="32" r="2.2" class="pivot"/>
+  <circle cx="32" cy="32" r="3.4" class="second" fill="none" stroke-width="0.8"/>
+</svg>

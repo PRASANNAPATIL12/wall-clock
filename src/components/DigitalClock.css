@@ -1,0 +1,67 @@
+/* =========================================================================
+   Digital Clock — focus-oriented typography
+   Font: JetBrains Mono 200 (thin) for elegant, low-noise presence.
+   Tabular numerals keep digits dimensionally stable.
+   Subtle gradient fill on hours/minutes adds OLED-like depth.
+   ========================================================================= */
+
+.digital {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.02em;
+  font-family: var(--font-mono);
+  font-weight: 200;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(60px, 17vmin, 220px);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--fg);
+  transition: color var(--d-theme) var(--ease-apple);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.d-hr,
+.d-min {
+  background: linear-gradient(180deg, var(--fg) 0%, var(--fg) 60%, color-mix(in srgb, var(--fg) 78%, transparent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  transition: background var(--d-theme) var(--ease-apple);
+}
+
+.d-sep {
+  color: var(--fg-muted);
+  margin: 0 0.04em;
+  position: relative;
+  transform: translateY(-0.06em);
+  transition: color var(--d-theme) var(--ease-apple);
+  /* Soft heart-beat blink, so the colon feels alive */
+  animation: blink 2s steps(2, jump-none) infinite;
+}
+
+@keyframes blink {
+  0%, 60% { opacity: 1; }
+  60.01%, 100% { opacity: 0.35; }
+}
+
+.d-sec {
+  color: var(--hand-second);
+  transition: color var(--d-theme) var(--ease-apple);
+}
+
+.d-suffix {
+  margin-left: 0.2em;
+  font-size: 0.28em;
+  letter-spacing: 0.2em;
+  font-weight: 300;
+  color: var(--fg-muted);
+  align-self: flex-end;
+  padding-bottom: 0.42em;
+  transition: color var(--d-theme) var(--ease-apple);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .d-sep { animation: none; opacity: 1; }
+}

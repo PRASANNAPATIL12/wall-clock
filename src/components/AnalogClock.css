@@ -1,0 +1,93 @@
+.analog {
+  position: relative;
+  width: min(62vmin, 560px);
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+}
+
+.analog__face {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--bg-elev);
+  box-shadow: var(--shadow-face),
+    inset 0 0 0 1px var(--bezel),
+    inset 0 0 0 3.5% transparent,
+    inset 0 0 0 calc(3.5% + 1px) var(--bezel-strong);
+  transition: background-color var(--d-theme) var(--ease-out),
+    box-shadow var(--d-theme) var(--ease-out);
+}
+
+.analog__dial {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--fg);
+  stroke: currentColor;
+  transition: color var(--d-theme) var(--ease-out);
+}
+
+.numeral {
+  font-family: var(--font-mono);
+  font-size: 3.4px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  fill: var(--fg);
+  stroke: none;
+  transition: fill var(--d-theme) var(--ease-out);
+}
+
+/* All hands — full-size SVG, absolutely positioned, rotating around center */
+.hand {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 50%;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.hand--hour,
+.hand--minute {
+  fill: var(--hand);
+  stroke: none;
+  /* Subtle cast shadow — gives the hands the sense of hovering 1–2 mm above the dial */
+  filter: drop-shadow(0 0.4% 0.5% var(--hand-shadow));
+  transition:
+    transform 200ms var(--ease-soft-spring),
+    fill var(--d-theme) var(--ease-out),
+    filter var(--d-theme) var(--ease-out);
+}
+
+.hand--second {
+  stroke: var(--hand-second);
+  fill: none;
+  filter: drop-shadow(0 0.3% 0.4% var(--hand-second-shadow));
+  /* No transform transition — pure RAF-driven continuous sweep */
+  transition:
+    stroke var(--d-theme) var(--ease-out),
+    filter var(--d-theme) var(--ease-out);
+}
+
+/* Pivot — three layered elements creating a precision jewel */
+.pivot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2.2%;
+  height: 2.2%;
+  border-radius: 50%;
+  background: var(--hand);
+  transform: translate(-50%, -50%);
+  box-shadow:
+    0 0 0 1.2px var(--bg-elev),
+    0 0 0 2px var(--hand-second);
+  transition:
+    background-color var(--d-theme) var(--ease-out),
+    box-shadow var(--d-theme) var(--ease-out);
+  z-index: 4;
+}
