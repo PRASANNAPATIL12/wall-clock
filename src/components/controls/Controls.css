@@ -1,14 +1,11 @@
 /* =========================================================================
-   Liquid Glass — Apple-style translucent controls
-   Layered: backdrop-blur + saturation, low-opacity tint, top sheen,
-   rim highlight (lighter top, darker bottom), soft diffuse shadow.
-   Applies uniformly to pills, segmented toggles, dropdown and coffee link.
+   Translucent controls — clean glass, no bevel, no sheen.
+   Just: low-opacity tint + backdrop blur + single hairline border + soft shadow.
    ========================================================================= */
 
 /* ----- Common pill ----- */
 .pill {
-  --pill-h: 40px;
-  position: relative;
+  --pill-h: 38px;
   height: var(--pill-h);
   display: inline-flex;
   align-items: center;
@@ -17,46 +14,26 @@
   padding: 0 16px;
   border-radius: 999px;
   background: var(--glass-bg);
-  border: 1px solid transparent;
-  box-shadow:
-    inset 0 1px 0 var(--glass-rim-top),
-    inset 0 -1px 0 var(--glass-rim-bottom),
-    var(--glass-shadow);
-  backdrop-filter: blur(28px) saturate(190%);
-  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
   color: var(--fg);
   font-family: var(--font-display);
   font-size: 13px;
-  letter-spacing: 0.02em;
-  isolation: isolate;
+  font-weight: 500;
+  letter-spacing: -0.005em;
   transition:
     background-color 320ms var(--ease-apple),
-    box-shadow 320ms var(--ease-apple),
+    border-color 320ms var(--ease-apple),
     color var(--d-theme) var(--ease-apple),
     transform 320ms var(--ease-apple),
     opacity 380ms var(--ease-apple);
 }
 
-/* Top sheen — a glass "wet" highlight */
-.pill::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--glass-sheen);
-  pointer-events: none;
-  opacity: 0.85;
-  z-index: -1;
-  transition: opacity 320ms var(--ease-apple);
-}
-
 .pill:hover {
   background: var(--glass-bg-hover);
   transform: translateY(-1px);
-}
-
-.pill:hover::before {
-  opacity: 1;
 }
 
 .pill:active {
@@ -65,7 +42,7 @@
 }
 
 .pill--icon {
-  width: 44px;
+  width: 42px;
   padding: 0;
   border-radius: 50%;
 }
@@ -102,8 +79,8 @@ body.idle .controls--br { opacity: 0; transform: translateY(8px); pointer-events
 /* ---- icon button swap ---- */
 .icon-swap {
   position: relative;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   display: grid;
   place-items: center;
 }
@@ -120,56 +97,38 @@ body.idle .controls--br { opacity: 0; transform: translateY(8px); pointer-events
   stroke-linejoin: round;
   transition:
     opacity 360ms var(--ease-apple),
-    transform 360ms var(--ease-spring),
-    filter 360ms var(--ease-apple);
+    transform 460ms var(--ease-spring);
 }
 
 .icon-swap > .is-hidden {
   opacity: 0;
-  transform: rotate(-110deg) scale(0.55);
-  filter: blur(2px);
+  transform: rotate(-90deg) scale(0.6);
 }
 
 .icon-swap > .is-shown {
   opacity: 1;
   transform: rotate(0) scale(1);
-  filter: blur(0);
 }
 
 /* ===== Segmented toggle (Analog/Digital, 12/24) ===== */
 .seg {
-  --seg-h: 40px;
+  --seg-h: 38px;
   position: relative;
   height: var(--seg-h);
   padding: 3px;
   display: inline-flex;
   border-radius: 999px;
   background: var(--glass-bg);
-  border: 1px solid transparent;
-  box-shadow:
-    inset 0 1px 0 var(--glass-rim-top),
-    inset 0 -1px 0 var(--glass-rim-bottom),
-    var(--glass-shadow);
-  backdrop-filter: blur(28px) saturate(190%);
-  -webkit-backdrop-filter: blur(28px) saturate(190%);
-  isolation: isolate;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
   transition:
     background-color 320ms var(--ease-apple),
-    box-shadow 320ms var(--ease-apple);
+    border-color 320ms var(--ease-apple);
 }
 
-.seg::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--glass-sheen);
-  pointer-events: none;
-  opacity: 0.85;
-  z-index: -1;
-}
-
-.seg--sm { --seg-h: 30px; padding: 2px; }
+.seg--sm { --seg-h: 28px; padding: 2px; }
 
 .seg__indicator {
   position: absolute;
@@ -179,10 +138,9 @@ body.idle .controls--br { opacity: 0; transform: translateY(8px); pointer-events
   width: calc(50% - 3px);
   border-radius: 999px;
   background: var(--fg);
-  box-shadow:
-    0 6px 16px -8px var(--hand-shadow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  transition: transform 420ms var(--ease-spring),
+  /* Deeper spring with longer settle, more pronounced overshoot */
+  transition:
+    transform 520ms cubic-bezier(0.5, 1.65, 0.35, 1),
     background-color var(--d-theme) var(--ease-apple);
   z-index: 0;
 }
@@ -200,18 +158,18 @@ body.idle .controls--br { opacity: 0; transform: translateY(8px); pointer-events
   flex: 1;
   padding: 0 18px;
   font-family: var(--font-display);
-  font-size: 12px;
-  letter-spacing: 0.12em;
+  font-size: 11px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 500;
   color: var(--fg-muted);
-  transition: color 380ms var(--ease-apple);
+  transition: color 420ms var(--ease-apple);
   min-width: 70px;
 }
 
 .seg--sm .seg__btn {
-  font-size: 11px;
-  letter-spacing: 0.1em;
+  font-size: 10px;
+  letter-spacing: 0.12em;
   padding: 0 12px;
   min-width: 44px;
 }
@@ -225,8 +183,13 @@ body.idle .controls--br { opacity: 0; transform: translateY(8px); pointer-events
   position: relative;
 }
 
-.tz__pill { padding: 0 16px 0 14px; min-width: 130px; }
-.tz__pill .tz__label { font-family: var(--font-display); font-size: 13px; letter-spacing: 0.04em; font-weight: 500; }
+.tz__pill { padding: 0 14px 0 12px; min-width: 130px; }
+.tz__pill .tz__label {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: -0.005em;
+  font-weight: 500;
+}
 
 .tz__caret {
   width: 12px; height: 12px;
@@ -238,40 +201,25 @@ body.idle .controls--br { opacity: 0; transform: translateY(8px); pointer-events
 .tz__menu {
   position: absolute;
   left: 0;
-  bottom: calc(100% + 12px);
+  bottom: calc(100% + 10px);
   min-width: 240px;
   max-height: 360px;
   overflow-y: auto;
   padding: 8px;
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--glass-bg);
-  border: 1px solid transparent;
-  box-shadow:
-    inset 0 1px 0 var(--glass-rim-top),
-    inset 0 -1px 0 var(--glass-rim-bottom),
-    var(--glass-shadow-pop);
-  backdrop-filter: blur(36px) saturate(200%);
-  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-pop);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
   transform-origin: bottom left;
   opacity: 0;
-  transform: scale(0.96) translateY(8px);
+  transform: scale(0.97) translateY(8px);
   pointer-events: none;
-  isolation: isolate;
   transition:
-    opacity 260ms var(--ease-apple),
+    opacity 240ms var(--ease-apple),
     transform 320ms var(--ease-spring);
   z-index: 20;
-}
-
-.tz__menu::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--glass-sheen);
-  pointer-events: none;
-  opacity: 0.85;
-  z-index: -1;
 }
 
 .tz[data-open='true'] .tz__menu {
@@ -286,13 +234,14 @@ body.idle .controls--br { opacity: 0; transform: translateY(8px); pointer-events
   justify-content: space-between;
   gap: 18px;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: 10px;
   font-family: var(--font-display);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
+  letter-spacing: -0.005em;
   color: var(--fg);
   cursor: pointer;
-  transition: background-color 200ms var(--ease-apple), color 200ms var(--ease-apple);
+  transition: background-color 180ms var(--ease-apple), color 180ms var(--ease-apple);
   width: 100%;
   text-align: left;
 }
@@ -320,7 +269,6 @@ body.idle .controls--br { opacity: 0; transform: translateY(8px); pointer-events
 
 /* ===== Coffee link ===== */
 .coffee {
-  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -328,36 +276,21 @@ body.idle .controls--br { opacity: 0; transform: translateY(8px); pointer-events
   padding: 0 14px;
   border-radius: 999px;
   background: var(--glass-bg);
-  border: 1px solid transparent;
-  box-shadow:
-    inset 0 1px 0 var(--glass-rim-top),
-    inset 0 -1px 0 var(--glass-rim-bottom),
-    var(--glass-shadow);
-  backdrop-filter: blur(28px) saturate(190%);
-  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
   color: var(--fg-muted);
   font-family: var(--font-display);
-  font-style: italic;
-  font-size: 11.5px;
-  letter-spacing: 0.02em;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
   text-decoration: none;
-  isolation: isolate;
   transition:
     color 320ms var(--ease-apple),
     background-color 320ms var(--ease-apple),
-    box-shadow 320ms var(--ease-apple),
+    border-color 320ms var(--ease-apple),
     transform 320ms var(--ease-apple);
-}
-
-.coffee::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--glass-sheen);
-  pointer-events: none;
-  opacity: 0.85;
-  z-index: -1;
 }
 
 .coffee:hover {
