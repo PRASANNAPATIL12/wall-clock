@@ -53,11 +53,18 @@ body.idle .focus-ring .track {
   transition: opacity 600ms var(--ease-apple) 0s;
 }
 
-/* While the comet is orbiting, the ghost track is invisible so the comet
-   head is the *only* thing the eye sees on the ring. Prevents the head
-   from visually merging with the track into an apparent "whole ring
-   glow" during the fast portion of the orbit. */
-.focus-ring.is-comet-playing .track {
+/* While the comet is orbiting, EVERY other ring element is invisible —
+   the comet's tail is the only thing on the ring. After the comet ends
+   and the class is removed, the drops fade back in via their own
+   transitions. This is the strict fix for the perceived "ring glow":
+   if nothing else is drawn, there's nothing for motion-blur to merge
+   with. */
+.focus-ring.is-comet-playing .track,
+.focus-ring.is-comet-playing .goal,
+.focus-ring.is-comet-playing .todo,
+.focus-ring.is-comet-playing .drop-start,
+.focus-ring.is-comet-playing .drop-end,
+.focus-ring.is-comet-playing .drop-head {
   opacity: 0 !important;
   transition: opacity 160ms var(--ease-apple) 0s;
 }
@@ -200,39 +207,41 @@ body.idle .focus-ring .track {
 }
 
 /* ---- Comet — one-shot orbit when a session starts ----
-   1500 ms total, decelerating ease (fast start, slow landing).
-   animation-fill-mode: both — locks the keyframe-0 state on first paint
-   (no flicker at angle 0) AND locks the keyframe-100 state after the
-   animation ends, preventing the head from snapping back to the default
-   transform (which would put it at 12 o'clock for ~100 ms — the
-   "glitch from minute point to 12" reported before this fix). */
+   1900 ms total with ease-in-out for slow start AND slow landing.
+   Four stacked tail arcs of decreasing length, thickness, and opacity
+   form a tapered comet silhouette — no head circle; the rounded
+   line-cap at the leading edge of layer 1 acts as the head.
+
+   animation-fill-mode: both — locks keyframe-0 on first paint (no
+   flicker) AND keyframe-100 after end (prevents the snap-back-to-12
+   bug from before this fix). */
 
 .comet {
   transform-box: view-box;
   transform-origin: 50% 50%;
-  animation: comet-orbit 1500ms cubic-bezier(0.15, 0.8, 0.3, 1) both;
+  animation: comet-orbit 1900ms cubic-bezier(0.6, 0.05, 0.25, 1) both;
   pointer-events: none;
 }
 
 @keyframes comet-orbit {
   0%   { transform: rotate(var(--from)); opacity: 1; }
-  90%  { opacity: 1; }
+  92%  { opacity: 1; }
   100% { transform: rotate(var(--to));   opacity: 0; }
-}
-
-.comet-head {
-  fill: var(--fg);
-  /* Tighter halo than before — less ambient bleed, the head reads as a
-     crisp point rather than a luminous blob. */
-  filter: drop-shadow(0 0 0.45% var(--fg));
 }
 
 .comet-tail {
   stroke: var(--fg);
   stroke-linecap: round;
-  stroke-width: 0.85;
-  opacity: 0.45;
+  fill: none;
 }
+
+/* Layer 1 — closest to the leading edge: brightest, widest. The rounded
+   cap at angle 0 (the end of the arc) reads as the comet's head. */
+.comet-tail--1 { stroke-width: 1.15; opacity: 0.78; }
+.comet-tail--2 { stroke-width: 0.95; opacity: 0.52; }
+.comet-tail--3 { stroke-width: 0.75; opacity: 0.32; }
+/* Layer 4 — farthest, faintest: dissolves into the background. */
+.comet-tail--4 { stroke-width: 0.55; opacity: 0.16; }
 
 /* ---- Hit area ---- */
 

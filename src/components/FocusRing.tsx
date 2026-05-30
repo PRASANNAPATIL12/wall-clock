@@ -132,7 +132,7 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
   >(null);
   useEffect(() => {
     if (!comet) return;
-    const t = window.setTimeout(() => setComet(null), 1600);
+    const t = window.setTimeout(() => setComet(null), 2000);
     return () => window.clearTimeout(t);
   }, [comet]);
 
@@ -288,9 +288,11 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
             );
           })()}
 
-        {/* Comet — one-shot orbit on session start. Single short tail behind
-            the head; slow enough that the eye resolves the path rather than
-            smearing it into a glowing ring. */}
+        {/* Comet — one-shot orbit on session start.
+            Four stacked tail arcs of decreasing length, thickness, and opacity
+            create a properly tapered comet silhouette: dense at the leading
+            edge, fading to nothing at the far end. No head circle — the
+            rounded line-cap at the leading edge IS the head. */}
         {comet && (
           <g
             key={comet.key}
@@ -302,17 +304,10 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
               } as React.CSSProperties
             }
           >
-            <path
-              d={arcPath(-18, 0, RING_R)}
-              className="comet-tail"
-              fill="none"
-            />
-            <circle
-              cx={C}
-              cy={C - RING_R}
-              r={DROP_R * 0.95}
-              className="comet-head"
-            />
+            <path d={arcPath(-38, 0, RING_R)} className="comet-tail comet-tail--4" fill="none" />
+            <path d={arcPath(-26, 0, RING_R)} className="comet-tail comet-tail--3" fill="none" />
+            <path d={arcPath(-16, 0, RING_R)} className="comet-tail comet-tail--2" fill="none" />
+            <path d={arcPath(-8,  0, RING_R)} className="comet-tail comet-tail--1" fill="none" />
           </g>
         )}
 
