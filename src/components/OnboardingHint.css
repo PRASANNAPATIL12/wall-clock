@@ -1,0 +1,123 @@
+/* =========================================================================
+   Onboarding hint — viewport-fixed handwritten whisper + line+arrow.
+
+   The line draws itself stroke-by-stroke (stroke-dashoffset 100 → 0) and
+   a chevron arrowhead rides along the same path (offset-distance 0 →
+   100%) at the exact same rate, so the head sits at the leading edge of
+   the visible line at every frame. The drawn line acts as the visible
+   trail behind the arrow — no separate tail element is needed.
+   ========================================================================= */
+
+.onboarding-hint {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  color: var(--fg-muted);
+  z-index: 6;
+  opacity: 0;
+  transition: opacity 480ms var(--ease-apple);
+}
+
+.onboarding-hint.is-visible {
+  opacity: 0.94;
+}
+
+.onboarding-hint.is-hidden {
+  opacity: 0;
+}
+
+body.idle .onboarding-hint {
+  opacity: 0;
+  transition: opacity 600ms var(--ease-apple);
+}
+
+.hint-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ---- The thin line — drawn from start to end via stroke-dashoffset ---- */
+
+.hint-line {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  opacity: 0.78;
+}
+
+.is-visible .hint-line {
+  animation: hint-line-draw 1900ms cubic-bezier(0.4, 0.05, 0.2, 1) 320ms both;
+}
+
+@keyframes hint-line-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* ---- The arrow head — same path, same timing, sits at leading edge ---- */
+
+.hint-arrow {
+  offset-distance: 0%;
+  -webkit-offset-distance: 0%;
+}
+
+.is-visible .hint-arrow {
+  /* IMPORTANT — must match .hint-line's duration + easing + delay
+     exactly, so the head and the leading edge of the drawn line stay
+     visually locked together. */
+  animation: hint-arrow-travel 1900ms cubic-bezier(0.4, 0.05, 0.2, 1) 320ms both;
+}
+
+@keyframes hint-arrow-travel {
+  0%   { offset-distance: 0%;   -webkit-offset-distance: 0%; }
+  100% { offset-distance: 100%; -webkit-offset-distance: 100%; }
+}
+
+/* ---- Chevron arrowhead — two open stroke lines forming '>' ---- */
+
+.hint-head {
+  stroke: currentColor;
+  stroke-width: 2.4;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---- Handwritten text — Caveat, positioned at calculated pixels ---- */
+
+.hint-text {
+  position: absolute;
+  font-family: var(--font-hand);
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(21px, 2.4vmin, 30px);
+  letter-spacing: 0.005em;
+  line-height: 1.2;
+  color: var(--fg-muted);
+  opacity: 0.95;
+  text-align: center;
+  max-width: 290px;
+  white-space: normal;
+  user-select: none;
+  -webkit-user-select: none;
+  transform: translate(-50%, -50%);
+  text-shadow: 0 1px 2px color-mix(in oklab, var(--fg-muted) 25%, transparent);
+}
+
+/* ---- Reduced motion — skip the animations, show line + arrow at
+        their final positions so the visual hint is preserved. ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  .hint-line,
+  .is-visible .hint-line {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .hint-arrow,
+  .is-visible .hint-arrow {
+    animation: none;
+    offset-distance: 100%;
+    -webkit-offset-distance: 100%;
+  }
+}
