@@ -155,7 +155,11 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
     handleClick(ang);
   };
 
-  const timerPos = data.start !== null ? polar(data.start, RING_R + 5.2) : null;
+  const timerPos = data.start !== null ? polar(data.start, RING_R + 4) : null;
+  /* Outward direction unit vector — used to anchor the timer text
+     so it extends *away* from the clock face, never over it. */
+  const ox = data.start !== null ? Math.sin((data.start * Math.PI) / 180) : 0;
+  const oy = data.start !== null ? -Math.cos((data.start * Math.PI) / 180) : 0;
   const ringClass = [
     'focus-ring',
     state.kind !== 'idle' ? 'is-active' : 'is-resting',
@@ -277,7 +281,14 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
       {data.start !== null && timerPos && (
         <div
           className="focus-timer"
-          style={{ left: `${timerPos.x}%`, top: `${timerPos.y}%` }}
+          style={
+            {
+              left: `${timerPos.x}%`,
+              top: `${timerPos.y}%`,
+              '--ox': ox,
+              '--oy': oy,
+            } as React.CSSProperties
+          }
         >
           <div className="focus-timer__line">
             {!data.complete ? (

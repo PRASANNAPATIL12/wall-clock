@@ -11,6 +11,10 @@
   width: 87%;
   height: 87%;
   border-radius: 50%;
+  /* Click-through: the face has no interactive content; letting the
+     focus ring's hit band extend behind the face fixes click 2 misses
+     when the user clicked just inside the dashed track. */
+  pointer-events: none;
   background: var(--bg-elev);
   box-shadow: var(--shadow-face),
     inset 0 0 0 1px var(--bezel),

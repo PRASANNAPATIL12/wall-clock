@@ -73,7 +73,7 @@ body.idle .focus-ring .track {
   }
   50% {
     opacity: 1;
-    filter: drop-shadow(0 0 1.5% color-mix(in oklab, var(--hand-second) 70%, transparent));
+    filter: drop-shadow(0 0 1.6% var(--bonus-soft));
   }
   100% {
     opacity: 0.82;
@@ -81,11 +81,11 @@ body.idle .focus-ring .track {
   }
 }
 
-/* ---- Bonus arc — warm-tinted, gentle breath ---- */
+/* ---- Bonus arc — warm gold, gentle breath ---- */
 
 .focus-ring .bonus {
-  stroke: color-mix(in oklab, var(--fg) 70%, var(--hand-second) 30%);
-  filter: drop-shadow(0 0 0.7% color-mix(in oklab, var(--hand-second) 35%, transparent));
+  stroke: var(--bonus);
+  filter: drop-shadow(0 0 0.8% var(--bonus-soft));
   opacity: 0.92;
   animation: bonus-breath 6s var(--ease-apple) infinite;
 }
@@ -164,15 +164,15 @@ body.idle .focus-ring .track {
   50%      { opacity: 1; }
 }
 
-/* After completion the drop head takes the bonus tint */
+/* After completion the drop head takes the warm gold bonus tint */
 .focus-ring.is-complete .drop-head {
-  fill: color-mix(in oklab, var(--fg) 70%, var(--hand-second) 30%);
+  fill: var(--bonus);
 }
 
-/* ---- Ripples — emanate from end drop ---- */
+/* ---- Ripples — warm gold, emanate from end drop ---- */
 
 .ripple {
-  stroke: color-mix(in oklab, var(--fg) 50%, var(--hand-second) 50%);
+  stroke: var(--bonus);
   fill: none;
 }
 
@@ -201,7 +201,13 @@ body.idle .focus-ring .track {
 
 .focus-timer {
   position: absolute;
-  transform: translate(-50%, -50%);
+  /* Anchor on the *inward* side so the text extends radially OUTWARD,
+     never over the clock face. --ox/--oy are unit-vector components of
+     the outward direction from clock center (set inline per angle). */
+  transform: translate(
+    calc(-50% + var(--ox, 0) * 50%),
+    calc(-50% + var(--oy, 0) * 50%)
+  );
   font-family: var(--font-mono);
   font-weight: 200;
   font-size: clamp(9.5px, 1.4vmin, 12px);
@@ -218,8 +224,8 @@ body.idle .focus-ring .track {
 }
 
 @keyframes timer-in {
-  from { opacity: 0; transform: translate(-50%, -50%) scale(0.94); }
-  to   { opacity: 0.78; transform: translate(-50%, -50%) scale(1); }
+  from { opacity: 0; scale: 0.94; }
+  to   { opacity: 0.78; scale: 1; }
 }
 
 .focus-timer__line {
@@ -232,10 +238,10 @@ body.idle .focus-ring .track {
   opacity: 0.55;
 }
 
-/* The bonus segment — slightly warm-tinted to match the bonus arc */
+/* The bonus segment — warm gold to match the bonus arc */
 .focus-timer__bonus {
   margin-left: 0.4em;
-  color: color-mix(in oklab, var(--fg-muted) 45%, var(--hand-second) 55%);
+  color: var(--bonus);
   opacity: 0.95;
 }
 
