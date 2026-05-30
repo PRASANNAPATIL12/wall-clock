@@ -139,6 +139,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   overflow: hidden;
+  /* Prevent iOS Safari's pull-to-refresh and bounce-scroll from
+     interfering with the end-drop drag gesture on the focus ring. */
+  overscroll-behavior: none;
   transition:
     background-color var(--d-theme) var(--ease-out),
     color var(--d-theme) var(--ease-out);

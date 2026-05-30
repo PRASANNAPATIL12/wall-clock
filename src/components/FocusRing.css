@@ -17,6 +17,14 @@
   overflow: visible;
   color: var(--fg);
   pointer-events: none;
+  /* Disable browser scroll/pan/zoom gestures over the entire focus-ring
+     region — always, not just during drag. Touch UAs evaluate
+     touch-action at the moment the touch starts, so applying it
+     reactively (e.g. only during drag) is too late: the browser has
+     already decided the gesture is a scroll candidate. Applying it
+     always tells the browser from frame zero "this region doesn't pan
+     or zoom, ever." Tap behaviour (click 1 / 2 / 3) is unaffected. */
+  touch-action: none;
 }
 
 /* ---- Ghost track — fade-on-rest, reveal-on-approach ---- */

@@ -228,57 +228,73 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
   };
 
   /**
-   * Pointer-down on the end-drop circle: enter drag mode. Stops
-   * propagation so the main ring's hit area doesn't ALSO treat this as
-   * a click-3 (reset). Drag continues via window-level pointermove/up
-   * listeners installed by the effect below.
+   * Pointer-down on the end-drop circle: enter drag mode.
+   *
+   * The drag's pointermove/pointerup/pointercancel listeners are installed
+   * SYNCHRONOUSLY inside this handler — NOT inside a useEffect.
+   *
+   * Why this matters on mobile: a useEffect runs *after* React renders,
+   * which runs *after* this event handler returns. Between the pointer-
+   * down and the effect firing, the browser can already see the first
+   * pointermove without any listener present — and touch UAs treat
+   * un-handled pointermoves as "this is a scroll gesture", which causes
+   * them to fire pointercancel and kill the drag after exactly one tick.
+   * Installing listeners inside this handler guarantees they exist before
+   * any move can fire.
    */
   const onEndDropPointerDown = (e: PointerEvent<SVGCircleElement>) => {
     if (state.kind !== 'targeted') return;
     e.stopPropagation();
     e.preventDefault();
-    // Warm up the AudioContext inside the user gesture, so the very first
-    // tick on the very first minute crossing isn't silently dropped by the
-    // browser's autoplay policy.
-    prepareHaptic();
-    const ang = computeAngle(e.clientX, e.clientY);
-    lastDragMinuteRef.current = Math.floor(ang / 6) % 60;
-    setDragging(true);
-    // Capture the pointer so we keep receiving move events even if the
-    // cursor strays off the circle. (window-level listeners cover this too;
-    // capture is belt-and-suspenders for some touch UAs.)
-    try {
-      (e.target as Element).setPointerCapture?.(e.pointerId);
-    } catch {
-      /* unsupported — window listeners still work */
-    }
-  };
 
-  // While dragging, listen at the window level so the drag survives
-  // the cursor leaving the end-drop element. Each minute boundary
-  // crossed triggers haptic feedback + a scale pulse on the end drop.
-  useEffect(() => {
-    if (!dragging) return;
-    const onMove = (e: globalThis.PointerEvent) => {
-      const ang = computeAngle(e.clientX, e.clientY);
-      const minute = Math.floor(ang / 6) % 60;
+    // Warm up the AudioContext inside the user gesture.
+    prepareHaptic();
+
+    const startAng = computeAngle(e.clientX, e.clientY);
+    lastDragMinuteRef.current = Math.floor(startAng / 6) % 60;
+    setDragging(true);
+
+    const pointerId = e.pointerId;
+    const target = e.target as Element;
+    try {
+      target.setPointerCapture?.(pointerId);
+    } catch {
+      /* unsupported — window listeners take over */
+    }
+
+    const onMove = (ev: globalThis.PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      ev.preventDefault();
+      const a = computeAngle(ev.clientX, ev.clientY);
+      const minute = Math.floor(a / 6) % 60;
       if (minute !== lastDragMinuteRef.current) {
         lastDragMinuteRef.current = minute;
         hapticTick();
         pulseEndDrop();
       }
-      setDragEnd(ang);
+      setDragEnd(a);
     };
-    const onUp = () => setDragging(false);
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', onUp);
-    return () => {
+
+    const onEnd = (ev: globalThis.PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      setDragging(false);
       window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', onUp);
+      window.removeEventListener('pointerup', onEnd);
+      window.removeEventListener('pointercancel', onEnd);
+      try {
+        target.releasePointerCapture?.(pointerId);
+      } catch {
+        /* ignore */
+      }
     };
-  }, [dragging, computeAngle, setDragEnd, pulseEndDrop]);
+
+    // passive: false is REQUIRED — without it, preventDefault inside onMove
+    // is a no-op (default for touch listeners) and the browser still claims
+    // the gesture.
+    window.addEventListener('pointermove', onMove, { passive: false });
+    window.addEventListener('pointerup', onEnd);
+    window.addEventListener('pointercancel', onEnd);
+  };
 
   const timerPos = data.start !== null ? polar(data.start, RING_R + 4) : null;
   /* Outward direction unit vector — used to anchor the timer text
