@@ -257,9 +257,17 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
   // While dragging, listen at the window level so the drag survives
   // the cursor leaving the end-drop element. Each minute boundary
   // crossed triggers haptic feedback + a scale pulse on the end drop.
+  //
+  // The pointermove listener MUST be non-passive ({ passive: false }) AND
+  // call e.preventDefault() on every move. Otherwise touch UAs treat the
+  // first pointermove as a "this is a scroll gesture" signal and fire
+  // pointercancel, which kills the drag after exactly one tick. (Desktop
+  // mouse drags are unaffected because mouse events aren't ambiguous
+  // between scroll and drag.)
   useEffect(() => {
     if (!dragging) return;
     const onMove = (e: globalThis.PointerEvent) => {
+      e.preventDefault();
       const ang = computeAngle(e.clientX, e.clientY);
       const minute = Math.floor(ang / 6) % 60;
       if (minute !== lastDragMinuteRef.current) {
@@ -270,7 +278,7 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
       setDragEnd(ang);
     };
     const onUp = () => setDragging(false);
-    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointermove', onMove, { passive: false });
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
     return () => {

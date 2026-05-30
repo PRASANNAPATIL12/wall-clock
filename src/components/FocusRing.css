@@ -19,6 +19,16 @@
   pointer-events: none;
 }
 
+/* While the user is dragging the end-drop circle, disable browser
+   scroll/pan/zoom gestures over the entire focus-ring region. Without
+   this, touch UAs claim the gesture after the first pointermove and
+   fire pointercancel — killing the drag and stopping the tick stream.
+   Declarative version of the same intent we enforce in JS via
+   passive:false + preventDefault on the move listener. */
+.focus-ring.is-dragging-end {
+  touch-action: none;
+}
+
 /* ---- Ghost track — fade-on-rest, reveal-on-approach ---- */
 
 .focus-ring .track {
