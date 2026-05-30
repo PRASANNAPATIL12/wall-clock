@@ -3,7 +3,7 @@ import type { PointerEvent } from 'react';
 import { useNow } from '../hooks/useNow';
 import { useFocusTrack } from '../hooks/useFocusTrack';
 import { getZonedTime } from '../lib/timezones';
-import { tick as hapticTick, prepareHaptic } from '../lib/haptic';
+import { tick as hapticTick, prepareHaptic, celebrate } from '../lib/haptic';
 import { OnboardingHint } from './OnboardingHint';
 import './FocusRing.css';
 
@@ -193,6 +193,11 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
     }
     if (data.complete && !prevCompleteRef.current) {
       setCelebrating(true);
+      // Audio + vibration chime to mark the goal-achievement moment.
+      // The AudioContext was pre-warmed during the user's initial ring
+      // interaction (see prepareHaptic in onPointerDown), so this fires
+      // even though the completion itself is a passive time-based event.
+      celebrate();
       const t = window.setTimeout(() => setCelebrating(false), 2200);
       prevCompleteRef.current = data.complete;
       return () => window.clearTimeout(t);
@@ -202,6 +207,12 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
 
   const onPointerDown = (e: PointerEvent<SVGElement>) => {
     const ang = computeAngle(e.clientX, e.clientY);
+
+    // Pre-warm the AudioContext during this user gesture, so the
+    // goal-achievement chime (which fires later from a time-based event,
+    // not a gesture) can produce sound without being blocked by Chrome's
+    // autoplay policy.
+    prepareHaptic();
 
     // Fire the comet only when transitioning from idle → tracking (click 1).
     if (state.kind === 'idle') {

@@ -92,8 +92,10 @@ function playAudioClick(): void {
 /**
  * Initialize the AudioContext from within a user gesture (e.g. the
  * pointer-down that begins a drag). Browsers block AudioContext creation
- * + playback outside user gestures, so calling this here makes sure the
- * very first tick during the drag isn't silently dropped.
+ * + playback outside user gestures, so calling this here makes sure
+ * subsequent automatic events (drag ticks, goal-reached chimes that fire
+ * when the minute hand reaches the target without further user input)
+ * still produce sound.
  */
 export function prepareHaptic(): void {
   if (userHasMuted()) return;
@@ -104,6 +106,75 @@ export function prepareHaptic(): void {
     } catch {
       /* ignore */
     }
+  }
+}
+
+/**
+ * Goal-achievement chime. Fired once when the minute hand reaches the
+ * target (state.kind === 'targeted' && elapsedMs ≥ targetMs).
+ *
+ * Layered tone — open A-major chord (A5 + E6 + A6) with staggered
+ * exponential decays so the high harmonics fade first, the fundamental
+ * rings longest. Designed to sound like a soft bell chime, not a video-
+ * game victory ding. Total ~900 ms.
+ *
+ * Vibration: a two-pulse [40, 30, 80] pattern — short pulse, brief pause,
+ * longer pulse. "ta-DA" feel that physically marks the moment.
+ *
+ * Unlike `tick()`, this fires BOTH channels together (audio AND vibration
+ * if available). The completion moment is significant enough that
+ * multimodal feedback is appropriate.
+ */
+export function celebrate(): void {
+  if (userHasMuted()) return;
+
+  // Vibration on touch devices — fires alongside audio, not as fallback.
+  if (
+    isTouchDevice() &&
+    typeof navigator !== 'undefined' &&
+    typeof navigator.vibrate === 'function'
+  ) {
+    try {
+      navigator.vibrate([40, 30, 80]);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  playChime();
+}
+
+function playChime(): void {
+  const ctx = getCtx();
+  if (!ctx) return;
+  try {
+    if (ctx.state === 'suspended') ctx.resume();
+    const t = ctx.currentTime;
+    // Open A-major chord, soft-bell envelope (no attack click — gentle).
+    const notes: Array<{ freq: number; gain: number; decay: number }> = [
+      { freq: 880, gain: 0.08, decay: 0.9 }, // A5  fundamental, longest ring
+      { freq: 1318.51, gain: 0.05, decay: 0.6 }, // E6  fifth, mid-length harmonic
+      { freq: 1760, gain: 0.03, decay: 0.35 }, // A6  upper octave, quick sparkle
+    ];
+    for (const note of notes) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = note.freq;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(note.gain, t + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + note.decay);
+      osc.start(t);
+      osc.stop(t + note.decay + 0.05);
+      osc.onended = () => {
+        osc.disconnect();
+        gain.disconnect();
+      };
+    }
+  } catch {
+    /* swallow audio errors — feedback is non-critical */
   }
 }
 

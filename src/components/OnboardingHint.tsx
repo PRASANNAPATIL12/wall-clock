@@ -60,11 +60,13 @@ function buildPath(vp: Viewport) {
   const clockSize = Math.min(vp.w * 0.7, vp.h * 0.7, 620);
   const ringR = clockSize * 0.46;
 
-  // Portrait mobile/tablet: not enough horizontal room to the right of
+  // Portrait orientation: not enough horizontal room to the right of
   // the clock for the side-hint layout. Switch to a top-anchored layout
   // — text centered above the clock, arrow curving down to the 12 o'clock
-  // area of the ring.
-  const isPortrait = vp.h > vp.w && vp.w < 900;
+  // area of the ring. Triggered whenever height > width, regardless of
+  // absolute size, so phones and tablets in portrait both get the right
+  // layout.
+  const isPortrait = vp.h > vp.w;
 
   if (isPortrait) {
     // Text near the top of the viewport, horizontally centered on the
@@ -171,8 +173,10 @@ export const OnboardingHint = memo(function OnboardingHint({ state }: Props) {
 
   // Cramped layouts — hide. Threshold differs by layout: side needs
   // horizontal breathing room, portrait needs vertical breathing room.
-  if (layout === 'side' && (availSpace < 150 || vp.w < 1024)) return null;
-  if (layout === 'portrait' && (availSpace < 90 || vp.h < 560)) return null;
+  // No absolute viewport-width cap any more: phones in landscape with
+  // enough horizontal space now also get the desktop-style side hint.
+  if (layout === 'side' && availSpace < 130) return null;
+  if (layout === 'portrait' && (availSpace < 80 || vp.h < 500)) return null;
 
   const arrowStyle = {
     offsetPath: `path('${pathD}')`,
