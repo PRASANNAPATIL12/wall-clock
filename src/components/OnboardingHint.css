@@ -1,113 +1,145 @@
 /* =========================================================================
-   Onboarding hint — a quiet handwritten whisper with a looped arrow.
+   Onboarding hint — handwritten whisper + flying arrow with looped path.
 
-   Layout: positioned in the lower-right area of the viewport, below the
-   bottom controls' baseline. The arrow SVG extends UP-LEFT toward the
-   clock's lower-right (the focus ring's 4–5 o'clock area). Text sits at
-   the bottom-right of the hint.
+   The component absolutely covers the .analog container (viewBox 0-100
+   matches the analog's coordinate system, where the focus ring sits at
+   radius 46). An offset-path animation flies a small arrow (head + tail
+   in negative-X local coords) from near the text, through an irregular
+   loop, and lands at the ring at the 4:30 position. Path is invisible —
+   only the moving arrow is rendered.
 
-   Both arrow and text use var(--fg-muted) — adapts to light and dark
-   themes automatically with no theme-specific overrides.
+   The path string is duplicated for both standard `offset-path` and the
+   `-webkit-` prefix (Safari requires it). It also appears in @keyframes
+   for browsers that only honor offset-distance during animation, not
+   alongside a static offset-path declaration.
    ========================================================================= */
 
 .onboarding-hint {
-  position: fixed;
-  /* Sits above the bottom-controls' baseline; clearly outside the clock face */
-  right: 7vw;
-  bottom: 18vh;
-  width: clamp(220px, 26vw, 300px);
+  position: absolute;
+  inset: 0;
   pointer-events: none;
-  z-index: 8;
   color: var(--fg-muted);
+  z-index: 6;
   opacity: 0;
-  transform: translateY(8px);
-  transition:
-    opacity 520ms var(--ease-apple),
-    transform 520ms var(--ease-apple);
+  transition: opacity 480ms var(--ease-apple);
 }
 
 .onboarding-hint.is-visible {
-  opacity: 0.82;
-  transform: translateY(0);
+  opacity: 0.92;
 }
 
 .onboarding-hint.is-hidden {
   opacity: 0;
-  transform: translateY(6px);
 }
 
 /* Body idle (5 s no input) — hide entirely, same family as the corner controls */
 body.idle .onboarding-hint {
   opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 600ms var(--ease-apple), transform 600ms var(--ease-apple);
+  transition: opacity 600ms var(--ease-apple);
 }
 
-/* ---- Arrow ---- */
+/* ---- The SVG canvas — fills the analog container, viewBox 0-100 ---- */
+
+.hint-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- The flying arrow — head + tail, moved by offset-path ----
+   Path anatomy (viewBox units 0-100):
+     M 88 92            — start, in the lower-right corner of the analog
+                          (near where the text sits)
+     Q 96 84 93 74      — quadratic curve sweeping UP along the right side
+     C 92 64, 80 56, 70 64
+                        — enter the loop, going up and left
+     C 60 72, 70 80, 80 74
+                        — bottom-left of the loop, coming around (this
+                          asymmetry is intentional — looks hand-drawn,
+                          not a perfect circle)
+     C 88 69, 88 76, 84 82
+                        — right side of the loop, closing back near where
+                          we entered (the loop is slightly oval,
+                          ~14 × 16 units, deliberately irregular)
+     Q 86 86 88 88      — continue down-left toward the ring
+     L 84 84            — final straight segment; its tangent direction
+                          (-1, -1) points the arrowhead toward the clock
+                          center, so it visually "points at the ring"
+                          when it lands.
+   ========================================================================= */
 
 .hint-arrow {
-  width: 100%;
-  height: auto;
-  display: block;
-  margin-bottom: 4px;
+  offset-path: path('M 88 92 Q 96 84 93 74 C 92 64, 80 56, 70 64 C 60 72, 70 80, 80 74 C 88 69, 88 76, 84 82 Q 86 86 88 88 L 84 84');
+  -webkit-offset-path: path('M 88 92 Q 96 84 93 74 C 92 64, 80 56, 70 64 C 60 72, 70 80, 80 74 C 88 69, 88 76, 84 82 Q 86 86 88 88 L 84 84');
+  offset-rotate: auto;
+  -webkit-offset-rotate: auto;
+  offset-distance: 0%;
+  -webkit-offset-distance: 0%;
 }
 
-.hint-arrow__path {
-  /* Total path length is ~360 user-units; the explicit pathLength normalizes
-     so stroke-dashoffset math is reliable across browsers. */
-  stroke-dasharray: 100;
-  stroke-dashoffset: 100;
-  /* Drawing animation runs once when the hint becomes visible. */
+.is-visible .hint-arrow {
+  animation: hint-travel 2400ms cubic-bezier(0.4, 0.05, 0.25, 1) 320ms both;
 }
 
-.is-visible .hint-arrow__path {
-  animation: hint-arrow-draw 900ms var(--ease-apple) 180ms both;
+@keyframes hint-travel {
+  0%   { offset-distance: 0%; }
+  100% { offset-distance: 100%; }
 }
 
-@keyframes hint-arrow-draw {
-  from { stroke-dashoffset: 100; }
-  to   { stroke-dashoffset: 0; }
+/* ---- Arrow head ---- */
+
+.hint-head {
+  fill: currentColor;
 }
 
-/* Make sure pathLength="100" applies for stroke-dasharray normalization */
-.hint-arrow__path { /* attribute set inline in TSX (see component) is preferred; */ }
+/* ---- Tail behind the head — three segments of decreasing thickness
+        and opacity, creating a comet-style fading trail that follows the
+        head wherever it goes along the path. ---- */
 
-/* ---- Text ---- */
+.hint-tail {
+  stroke: currentColor;
+  stroke-linecap: round;
+  fill: none;
+}
+
+.hint-tail--1 { stroke-width: 0.35; opacity: 0.14; }  /* farthest, faintest */
+.hint-tail--2 { stroke-width: 0.55; opacity: 0.4; }
+.hint-tail--3 { stroke-width: 0.78; opacity: 0.72; }  /* closest to head */
+
+/* ---- Handwritten text — sits in the lower-right corner of the analog ---- */
 
 .hint-text {
-  display: block;
-  text-align: right;
+  position: absolute;
+  bottom: 1%;
+  right: 3%;
   font-family: var(--font-hand);
   font-weight: 400;
   font-style: italic;
-  /* Caveat reads naturally large — clamp keeps it on a calm reading scale */
-  font-size: clamp(15px, 1.9vmin, 22px);
+  font-size: clamp(15px, 1.95vmin, 22px);
   letter-spacing: 0.005em;
-  line-height: 1.1;
+  line-height: 1.15;
   color: var(--fg-muted);
   opacity: 0.92;
-  text-shadow: 0 0.6% 1.2% color-mix(in oklab, var(--fg-muted) 40%, transparent);
+  max-width: 55%;
+  text-align: right;
   user-select: none;
   -webkit-user-select: none;
+  text-shadow: 0 0.4% 1% color-mix(in oklab, var(--fg-muted) 30%, transparent);
 }
 
-/* ---- Mobile cutoff ---- */
-
+/* Hide on small screens — the layout becomes too cramped */
 @media (max-width: 640px) {
   .onboarding-hint { display: none; }
 }
 
-/* ---- Reduced motion ---- */
-
+/* Reduced motion — drop the offset-path animation but still show the
+   arrow at its end position, so the visual context is preserved. */
 @media (prefers-reduced-motion: reduce) {
-  .onboarding-hint,
-  .is-visible .hint-arrow__path {
-    animation: none !important;
-    transition: opacity 200ms ease;
-    transform: none;
-  }
-  .hint-arrow__path {
-    stroke-dasharray: none;
-    stroke-dashoffset: 0;
+  .hint-arrow,
+  .is-visible .hint-arrow {
+    animation: none;
+    offset-distance: 100%;
+    -webkit-offset-distance: 100%;
   }
 }

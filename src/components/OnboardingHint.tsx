@@ -10,12 +10,28 @@ interface Props {
 /**
  * Caveat-font hint that whispers what the focus ring can do.
  * Three variants — one per state — shown at most once each per user, then
- * never again. See `useOnboardingHint` for the lifecycle logic.
+ * never again (see useOnboardingHint).
  *
- * Layout: positioned bottom-right of the viewport. A curved SVG arrow
- * extends from beside the text up-and-to-the-left toward the focus ring;
- * the arrow has a small clockwise loop mid-journey for the hand-drawn
- * flourish you'd see on a friend's note.
+ * Layout: the component is absolutely positioned over the analog clock
+ * container (the parent .analog has position: relative). Its inner SVG
+ * has viewBox 0-100 — the SAME coordinate system the focus ring uses —
+ * so coordinates align: the analog center is (50, 50), the ring sits at
+ * radius 46, and a ring-circumference target is at (82.5, 82.5) for the
+ * 4:30 position.
+ *
+ * Animation: the arrow group (small filled head + 3 fading tail segments)
+ * is driven by CSS `offset-path` along an SVG path. The path goes from
+ * near the text (lower-right of the analog) up around an irregular loop
+ * (cubic-bezier curves with intentionally non-symmetric controls so it
+ * looks hand-drawn, not geometric) and lands at the ring circumference
+ * at the 4:30 position. `offset-rotate: auto` keeps the arrow's tip
+ * aligned with the path tangent — so the arrow is *flying* through the
+ * loop, tail trailing behind it. Nothing of the path itself is rendered;
+ * only the moving arrow + tail is visible.
+ *
+ * The path has been chosen so its final tangent direction points from
+ * outside-the-ring toward the clock center — the arrow tip therefore
+ * lands on the ring with its point indicating "here, click this".
  */
 
 const TEXTS: Record<string, string> = {
@@ -27,9 +43,8 @@ const TEXTS: Record<string, string> = {
 export const OnboardingHint = memo(function OnboardingHint({ state }: Props) {
   const { visible, hintKind } = useOnboardingHint(state);
 
-  // We always render the container so we can fade it in/out via CSS.
-  // The text body only renders once we know which hint to show.
-  const text = hintKind ? TEXTS[hintKind] : '';
+  if (!hintKind) return null;
+  const text = TEXTS[hintKind];
 
   return (
     <div
@@ -37,45 +52,26 @@ export const OnboardingHint = memo(function OnboardingHint({ state }: Props) {
       aria-hidden={!visible}
     >
       <svg
-        className="hint-arrow"
-        viewBox="0 0 260 110"
+        className="hint-canvas"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="xMidYMid meet"
         overflow="visible"
         aria-hidden
       >
-        <defs>
-          <marker
-            id="hint-arrowhead"
-            markerWidth="9"
-            markerHeight="9"
-            refX="7.5"
-            refY="4.5"
-            orient="auto"
-            markerUnits="userSpaceOnUse"
-          >
-            <path d="M 0 0 L 9 4.5 L 0 9 Z" fill="currentColor" />
-          </marker>
-        </defs>
-        {/*
-          Path anatomy (each step continues from the previous end-point):
-            M 230 88                        – start near the text-end
-            Q 195 78 155 65                 – gentle curve up-left
-            A 8 8 0 0 1 155 49              – top half of a small clockwise loop
-            A 8 8 0 0 1 155 65              – bottom half — completes the circle
-            Q 90 50 18 10                   – continue up-left to the arrow tip
-        */}
-        <path
-          className="hint-arrow__path"
-          d="M 230 88 Q 195 78 155 65 A 8 8 0 0 1 155 49 A 8 8 0 0 1 155 65 Q 90 50 18 10"
-          pathLength={100}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          markerEnd="url(#hint-arrowhead)"
-        />
+        {/* The arrow itself — head + trailing tail segments. The whole
+            group is animated along offset-path defined in CSS. */}
+        <g className="hint-arrow" key={hintKind}>
+          {/* Three short tail segments behind the head, fading toward the
+              back. They sit on negative-X in local coords; offset-rotate
+              keeps "behind the head" pointed opposite to motion. */}
+          <line className="hint-tail hint-tail--1" x1="-9" y1="0" x2="-6" y2="0" />
+          <line className="hint-tail hint-tail--2" x1="-6" y1="0" x2="-3.4" y2="0" />
+          <line className="hint-tail hint-tail--3" x1="-3.4" y1="0" x2="-1.2" y2="0" />
+          {/* Small filled arrowhead — tip at +X (direction of motion) */}
+          <path className="hint-head" d="M 0 -1.1 L 2.4 0 L 0 1.1 Z" />
+        </g>
       </svg>
-      <span className="hint-text">{text}</span>
+      <span className="hint-text" key={`text-${hintKind}`}>{text}</span>
     </div>
   );
 });
