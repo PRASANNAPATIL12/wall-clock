@@ -1,13 +1,11 @@
 /* =========================================================================
-   Onboarding hint — viewport-fixed handwritten whisper + flying arrow.
+   Onboarding hint — viewport-fixed handwritten whisper + line+arrow.
 
-   The component is fixed-positioned over the full viewport so the path
-   can extend from the text (far right side) all the way to the focus
-   ring (near the center) without being constrained to a single element.
-
-   The path itself is invisible — only the moving arrow group (head +
-   trailing tail) is visible. Path coordinates are computed in viewport
-   pixels by TSX and inlined as the `offset-path` of the arrow group.
+   The line draws itself stroke-by-stroke (stroke-dashoffset 100 → 0) and
+   a chevron arrowhead rides along the same path (offset-distance 0 →
+   100%) at the exact same rate, so the head sits at the leading edge of
+   the visible line at every frame. The drawn line acts as the visible
+   trail behind the arrow — no separate tail element is needed.
    ========================================================================= */
 
 .onboarding-hint {
@@ -28,13 +26,10 @@
   opacity: 0;
 }
 
-/* Hide alongside the corner controls when the body goes idle. */
 body.idle .onboarding-hint {
   opacity: 0;
   transition: opacity 600ms var(--ease-apple);
 }
-
-/* ---- SVG canvas — fills the viewport ---- */
 
 .hint-canvas {
   position: absolute;
@@ -44,10 +39,23 @@ body.idle .onboarding-hint {
   pointer-events: none;
 }
 
-/* ---- The flying arrow — moved by offset-path (inline style) ----
-   Animation curve: cubic-bezier(0.5, 0.05, 0.15, 1) — gentle initial
-   acceleration, pronounced deceleration at the end so the arrow visibly
-   slows down as it approaches the ring. */
+/* ---- The thin line — drawn from start to end via stroke-dashoffset ---- */
+
+.hint-line {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  opacity: 0.78;
+}
+
+.is-visible .hint-line {
+  animation: hint-line-draw 1900ms cubic-bezier(0.4, 0.05, 0.2, 1) 320ms both;
+}
+
+@keyframes hint-line-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* ---- The arrow head — same path, same timing, sits at leading edge ---- */
 
 .hint-arrow {
   offset-distance: 0%;
@@ -55,39 +63,28 @@ body.idle .onboarding-hint {
 }
 
 .is-visible .hint-arrow {
-  animation: hint-travel 2600ms cubic-bezier(0.5, 0.05, 0.15, 1) 320ms both;
+  /* IMPORTANT — must match .hint-line's duration + easing + delay
+     exactly, so the head and the leading edge of the drawn line stay
+     visually locked together. */
+  animation: hint-arrow-travel 1900ms cubic-bezier(0.4, 0.05, 0.2, 1) 320ms both;
 }
 
-@keyframes hint-travel {
+@keyframes hint-arrow-travel {
   0%   { offset-distance: 0%;   -webkit-offset-distance: 0%; }
   100% { offset-distance: 100%; -webkit-offset-distance: 100%; }
 }
 
-/* ---- Chevron arrowhead — two open lines meeting at the tip ----
-   No fill, just two stroked segments. Reads as a hand-drawn ">". */
+/* ---- Chevron arrowhead — two open stroke lines forming '>' ---- */
 
 .hint-head {
   stroke: currentColor;
-  stroke-width: 2.5;
+  stroke-width: 2.4;
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-/* ---- Tail — three short segments behind the head, fading away ---- */
-
-.hint-tail {
-  stroke: currentColor;
-  stroke-linecap: round;
-  fill: none;
-}
-
-.hint-tail--1 { stroke-width: 1.0;  opacity: 0.15; } /* farthest, faintest */
-.hint-tail--2 { stroke-width: 1.6;  opacity: 0.42; }
-.hint-tail--3 { stroke-width: 2.05; opacity: 0.72; } /* closest to head */
-
-/* ---- Handwritten text — positioned at calculated viewport pixel
-        coordinates via inline `left` / `top`; transform centers it. ---- */
+/* ---- Handwritten text — Caveat, positioned at calculated pixels ---- */
 
 .hint-text {
   position: absolute;
@@ -108,10 +105,15 @@ body.idle .onboarding-hint {
   text-shadow: 0 1px 2px color-mix(in oklab, var(--fg-muted) 25%, transparent);
 }
 
-/* ---- Reduced motion — skip the offset-path travel; show the arrow
-        at its landing position so the visual hint is still conveyed. ---- */
+/* ---- Reduced motion — skip the animations, show line + arrow at
+        their final positions so the visual hint is preserved. ---- */
 
 @media (prefers-reduced-motion: reduce) {
+  .hint-line,
+  .is-visible .hint-line {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
   .hint-arrow,
   .is-visible .hint-arrow {
     animation: none;

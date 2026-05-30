@@ -9,28 +9,33 @@ interface Props {
 }
 
 /**
- * Onboarding hint — handwritten whisper + flying arrow with a hand-drawn
- * loop near the text and a graceful sweep down to the focus ring.
+ * Onboarding hint — handwritten whisper + a simple thin line that draws
+ * itself from the text to the focus ring, with a chevron arrowhead
+ * traveling at its leading edge.
  *
- * Layout: the hint is *viewport-fixed*, not constrained to the analog
- * container. Its SVG has a viewBox matching the live viewport pixels,
- * so path coordinates align 1:1 with screen pixels and the path can
- * extend from text-area (right side of the viewport) to the ring (at
- * the center). On resize the path is recomputed.
+ * Layout: viewport-fixed. The SVG's viewBox matches the live viewport
+ * pixels so path coordinates map 1:1 to screen pixels. The component
+ * recomputes the path on resize.
  *
- * Path strategy (all coords in viewport pixels):
- *   · Start just below-left of the text.
- *   · Short curve into a small "signature curl" loop drawn with two
- *     cubic Béziers (asymmetric control points so it looks hand-drawn,
- *     not a geometric circle).
- *   · Single quadratic Bézier sweeping down-left to the target —
- *     the graceful single-arc shape per Image 2.
- *   · Target sits 16 px OUTSIDE the focus ring (at angle 75° ≈ 2:30),
- *     so the arrow lands NEAR the clock but does not touch it.
+ * Animation strategy (simplified per user request — no looped flourish):
+ *   · The line itself is rendered as an SVG path that draws via
+ *     stroke-dashoffset (100 → 0). pathLength normalized to 100 so the
+ *     dasharray math works regardless of true path length.
+ *   · The chevron arrow rides along the SAME path via CSS offset-path
+ *     (0% → 100%) with offset-rotate: auto so it keeps pointing in the
+ *     direction of motion.
+ *   · Both animations have the exact same duration and easing so the
+ *     arrow head sits at the leading edge of the drawn line at every
+ *     moment. Reads as "the arrow draws the line as it travels."
  *
- * Every control point and every interpolated curve point is at
- * distance > ringRadius from the clock center, by construction —
- * the arrow physically cannot cross the clock face.
+ * Path shape: a single quadratic Bezier with a gentle upward control
+ * point. Not a straight line, not a complex flourish — just one elegant
+ * arc, with the arrow visibly decelerating as it approaches the ring.
+ *
+ * Font flash fix: the hint waits for the Caveat web font to actually
+ * load (document.fonts.load) before rendering, so the user never sees
+ * the larger fallback font appear and then jump to Caveat's smaller
+ * metrics.
  */
 
 const TEXTS: Record<string, string> = {
@@ -61,56 +66,77 @@ function buildPath(vp: Viewport) {
   const textX = Math.min(cx + ringR + desiredOffset, vp.w - minRightMargin);
   const textY = Math.max(cy - 90, 80);
 
-  // Available horizontal space between clock edge and text — used to detect
-  // 'too cramped' viewports below.
   const availSpace = textX - (cx + ringR);
 
-  // Target — slightly outside the ring at ~2:30. 16 px gap so the arrow
-  // tip lands near the clock but does not touch the ring or the face.
+  // Target — 18 px outside the focus ring at angle 75° (~ 2:30 position).
+  // The arrow lands NEAR the clock but does NOT touch the ring or face.
   const targetAngleDeg = 75;
   const targetRad = ((targetAngleDeg - 90) * Math.PI) / 180;
-  const targetGap = 16;
+  const targetGap = 18;
   const targetX = cx + (ringR + targetGap) * Math.cos(targetRad);
   const targetY = cy + (ringR + targetGap) * Math.sin(targetRad);
 
-  // Path waypoints, all positioned in the exterior region just left of the
-  // text. The loop is ~45 × 56 px, deliberately taller than wide for an
-  // 'old shape' feel.
-  const sx = textX - 18;
-  const sy = textY + 14;
+  // Path start — just below-left of the text, so the line emerges from
+  // "next to" the text rather than precisely at its baseline.
+  const sx = textX - 22;
+  const sy = textY + 18;
 
-  const entryX = textX - 32;
-  const entryY = textY + 6;
+  // Single quadratic Bézier with a gentle upward arc. Control point
+  // sits ~32 px above the straight line's midpoint — produces a calm
+  // arc that swoops up first, then descends toward the target. Not a
+  // loop, not a wiggle, just one elegant curve.
+  const midX = (sx + targetX) / 2;
+  const midY = (sy + targetY) / 2 - 32;
 
-  const bottomEndX = textX - 65;
-  const bottomEndY = textY + 8;
-
-  const exitX = textX - 35;
-  const exitY = textY + 6;
-
-  // Final Q's control: lifted above the straight line from exit→target so
-  // the curve arcs UP first, then descends. Matches the graceful single-arc
-  // shape the user drew in Image 2.
-  const mx = (exitX + targetX) / 2 - 40;
-  const my = (exitY + targetY) / 2 - 30;
-
-  const d =
-    `M ${sx} ${sy} ` +
-    // short approach curve from start into the loop's entry
-    `C ${sx - 8} ${sy + 4} ${entryX + 4} ${entryY + 4} ${entryX} ${entryY} ` +
-    // loop's bottom half: right → bottom → left  (clockwise)
-    `C ${entryX + 6} ${entryY + 28} ${bottomEndX - 5} ${bottomEndY + 28} ${bottomEndX} ${bottomEndY} ` +
-    // loop's top half: left → top → back near entry  (clockwise)
-    `C ${bottomEndX + 4} ${bottomEndY - 28} ${exitX + 6} ${exitY - 24} ${exitX} ${exitY} ` +
-    // graceful single-arc sweep to the target
-    `Q ${mx} ${my} ${targetX} ${targetY}`;
+  const d = `M ${sx} ${sy} Q ${midX} ${midY} ${targetX} ${targetY}`;
 
   return { d, textX, textY, availSpace };
+}
+
+/**
+ * Tracks whether the Caveat web font has actually loaded into the
+ * browser. We use document.fonts (the CSS Font Loading API) and call
+ * `load('1em Caveat')` which returns a promise that resolves once the
+ * font file is available. Until then we don't render the hint — that
+ * way the user never sees the larger fallback font appear briefly.
+ */
+function useFontReady(family: string): boolean {
+  const [ready, setReady] = useState<boolean>(() => {
+    if (typeof document === 'undefined') return true;
+    try {
+      return document.fonts?.check(`1em "${family}"`) ?? true;
+    } catch {
+      return true;
+    }
+  });
+
+  useEffect(() => {
+    if (ready) return;
+    if (typeof document === 'undefined' || !document.fonts) {
+      setReady(true);
+      return;
+    }
+    let cancelled = false;
+    document.fonts
+      .load(`1em "${family}"`)
+      .then(() => {
+        if (!cancelled) setReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) setReady(true); // bail to fallback if anything fails
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, family]);
+
+  return ready;
 }
 
 export const OnboardingHint = memo(function OnboardingHint({ state }: Props) {
   const { visible, hintKind } = useOnboardingHint(state);
   const [vp, setVp] = useState<Viewport>(readViewport);
+  const fontReady = useFontReady('Caveat');
 
   useEffect(() => {
     const onResize = () => setVp(readViewport());
@@ -118,15 +144,13 @@ export const OnboardingHint = memo(function OnboardingHint({ state }: Props) {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  if (!hintKind) return null;
+  if (!hintKind || !fontReady) return null;
   const text = TEXTS[hintKind];
   const { d: pathD, textX, textY, availSpace } = buildPath(vp);
 
   // Cramped layouts — hide.
   if (availSpace < 150 || vp.w < 1024) return null;
 
-  // Both standard and webkit-prefixed offset properties, set inline so
-  // path coordinates can change with viewport size.
   const arrowStyle = {
     offsetPath: `path('${pathD}')`,
     WebkitOffsetPath: `path('${pathD}')`,
@@ -146,15 +170,23 @@ export const OnboardingHint = memo(function OnboardingHint({ state }: Props) {
         overflow="visible"
         aria-hidden
       >
+        {/* The line itself — drawn stroke-by-stroke via stroke-dashoffset.
+            pathLength is normalized to 100 so the dasharray math is the
+            same regardless of how long the actual path is. */}
+        <path
+          className="hint-line"
+          d={pathD}
+          pathLength={100}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        />
+        {/* Arrow head — travels along the same path via offset-path.
+            Same duration + same easing as the line draw, so the head
+            sits exactly at the leading edge of the visible line. */}
         <g className="hint-arrow" key={hintKind} style={arrowStyle}>
-          {/* Tail — three fading segments behind the head, in negative-X
-              local coords so they trail along whichever direction the
-              head is moving. */}
-          <line className="hint-tail hint-tail--1" x1="-55" y1="0" x2="-38" y2="0" />
-          <line className="hint-tail hint-tail--2" x1="-38" y1="0" x2="-22" y2="0" />
-          <line className="hint-tail hint-tail--3" x1="-22" y1="0" x2="-10" y2="0" />
-          {/* Chevron arrowhead — two open lines forming '>', no fill. */}
-          <path className="hint-head" d="M -10 -7 L 0 0 L -10 7" />
+          <path className="hint-head" d="M -9 -6 L 0 0 L -9 6" />
         </g>
       </svg>
       <span
