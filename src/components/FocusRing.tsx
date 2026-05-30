@@ -3,7 +3,7 @@ import type { PointerEvent } from 'react';
 import { useNow } from '../hooks/useNow';
 import { useFocusTrack } from '../hooks/useFocusTrack';
 import { getZonedTime } from '../lib/timezones';
-import { tick as hapticTick } from '../lib/haptic';
+import { tick as hapticTick, prepareHaptic } from '../lib/haptic';
 import { OnboardingHint } from './OnboardingHint';
 import './FocusRing.css';
 
@@ -225,6 +225,11 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
   const onEndDropPointerDown = (e: PointerEvent<SVGCircleElement>) => {
     if (state.kind !== 'targeted') return;
     e.stopPropagation();
+    e.preventDefault();
+    // Warm up the AudioContext inside the user gesture, so the very first
+    // tick on the very first minute crossing isn't silently dropped by the
+    // browser's autoplay policy.
+    prepareHaptic();
     const ang = computeAngle(e.clientX, e.clientY);
     lastDragMinuteRef.current = Math.floor(ang / 6) % 60;
     setDragging(true);
@@ -340,24 +345,8 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
             return <circle cx={p.x} cy={p.y} r={DROP_R} className="drop drop-start" />;
           })()}
 
-        {/* End drop — open ring → fills on completion. In `targeted` state
-            it is also draggable: pointer-down here intercepts the click so
-            the main ring doesn't treat the gesture as click-3 (reset). */}
-        {data.end !== null &&
-          (() => {
-            const p = polar(data.end, RING_R);
-            return (
-              <circle
-                ref={endDropRef}
-                cx={p.x}
-                cy={p.y}
-                r={DROP_R}
-                className={`drop drop-end ${dragging ? 'is-dragging' : ''}`}
-                strokeWidth={STROKE * 1.2}
-                onPointerDown={onEndDropPointerDown}
-              />
-            );
-          })()}
+        {/* End drop is rendered AFTER the main hit area below — see comment
+            there. Removed from this slot in the DOM. */}
 
         {/* Drop head — current minute hand position */}
         {data.head !== null &&
@@ -413,6 +402,44 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
           strokeWidth={HIT_STROKE}
           onPointerDown={onPointerDown}
         />
+
+        {/* End drop — rendered AFTER the main hit band so it sits ON TOP in
+            DOM order. SVG hit-testing picks the topmost element, so
+            pointer-downs on this circle reach the drag handler instead of
+            the main ring's click handler (which would otherwise treat it
+            as click-3 / reset).
+
+            Two stacked circles at the same center:
+              · A larger transparent hit zone (~12 viewBox units diameter)
+                that catches pointer events. Big touch target on mobile,
+                comfortable click target on desktop.
+              · The visible end-drop circle on top, pointer-events: none —
+                doesn't catch events itself (those pass through to the hit
+                zone below); just renders the visual marker. */}
+        {data.end !== null &&
+          (() => {
+            const p = polar(data.end, RING_R);
+            return (
+              <>
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r={DROP_R + 4.6}
+                  className={`drop-end-hit ${dragging ? 'is-dragging' : ''}`}
+                  fill="transparent"
+                  onPointerDown={onEndDropPointerDown}
+                />
+                <circle
+                  ref={endDropRef}
+                  cx={p.x}
+                  cy={p.y}
+                  r={DROP_R}
+                  className="drop drop-end"
+                  strokeWidth={STROKE * 1.2}
+                />
+              </>
+            );
+          })()}
       </svg>
 
       {/* Floating timer */}

@@ -68,22 +68,42 @@ function playAudioClick(): void {
     osc.connect(gain);
     gain.connect(ctx.destination);
 
+    // Higher frequency + sharper envelope = a punchier, more present "tick"
+    // instead of the previous muddy soft tone.
     osc.type = 'sine';
-    osc.frequency.value = 1100;
+    osc.frequency.value = 2000;
 
     const t = ctx.currentTime;
     gain.gain.setValueAtTime(0, t);
-    gain.gain.linearRampToValueAtTime(0.06, t + 0.002); // sharp attack
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.05); // quick release
+    gain.gain.linearRampToValueAtTime(0.09, t + 0.001); // 1 ms sharp attack
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.022); // 22 ms decay
 
     osc.start(t);
-    osc.stop(t + 0.06);
+    osc.stop(t + 0.025);
     osc.onended = () => {
       osc.disconnect();
       gain.disconnect();
     };
   } catch {
     /* swallow audio errors — feedback is non-critical */
+  }
+}
+
+/**
+ * Initialize the AudioContext from within a user gesture (e.g. the
+ * pointer-down that begins a drag). Browsers block AudioContext creation
+ * + playback outside user gestures, so calling this here makes sure the
+ * very first tick during the drag isn't silently dropped.
+ */
+export function prepareHaptic(): void {
+  if (userHasMuted()) return;
+  const ctx = getCtx();
+  if (ctx && ctx.state === 'suspended') {
+    try {
+      ctx.resume();
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -101,13 +121,17 @@ export function tick(): void {
   if (userHasMuted()) return;
 
   // Prefer vibration on touch devices that expose the Vibration API.
+  // 18 ms gives a sharp, percussive "click" — short enough to read as
+  // a tick, long enough that the user actually feels it. 8 ms (what we
+  // had before) is below the threshold most phone vibration motors can
+  // even reproduce, which is why the previous build felt like nothing.
   if (
     isTouchDevice() &&
     typeof navigator !== 'undefined' &&
     typeof navigator.vibrate === 'function'
   ) {
     try {
-      const ok = navigator.vibrate(8);
+      const ok = navigator.vibrate(18);
       if (ok) return; // hardware accepted the call — done
     } catch {
       /* fall through to audio */
