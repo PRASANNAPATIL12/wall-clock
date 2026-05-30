@@ -132,7 +132,7 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
   >(null);
   useEffect(() => {
     if (!comet) return;
-    const t = window.setTimeout(() => setComet(null), 1200);
+    const t = window.setTimeout(() => setComet(null), 1600);
     return () => window.clearTimeout(t);
   }, [comet]);
 
@@ -188,6 +188,7 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
     state.kind !== 'idle' ? 'is-active' : 'is-resting',
     data.complete ? 'is-complete' : '',
     celebrating ? 'is-celebrating' : '',
+    comet ? 'is-comet-playing' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -309,7 +310,7 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
             <circle
               cx={C}
               cy={C - RING_R}
-              r={DROP_R * 0.8}
+              r={DROP_R * 0.95}
               className="comet-head"
             />
           </g>

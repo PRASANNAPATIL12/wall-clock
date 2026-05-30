@@ -53,6 +53,15 @@ body.idle .focus-ring .track {
   transition: opacity 600ms var(--ease-apple) 0s;
 }
 
+/* While the comet is orbiting, the ghost track is invisible so the comet
+   head is the *only* thing the eye sees on the ring. Prevents the head
+   from visually merging with the track into an apparent "whole ring
+   glow" during the fast portion of the orbit. */
+.focus-ring.is-comet-playing .track {
+  opacity: 0 !important;
+  transition: opacity 160ms var(--ease-apple) 0s;
+}
+
 /* ---- Goal arc — base monochrome ---- */
 
 .focus-ring .goal {
@@ -191,26 +200,31 @@ body.idle .focus-ring .track {
 }
 
 /* ---- Comet — one-shot orbit when a session starts ----
-   Slower travel + thinner tail than previous attempt, so the head reads
-   as a moving point with a wisp behind it rather than smearing into a
-   glowing ring at high speed. */
+   1500 ms total, decelerating ease (fast start, slow landing).
+   animation-fill-mode: both — locks the keyframe-0 state on first paint
+   (no flicker at angle 0) AND locks the keyframe-100 state after the
+   animation ends, preventing the head from snapping back to the default
+   transform (which would put it at 12 o'clock for ~100 ms — the
+   "glitch from minute point to 12" reported before this fix). */
 
 .comet {
   transform-box: view-box;
   transform-origin: 50% 50%;
-  animation: comet-orbit 1100ms cubic-bezier(0.45, 0, 0.35, 1);
+  animation: comet-orbit 1500ms cubic-bezier(0.15, 0.8, 0.3, 1) both;
   pointer-events: none;
 }
 
 @keyframes comet-orbit {
   0%   { transform: rotate(var(--from)); opacity: 1; }
-  88%  { opacity: 1; }
+  90%  { opacity: 1; }
   100% { transform: rotate(var(--to));   opacity: 0; }
 }
 
 .comet-head {
   fill: var(--fg);
-  filter: drop-shadow(0 0 0.9% var(--fg));
+  /* Tighter halo than before — less ambient bleed, the head reads as a
+     crisp point rather than a luminous blob. */
+  filter: drop-shadow(0 0 0.45% var(--fg));
 }
 
 .comet-tail {
