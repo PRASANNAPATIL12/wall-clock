@@ -1,0 +1,336 @@
+/* =========================================================================
+   Focus Ring — visual layers
+     · ghost track (always faintly present, fades on rest)
+     · to-do arc (pre-target ghost)
+     · goal arc (start → current head or start → end)
+     · bonus arc (post-target, subtly tinted)
+     · ripples (one-shot, during completion moment)
+     · drops (start, end, head)
+     · timer + lap label (HTML, sibling to SVG)
+   ========================================================================= */
+
+.focus-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  color: var(--fg);
+  pointer-events: none;
+}
+
+/* ---- Ghost track — fade-on-rest, reveal-on-approach ---- */
+
+.focus-ring .track {
+  stroke: currentColor;
+  opacity: 0;
+  animation: ring-reveal 3.6s var(--ease-apple);
+  transition: opacity 480ms var(--ease-apple) 1.4s;
+}
+
+@keyframes ring-reveal {
+  0%, 100% { opacity: 0; }
+  18%, 50% { opacity: 0.22; }
+}
+
+.analog:hover .focus-ring .track {
+  opacity: 0.22;
+  transition: opacity 320ms var(--ease-apple) 0s;
+}
+
+.focus-ring.is-active .track {
+  animation: none;
+  opacity: 0.06;
+  transition: opacity 420ms var(--ease-apple) 0s;
+}
+
+.analog:hover .focus-ring.is-active .track {
+  opacity: 0.22;
+}
+
+body.idle .focus-ring .track {
+  opacity: 0;
+  transition: opacity 600ms var(--ease-apple) 0s;
+}
+
+/* While the comet is orbiting, EVERY other ring element is invisible —
+   the comet's tail is the only thing on the ring. After the comet ends
+   and the class is removed, the drops fade back in via their own
+   transitions. This is the strict fix for the perceived "ring glow":
+   if nothing else is drawn, there's nothing for motion-blur to merge
+   with. */
+.focus-ring.is-comet-playing .track,
+.focus-ring.is-comet-playing .goal,
+.focus-ring.is-comet-playing .todo,
+.focus-ring.is-comet-playing .drop-start,
+.focus-ring.is-comet-playing .drop-end,
+.focus-ring.is-comet-playing .drop-head {
+  opacity: 0 !important;
+  transition: opacity 160ms var(--ease-apple) 0s;
+}
+
+/* ---- Goal arc — base monochrome ---- */
+
+.focus-ring .goal {
+  stroke: currentColor;
+  opacity: 0.82;
+  filter: drop-shadow(0 0.25% 0.6% var(--hand-shadow));
+  transition: stroke 420ms var(--ease-apple), opacity 420ms var(--ease-apple);
+}
+
+.focus-ring.is-celebrating .goal {
+  animation: goal-glow 1.4s var(--ease-apple);
+}
+
+@keyframes goal-glow {
+  0% {
+    opacity: 0.82;
+    filter: drop-shadow(0 0.25% 0.6% var(--hand-shadow));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 1.6% var(--bonus-soft));
+  }
+  100% {
+    opacity: 0.82;
+    filter: drop-shadow(0 0.25% 0.6% var(--hand-shadow));
+  }
+}
+
+/* ---- Bonus arc — warm gold, gentle breath ---- */
+
+.focus-ring .bonus {
+  stroke: var(--bonus);
+  filter: drop-shadow(0 0 0.8% var(--bonus-soft));
+  opacity: 0.92;
+  animation: bonus-breath 6s var(--ease-apple) infinite;
+}
+
+@keyframes bonus-breath {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 1; }
+}
+
+/* ---- To-do ghost arc ---- */
+
+.focus-ring .todo {
+  stroke: currentColor;
+  opacity: 0.16;
+  transition: opacity 420ms var(--ease-apple);
+}
+
+/* ---- Drops ---- */
+
+.focus-ring .drop {
+  fill: currentColor;
+  transition: fill 420ms var(--ease-apple), opacity 420ms var(--ease-apple);
+}
+
+.focus-ring .drop-start {
+  opacity: 0.92;
+}
+
+/* End drop — open ring by default, fills in on completion */
+.focus-ring .drop-end {
+  fill: currentColor;
+  fill-opacity: 0;
+  stroke: currentColor;
+  stroke-opacity: 0.85;
+  transition:
+    fill-opacity 360ms var(--ease-apple),
+    stroke-opacity 360ms var(--ease-apple);
+}
+
+.focus-ring.is-complete .drop-end {
+  fill-opacity: 0.95;
+  stroke-opacity: 1;
+}
+
+/* End drop scale-pop on the completion moment */
+.focus-ring.is-celebrating .drop-end {
+  animation: drop-end-pop 1.2s var(--ease-spring);
+}
+
+@keyframes drop-end-pop {
+  0%   { r: 1.4; }
+  30%  { r: 1.7; }
+  60%  { r: 1.32; }
+  100% { r: 1.4; }
+}
+
+/* Start drop pulses to full brightness 0.4s after target reached */
+.focus-ring.is-celebrating .drop-start {
+  animation: start-flash 1.0s var(--ease-apple) 0.4s;
+}
+
+@keyframes start-flash {
+  0%   { opacity: 0.92; }
+  40%  { opacity: 1; }
+  100% { opacity: 0.92; }
+}
+
+/* Drop head — current minute hand, soft pulse */
+.focus-ring .drop-head {
+  opacity: 0.85;
+  animation: head-pulse 2.2s var(--ease-apple) infinite;
+}
+
+@keyframes head-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+
+/* After completion the drop head takes the warm gold bonus tint */
+.focus-ring.is-complete .drop-head {
+  fill: var(--bonus);
+}
+
+/* ---- Ripples — warm gold, emanate from end drop ---- */
+
+.ripple {
+  stroke: var(--bonus);
+  fill: none;
+}
+
+.ripple-1 {
+  animation: ripple-out 1.4s var(--ease-apple);
+}
+
+.ripple-2 {
+  animation: ripple-out 1.4s var(--ease-apple) 0.35s;
+  opacity: 0.6;
+}
+
+@keyframes ripple-out {
+  0%   { r: 1.4; opacity: 0.8; stroke-width: 0.6; }
+  100% { r: 6;   opacity: 0;   stroke-width: 0.2; }
+}
+
+/* ---- Comet — one-shot orbit when a session starts ----
+   1900 ms total with ease-in-out for slow start AND slow landing.
+   Four stacked tail arcs of decreasing length, thickness, and opacity
+   form a tapered comet silhouette — no head circle; the rounded
+   line-cap at the leading edge of layer 1 acts as the head.
+
+   animation-fill-mode: both — locks keyframe-0 on first paint (no
+   flicker) AND keyframe-100 after end (prevents the snap-back-to-12
+   bug from before this fix). */
+
+.comet {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  animation: comet-orbit 1900ms cubic-bezier(0.6, 0.05, 0.25, 1) both;
+  pointer-events: none;
+}
+
+@keyframes comet-orbit {
+  0%   { transform: rotate(var(--from)); opacity: 1; }
+  92%  { opacity: 1; }
+  100% { transform: rotate(var(--to));   opacity: 0; }
+}
+
+.comet-tail {
+  stroke: var(--fg);
+  stroke-linecap: round;
+  fill: none;
+}
+
+/* Layer 1 — closest to the leading edge: brightest, widest. The rounded
+   cap at angle 0 (the end of the arc) reads as the comet's head. */
+.comet-tail--1 { stroke-width: 1.15; opacity: 0.78; }
+.comet-tail--2 { stroke-width: 0.95; opacity: 0.52; }
+.comet-tail--3 { stroke-width: 0.75; opacity: 0.32; }
+/* Layer 4 — farthest, faintest: dissolves into the background. */
+.comet-tail--4 { stroke-width: 0.55; opacity: 0.16; }
+
+/* ---- Hit area ---- */
+
+.focus-ring .hit {
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+/* ---- Floating timer ---- */
+
+.focus-timer {
+  position: absolute;
+  /* Anchor on the *inward* side so the text extends radially OUTWARD,
+     never over the clock face. --ox/--oy are unit-vector components of
+     the outward direction from clock center (set inline per angle). */
+  transform: translate(
+    calc(-50% + var(--ox, 0) * 50%),
+    calc(-50% + var(--oy, 0) * 50%)
+  );
+  font-family: var(--font-mono);
+  font-weight: 200;
+  font-size: clamp(9.5px, 1.4vmin, 12px);
+  letter-spacing: -0.01em;
+  color: var(--fg-muted);
+  opacity: 0.78;
+  pointer-events: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  text-align: center;
+  transition: color 420ms var(--ease-apple), opacity 420ms var(--ease-apple);
+  animation: timer-in 480ms var(--ease-apple) both;
+}
+
+@keyframes timer-in {
+  from { opacity: 0; scale: 0.94; }
+  to   { opacity: 0.78; scale: 1; }
+}
+
+.focus-timer__line {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+}
+
+.focus-timer__target {
+  opacity: 0.55;
+}
+
+/* The bonus segment — warm gold to match the bonus arc */
+.focus-timer__bonus {
+  margin-left: 0.4em;
+  color: var(--bonus);
+  opacity: 0.95;
+}
+
+/* Lap counter — even smaller, below the timer, appears at lap ≥ 2 */
+.focus-timer__lap {
+  font-size: 0.78em;
+  color: var(--fg-muted);
+  opacity: 0.6;
+  letter-spacing: 0.04em;
+  margin-top: 0.2em;
+  animation: lap-in 380ms var(--ease-apple) both;
+}
+
+@keyframes lap-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 0.6; transform: translateY(0); }
+}
+
+/* Hide on very small screens */
+@media (max-width: 420px) {
+  .focus-ring { display: none; }
+  .focus-timer { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-ring .track,
+  .focus-ring .progress,
+  .focus-ring .drop-head,
+  .focus-ring .ripple,
+  .focus-ring .bonus,
+  .focus-ring.is-celebrating .drop-end,
+  .focus-ring.is-celebrating .drop-start,
+  .focus-ring.is-celebrating .goal,
+  .comet,
+  .focus-timer,
+  .focus-timer__lap {
+    animation: none;
+  }
+}

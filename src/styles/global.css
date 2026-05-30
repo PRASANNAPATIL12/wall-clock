@@ -36,6 +36,12 @@
   --hand-shadow: rgba(26, 26, 26, 0.35);
   --hand-second-shadow: rgba(120, 20, 20, 0.35);
 
+  /* Focus-ring bonus tint — warm muted gold for "past target" mode.
+     Distinct from the seconds-hand red so the eye reads it as celebration,
+     not alert. Still subdued enough to keep the page calm. */
+  --bonus: #b8893a;
+  --bonus-soft: rgba(184, 137, 58, 0.35);
+
   /* Translucent glass — single tint, single hairline border, single shadow */
   --glass-bg: rgba(255, 255, 255, 0.32);
   --glass-bg-hover: rgba(255, 255, 255, 0.5);
@@ -73,6 +79,10 @@
   --hand-second-soft: rgba(224, 70, 63, 0.9);
   --hand-shadow: rgba(0, 0, 0, 0.55);
   --hand-second-shadow: rgba(0, 0, 0, 0.5);
+
+  /* Focus-ring bonus tint — warm honey for dark mode */
+  --bonus: #e6b85c;
+  --bonus-soft: rgba(230, 184, 92, 0.35);
 
   /* Translucent glass — dark */
   --glass-bg: rgba(255, 255, 255, 0.06);

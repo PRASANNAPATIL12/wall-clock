@@ -1,6 +1,6 @@
 .analog {
   position: relative;
-  width: min(62vmin, 560px);
+  width: min(70vmin, 620px);
   aspect-ratio: 1 / 1;
   display: grid;
   place-items: center;
@@ -8,9 +8,13 @@
 
 .analog__face {
   position: relative;
-  width: 100%;
-  height: 100%;
+  width: 87%;
+  height: 87%;
   border-radius: 50%;
+  /* Click-through: the face has no interactive content; letting the
+     focus ring's hit band extend behind the face fixes click 2 misses
+     when the user clicked just inside the dashed track. */
+  pointer-events: none;
   background: var(--bg-elev);
   box-shadow: var(--shadow-face),
     inset 0 0 0 1px var(--bezel),
@@ -37,7 +41,31 @@
   letter-spacing: -0.02em;
   fill: var(--fg);
   stroke: none;
-  transition: fill var(--d-theme) var(--ease-out);
+  opacity: 0.86;
+  transition:
+    fill var(--d-theme) var(--ease-out),
+    opacity 700ms var(--ease-apple),
+    filter 700ms var(--ease-apple);
+}
+
+/* The numeral matching the current hour — larger, fully opaque, painted in
+   the same red as the second hand. Extends the "red = now" visual language
+   from the second hand to the current hour numeral. A soft warm-tinted
+   cast shadow gives it a quiet "floating" presence. Animation runs once
+   when this numeral inherits the class (i.e. at each hour rollover). */
+.numeral--current {
+  font-size: 4.6px;
+  font-weight: 500;
+  fill: var(--hand-second);
+  opacity: 1;
+  filter: drop-shadow(0 0.5% 1.2% var(--hand-second-shadow));
+  animation: numeral-rise 900ms var(--ease-apple);
+}
+
+@keyframes numeral-rise {
+  0%   { opacity: 0.86; filter: drop-shadow(0 0 0 transparent); }
+  60%  { opacity: 1;    filter: drop-shadow(0 0.6% 1.6% var(--hand-second-shadow)); }
+  100% { opacity: 1;    filter: drop-shadow(0 0.5% 1.2% var(--hand-second-shadow)); }
 }
 
 /* All hands — full-size SVG, absolutely positioned, rotating around center */
