@@ -41,10 +41,11 @@ const Ticks = memo(function Ticks() {
   return <g className="ticks">{ticks}</g>;
 });
 
-const Numerals = memo(function Numerals() {
+const Numerals = memo(function Numerals({ currentHour }: { currentHour: number }) {
   const nums = [] as JSX.Element[];
   for (let i = 1; i <= 12; i++) {
     const { x, y } = polar(i * 30, NUMERAL_RADIUS);
+    const isCurrent = i === currentHour;
     nums.push(
       <text
         key={i}
@@ -52,7 +53,7 @@ const Numerals = memo(function Numerals() {
         y={y}
         textAnchor="middle"
         dominantBaseline="central"
-        className="numeral"
+        className={`numeral${isCurrent ? ' numeral--current' : ''}`}
       >
         {i}
       </text>,
@@ -71,6 +72,8 @@ export const AnalogClock = memo(function AnalogClock({ timezone }: Props) {
   const secAngle = (seconds + ms / 1000) * 6;
   const minAngle = (minutes + seconds / 60) * 6;
   const hourAngle = ((hours % 12) + minutes / 60) * 30;
+  // 1..12 (so midnight/noon → 12) for highlighting the current numeral
+  const currentHour = hours % 12 === 0 ? 12 : hours % 12;
 
   return (
     <div className="analog">
@@ -78,7 +81,7 @@ export const AnalogClock = memo(function AnalogClock({ timezone }: Props) {
       <div className="analog__face" aria-hidden>
         <svg className="analog__dial" viewBox="0 0 100 100" role="img" aria-label="Analog clock face">
           <Ticks />
-          <Numerals />
+          <Numerals currentHour={currentHour} />
         </svg>
 
         {/* Hands — each absolutely positioned, full-size SVG, rotated around its own center */}

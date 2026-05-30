@@ -124,6 +124,18 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
     };
   }, [state, now, timezone]);
 
+  /* Comet animation — when a session is freshly started (idle → tracking via a
+     click), a small head + fading tail orbits once from the click angle to the
+     current minute-hand angle. Brief flourish, ~800 ms, then disappears. */
+  const [comet, setComet] = useState<
+    { from: number; to: number; key: number } | null
+  >(null);
+  useEffect(() => {
+    if (!comet) return;
+    const t = window.setTimeout(() => setComet(null), 900);
+    return () => window.clearTimeout(t);
+  }, [comet]);
+
   /* Fire celebration animations once, on the false→true transition for `complete`.
      Won't replay on page refresh because we initialize the ref to the current
      value on first run. */
@@ -152,6 +164,17 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
     const dy = e.clientY - cy;
     let ang = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
     if (ang < 0) ang += 360;
+
+    // Fire the comet only when transitioning from idle → tracking (click 1).
+    if (state.kind === 'idle') {
+      const zt = getZonedTime(new Date(), timezone);
+      const minAng = ((zt.minutes + zt.seconds / 60) * 6) % 360;
+      // Comet runs at least one full revolution clockwise from click angle,
+      // ending at the minute-hand angle.
+      const cwDistance = ((minAng - ang) % 360 + 360) % 360;
+      setComet({ from: ang, to: ang + 360 + cwDistance, key: Date.now() });
+    }
+
     handleClick(ang);
   };
 
@@ -263,6 +286,44 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
               </>
             );
           })()}
+
+        {/* Comet — one-shot orbit on session start */}
+        {comet && (
+          <g
+            key={comet.key}
+            className="comet"
+            style={
+              {
+                '--from': `${comet.from}deg`,
+                '--to': `${comet.to}deg`,
+              } as React.CSSProperties
+            }
+          >
+            {/* Three stacked tail arcs of decreasing length & opacity create the
+                fading-trail effect behind the head. */}
+            <path
+              d={arcPath(-44, 0, RING_R)}
+              className="comet-tail comet-tail--1"
+              fill="none"
+            />
+            <path
+              d={arcPath(-28, 0, RING_R)}
+              className="comet-tail comet-tail--2"
+              fill="none"
+            />
+            <path
+              d={arcPath(-14, 0, RING_R)}
+              className="comet-tail comet-tail--3"
+              fill="none"
+            />
+            <circle
+              cx={C}
+              cy={C - RING_R}
+              r={DROP_R * 0.85}
+              className="comet-head"
+            />
+          </g>
+        )}
 
         {/* Hit band — generous, only stroke catches pointer */}
         <circle
