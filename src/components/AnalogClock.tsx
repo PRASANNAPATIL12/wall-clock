@@ -74,7 +74,7 @@ export const AnalogClock = memo(function AnalogClock({ timezone }: Props) {
 
   return (
     <div className="analog">
-      <FocusRing />
+      <FocusRing timezone={timezone} />
       <div className="analog__face" aria-hidden>
         <svg className="analog__dial" viewBox="0 0 100 100" role="img" aria-label="Analog clock face">
           <Ticks />

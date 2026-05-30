@@ -2,7 +2,12 @@ import { memo, useMemo, useRef } from 'react';
 import type { MouseEvent } from 'react';
 import { useNow } from '../hooks/useNow';
 import { useFocusTrack } from '../hooks/useFocusTrack';
+import { getZonedTime } from '../lib/timezones';
 import './FocusRing.css';
+
+interface Props {
+  timezone: string;
+}
 
 /* viewBox geometry — all values in viewBox units (0..100). */
 const C = 50; // center
@@ -36,18 +41,21 @@ function fmt(ms: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
-export const FocusRing = memo(function FocusRing() {
+export const FocusRing = memo(function FocusRing({ timezone }: Props) {
   const now = useNow('second');
   const svgRef = useRef<SVGSVGElement>(null);
-  const { state, handleClick } = useFocusTrack();
+  const { state, handleClick } = useFocusTrack(timezone);
 
   const data = useMemo(() => {
     if (state.kind === 'idle') {
       return { start: null, end: null, head: null, elapsed: 0, target: null, complete: false };
     }
 
-    const startMin = ((state.start / 60000) % 60 + 60) % 60;
-    const startAngle = (startMin * 6) % 360;
+    // Start angle from the *displayed* timezone's minute — same source of
+    // truth as the analog minute hand, so the drop always lands where the
+    // user expects regardless of half-hour zone offsets.
+    const startZt = getZonedTime(new Date(state.start), timezone);
+    const startAngle = ((startZt.minutes + startZt.seconds / 60) * 6) % 360;
 
     const elapsedMs = now.getTime() - state.start;
     const sweep = Math.min((elapsedMs / 60000) * 6, 359.5);
@@ -57,8 +65,8 @@ export const FocusRing = memo(function FocusRing() {
       return { start: startAngle, end: null, head, elapsed: elapsedMs, target: null, complete: false };
     }
 
-    const endMin = ((state.end / 60000) % 60 + 60) % 60;
-    const endAngle = (endMin * 6) % 360;
+    const endZt = getZonedTime(new Date(state.end), timezone);
+    const endAngle = ((endZt.minutes + endZt.seconds / 60) * 6) % 360;
     const targetMs = state.end - state.start;
     const complete = elapsedMs >= targetMs;
     const cappedHead = complete ? endAngle : head;
@@ -70,7 +78,7 @@ export const FocusRing = memo(function FocusRing() {
       target: targetMs,
       complete,
     };
-  }, [state, now]);
+  }, [state, now, timezone]);
 
   const onClick = (e: MouseEvent<SVGElement>) => {
     if (!svgRef.current) return;

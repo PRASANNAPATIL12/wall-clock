@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { getZonedTime } from '../lib/timezones';
 
 /**
  * Focus-tracking state machine for the analog clock's focus ring.
@@ -46,7 +47,7 @@ function load(): FocusState {
   }
 }
 
-export function useFocusTrack() {
+export function useFocusTrack(timezone: string) {
   const [state, setState] = useState<FocusState>(load);
 
   // Persist every change
@@ -83,9 +84,11 @@ export function useFocusTrack() {
 
       if (prev.kind === 'tracking') {
         // Click 2 — target. Convert clicked angle to future timestamp.
-        const d = new Date(now);
-        const currentMinAngle =
-          ((d.getMinutes() + d.getSeconds() / 60) * 6) % 360;
+        // Use the *displayed* timezone's minute, so the math aligns with
+        // wherever the user actually sees the minute hand (this matters
+        // for half-hour offset zones like IST, Newfoundland, Iran).
+        const zt = getZonedTime(new Date(now), timezone);
+        const currentMinAngle = ((zt.minutes + zt.seconds / 60) * 6) % 360;
         let delta = clickAngleDeg - currentMinAngle;
         // wrap forward: clicking "behind" or exactly on now means the next
         // time the minute hand reaches that angle (i.e. within an hour).
@@ -97,7 +100,7 @@ export function useFocusTrack() {
       // Click 3 — clear.
       return { kind: 'idle' };
     });
-  }, []);
+  }, [timezone]);
 
   return { state, handleClick };
 }

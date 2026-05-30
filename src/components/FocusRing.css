@@ -14,24 +14,48 @@
   pointer-events: none; /* only .hit accepts clicks */
 }
 
-/* ---- Ghost track — always faintly there ---- */
+/* ---- Ghost track — fade-on-rest, reveal-on-approach ----
+   At rest: invisible. First paint: brief 3s reveal-then-fade animation
+   to teach the user the ring exists. Hover anywhere in the clock area:
+   the track surfaces. When actively tracking, the track stays as a
+   whisper-faint reference for the active drops. */
+
 .focus-ring .track {
   stroke: currentColor;
-  opacity: 0.085;
-  /* Gentle reveal on first paint, then settle to resting opacity */
-  animation: ring-reveal 3.6s var(--ease-apple) both;
-  transition: opacity 420ms var(--ease-apple);
+  opacity: 0;
+  /* One-time reveal teach: 0 → 22% → 0 over 3.6s */
+  animation: ring-reveal 3.6s var(--ease-apple);
+  /* After animation ends, this transition governs hover in/out */
+  transition: opacity 480ms var(--ease-apple) 1.4s;
 }
 
 @keyframes ring-reveal {
-  0%   { opacity: 0; }
-  22%  { opacity: 0.22; }
-  100% { opacity: 0.085; }
+  0%, 100% { opacity: 0; }
+  18%, 50% { opacity: 0.22; }
 }
 
-/* On hover near the clock, the track surfaces */
+/* Hover near the clock — surfaces immediately, no delay */
 .analog:hover .focus-ring .track {
   opacity: 0.22;
+  transition: opacity 320ms var(--ease-apple) 0s;
+}
+
+/* Active session — track stays as a whisper-faint reference always */
+.focus-ring.is-active .track {
+  animation: none;
+  opacity: 0.06;
+  transition: opacity 420ms var(--ease-apple) 0s;
+}
+
+.analog:hover .focus-ring.is-active .track {
+  opacity: 0.22;
+}
+
+/* Body idle fades the track to 0, even mid-session — the active drops
+   and arc carry the information on their own. */
+body.idle .focus-ring .track {
+  opacity: 0;
+  transition: opacity 600ms var(--ease-apple) 0s;
 }
 
 /* ---- Progress arc — start to head, gently glowing ---- */
