@@ -60,7 +60,40 @@ function buildPath(vp: Viewport) {
   const clockSize = Math.min(vp.w * 0.7, vp.h * 0.7, 620);
   const ringR = clockSize * 0.46;
 
-  // Text position — comfortably right of the clock, slightly above center.
+  // Portrait orientation: not enough horizontal room to the right of
+  // the clock for the side-hint layout. Switch to a top-anchored layout
+  // — text centered above the clock, arrow curving down to the 12 o'clock
+  // area of the ring. Triggered whenever height > width, regardless of
+  // absolute size, so phones and tablets in portrait both get the right
+  // layout.
+  const isPortrait = vp.h > vp.w;
+
+  if (isPortrait) {
+    // Text near the top of the viewport, horizontally centered on the
+    // clock's vertical axis.
+    const textX = cx;
+    const textY = Math.max(cy - ringR - 110, 60);
+
+    const availSpace = cy - ringR - textY;
+
+    // Target — 18 px above the ring at 12 o'clock.
+    const targetX = cx;
+    const targetY = cy - ringR - 18;
+
+    // Path start: just below the text. The control point is offset
+    // sideways so the descending arc has a gentle S-curve instead of a
+    // straight vertical drop.
+    const sx = textX + 6;
+    const sy = textY + 36;
+    const midX = sx + 60;
+    const midY = (sy + targetY) / 2;
+
+    const d = `M ${sx} ${sy} Q ${midX} ${midY} ${targetX} ${targetY}`;
+    return { d, textX, textY, availSpace, layout: 'portrait' as const };
+  }
+
+  // Default: side layout. Text positioned right of the clock, slightly
+  // above center; arrow sweeps down-left toward the 2:30 position.
   const desiredOffset = 200;
   const minRightMargin = 60;
   const textX = Math.min(cx + ringR + desiredOffset, vp.w - minRightMargin);
@@ -68,29 +101,19 @@ function buildPath(vp: Viewport) {
 
   const availSpace = textX - (cx + ringR);
 
-  // Target — 18 px outside the focus ring at angle 75° (~ 2:30 position).
-  // The arrow lands NEAR the clock but does NOT touch the ring or face.
   const targetAngleDeg = 75;
   const targetRad = ((targetAngleDeg - 90) * Math.PI) / 180;
   const targetGap = 18;
   const targetX = cx + (ringR + targetGap) * Math.cos(targetRad);
   const targetY = cy + (ringR + targetGap) * Math.sin(targetRad);
 
-  // Path start — just below-left of the text, so the line emerges from
-  // "next to" the text rather than precisely at its baseline.
   const sx = textX - 22;
   const sy = textY + 18;
-
-  // Single quadratic Bézier with a gentle upward arc. Control point
-  // sits ~32 px above the straight line's midpoint — produces a calm
-  // arc that swoops up first, then descends toward the target. Not a
-  // loop, not a wiggle, just one elegant curve.
   const midX = (sx + targetX) / 2;
   const midY = (sy + targetY) / 2 - 32;
 
   const d = `M ${sx} ${sy} Q ${midX} ${midY} ${targetX} ${targetY}`;
-
-  return { d, textX, textY, availSpace };
+  return { d, textX, textY, availSpace, layout: 'side' as const };
 }
 
 /**
@@ -146,10 +169,14 @@ export const OnboardingHint = memo(function OnboardingHint({ state }: Props) {
 
   if (!hintKind || !fontReady) return null;
   const text = TEXTS[hintKind];
-  const { d: pathD, textX, textY, availSpace } = buildPath(vp);
+  const { d: pathD, textX, textY, availSpace, layout } = buildPath(vp);
 
-  // Cramped layouts — hide.
-  if (availSpace < 150 || vp.w < 1024) return null;
+  // Cramped layouts — hide. Threshold differs by layout: side needs
+  // horizontal breathing room, portrait needs vertical breathing room.
+  // No absolute viewport-width cap any more: phones in landscape with
+  // enough horizontal space now also get the desktop-style side hint.
+  if (layout === 'side' && availSpace < 130) return null;
+  if (layout === 'portrait' && (availSpace < 80 || vp.h < 500)) return null;
 
   const arrowStyle = {
     offsetPath: `path('${pathD}')`,

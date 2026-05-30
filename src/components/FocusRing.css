@@ -130,15 +130,44 @@ body.idle .focus-ring .track {
   opacity: 0.92;
 }
 
-/* End drop — open ring by default, fills in on completion */
+/* Visible end drop — open ring by default, fills in on completion.
+   Pointer events disabled because the events are caught by the larger
+   transparent hit-zone circle rendered just below it (see drop-end-hit
+   below). */
 .focus-ring .drop-end {
   fill: currentColor;
   fill-opacity: 0;
   stroke: currentColor;
   stroke-opacity: 0.85;
+  pointer-events: none;
   transition:
     fill-opacity 360ms var(--ease-apple),
-    stroke-opacity 360ms var(--ease-apple);
+    stroke-opacity 360ms var(--ease-apple),
+    stroke-width 200ms var(--ease-apple);
+}
+
+/* Invisible larger circle around the end drop — actual touch / click
+   target for the drag interaction. ~12 viewBox units diameter:
+     · on a 620 px desktop clock: ~74 px hit zone
+     · on a 280 px mobile clock:  ~34 px hit zone
+   Rendered AFTER the main ring hit band so SVG hit-testing prefers it.
+   touch-action: none stops the page from scrolling while the user
+   drags on a phone. */
+.focus-ring .drop-end-hit {
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.focus-ring .drop-end-hit.is-dragging,
+.focus-ring.is-dragging-end .drop-end-hit {
+  cursor: grabbing;
+}
+
+/* When the user hovers the hit zone, thicken the visible drop slightly
+   so they see "yes, this is the thing I'm about to grab". */
+.focus-ring .drop-end-hit:hover ~ .drop-end {
+  stroke-width: 1.4;
 }
 
 .focus-ring.is-complete .drop-end {
@@ -313,10 +342,14 @@ body.idle .focus-ring .track {
   to   { opacity: 0.6; transform: translateY(0); }
 }
 
-/* Hide on very small screens */
-@media (max-width: 420px) {
-  .focus-ring { display: none; }
-  .focus-timer { display: none; }
+/* On narrow phone widths, scale down the floating timer so it doesn't
+   overflow into the corner controls' zone. The focus ring itself stays
+   visible and fully interactive in both portrait and landscape. */
+@media (max-width: 480px) {
+  .focus-timer {
+    max-width: 32vw;
+    font-size: clamp(8px, 1.6vmin, 11px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
