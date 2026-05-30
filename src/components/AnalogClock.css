@@ -1,6 +1,6 @@
 .analog {
   position: relative;
-  width: min(62vmin, 560px);
+  width: min(70vmin, 620px);
   aspect-ratio: 1 / 1;
   display: grid;
   place-items: center;
@@ -8,8 +8,8 @@
 
 .analog__face {
   position: relative;
-  width: 100%;
-  height: 100%;
+  width: 87%;
+  height: 87%;
   border-radius: 50%;
   background: var(--bg-elev);
   box-shadow: var(--shadow-face),

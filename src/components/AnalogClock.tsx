@@ -1,6 +1,7 @@
 import { memo, useMemo } from 'react';
 import { useNow } from '../hooks/useNow';
 import { getZonedTime } from '../lib/timezones';
+import { FocusRing } from './FocusRing';
 import './AnalogClock.css';
 
 interface Props {
@@ -73,6 +74,7 @@ export const AnalogClock = memo(function AnalogClock({ timezone }: Props) {
 
   return (
     <div className="analog">
+      <FocusRing />
       <div className="analog__face" aria-hidden>
         <svg className="analog__dial" viewBox="0 0 100 100" role="img" aria-label="Analog clock face">
           <Ticks />

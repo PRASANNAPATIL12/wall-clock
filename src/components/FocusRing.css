@@ -1,0 +1,147 @@
+/* =========================================================================
+   Focus Ring — a thin "wire of water" that lives just outside the dial.
+   The user clicks to anchor a start, again to set a target, again to clear.
+   Visible at low opacity at rest; full opacity while actively tracking.
+   ========================================================================= */
+
+.focus-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  color: var(--fg);
+  pointer-events: none; /* only .hit accepts clicks */
+}
+
+/* ---- Ghost track — always faintly there ---- */
+.focus-ring .track {
+  stroke: currentColor;
+  opacity: 0.085;
+  /* Gentle reveal on first paint, then settle to resting opacity */
+  animation: ring-reveal 3.6s var(--ease-apple) both;
+  transition: opacity 420ms var(--ease-apple);
+}
+
+@keyframes ring-reveal {
+  0%   { opacity: 0; }
+  22%  { opacity: 0.22; }
+  100% { opacity: 0.085; }
+}
+
+/* On hover near the clock, the track surfaces */
+.analog:hover .focus-ring .track {
+  opacity: 0.22;
+}
+
+/* ---- Progress arc — start to head, gently glowing ---- */
+.focus-ring .progress {
+  stroke: currentColor;
+  opacity: 0.82;
+  filter: drop-shadow(0 0.25% 0.6% var(--hand-shadow));
+  transition: stroke 420ms var(--ease-apple), opacity 420ms var(--ease-apple);
+}
+
+.focus-ring.is-complete .progress {
+  animation: progress-bloom 3s var(--ease-apple);
+}
+
+@keyframes progress-bloom {
+  0%   { opacity: 0.82; filter: drop-shadow(0 0.25% 0.6% var(--hand-shadow)); }
+  50%  { opacity: 1;    filter: drop-shadow(0 0.4% 1.4% var(--hand-shadow)); }
+  100% { opacity: 0.88; filter: drop-shadow(0 0.25% 0.6% var(--hand-shadow)); }
+}
+
+/* ---- To-do ghost arc — current head to target end ---- */
+.focus-ring .todo {
+  stroke: currentColor;
+  opacity: 0.16;
+  transition: opacity 420ms var(--ease-apple);
+}
+
+/* ---- Drops (start, end, head) ---- */
+.focus-ring .drop {
+  fill: currentColor;
+  transition: fill 420ms var(--ease-apple), opacity 420ms var(--ease-apple);
+}
+
+.focus-ring .drop-start { opacity: 0.92; }
+
+.focus-ring .drop-end {
+  fill: none;
+  stroke: currentColor;
+  opacity: 0.85;
+}
+
+.focus-ring .drop-head {
+  opacity: 0.85;
+  animation: head-pulse 2.2s var(--ease-apple) infinite;
+}
+
+@keyframes head-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+
+.focus-ring.is-complete .drop-start,
+.focus-ring.is-complete .drop-end {
+  animation: drop-celebrate 3s var(--ease-apple);
+}
+
+@keyframes drop-celebrate {
+  0%   { opacity: 0.9; }
+  25%  { opacity: 1; }
+  50%  { opacity: 0.75; }
+  75%  { opacity: 1; }
+  100% { opacity: 0.92; }
+}
+
+/* ---- Hit area ---- */
+.focus-ring .hit {
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+/* ---- Floating elapsed timer ---- */
+.focus-timer {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-weight: 200;
+  font-size: clamp(9.5px, 1.4vmin, 12px);
+  letter-spacing: -0.01em;
+  color: var(--fg-muted);
+  opacity: 0.78;
+  pointer-events: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: color 420ms var(--ease-apple), opacity 420ms var(--ease-apple);
+  /* Subtle entrance */
+  animation: timer-in 480ms var(--ease-apple) both;
+}
+
+@keyframes timer-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.94); }
+  to   { opacity: 0.78; transform: translate(-50%, -50%) scale(1); }
+}
+
+.focus-timer__target {
+  margin-left: 0.35em;
+  opacity: 0.55;
+}
+
+/* Hide on very small screens — the ring would be cramped */
+@media (max-width: 420px) {
+  .focus-ring { display: none; }
+  .focus-timer { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-ring .track,
+  .focus-ring .progress,
+  .focus-ring .drop-head,
+  .focus-timer {
+    animation: none;
+  }
+}
