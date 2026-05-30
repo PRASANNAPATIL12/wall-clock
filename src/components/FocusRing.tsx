@@ -3,6 +3,7 @@ import type { PointerEvent } from 'react';
 import { useNow } from '../hooks/useNow';
 import { useFocusTrack } from '../hooks/useFocusTrack';
 import { getZonedTime } from '../lib/timezones';
+import { OnboardingHint } from './OnboardingHint';
 import './FocusRing.css';
 
 interface Props {
@@ -355,6 +356,11 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
           {data.lap >= 2 && <div className="focus-timer__lap">lap {data.lap}</div>}
         </div>
       )}
+
+      {/* Onboarding hint — whispers to first-time users that the ring is
+          interactive. Each state's hint shows at most once per user, then
+          never again. Independent of every other ring element. */}
+      <OnboardingHint state={state} />
     </>
   );
 });

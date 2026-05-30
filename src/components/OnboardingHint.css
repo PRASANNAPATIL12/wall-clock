@@ -1,0 +1,113 @@
+/* =========================================================================
+   Onboarding hint — a quiet handwritten whisper with a looped arrow.
+
+   Layout: positioned in the lower-right area of the viewport, below the
+   bottom controls' baseline. The arrow SVG extends UP-LEFT toward the
+   clock's lower-right (the focus ring's 4–5 o'clock area). Text sits at
+   the bottom-right of the hint.
+
+   Both arrow and text use var(--fg-muted) — adapts to light and dark
+   themes automatically with no theme-specific overrides.
+   ========================================================================= */
+
+.onboarding-hint {
+  position: fixed;
+  /* Sits above the bottom-controls' baseline; clearly outside the clock face */
+  right: 7vw;
+  bottom: 18vh;
+  width: clamp(220px, 26vw, 300px);
+  pointer-events: none;
+  z-index: 8;
+  color: var(--fg-muted);
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 520ms var(--ease-apple),
+    transform 520ms var(--ease-apple);
+}
+
+.onboarding-hint.is-visible {
+  opacity: 0.82;
+  transform: translateY(0);
+}
+
+.onboarding-hint.is-hidden {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+/* Body idle (5 s no input) — hide entirely, same family as the corner controls */
+body.idle .onboarding-hint {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 600ms var(--ease-apple), transform 600ms var(--ease-apple);
+}
+
+/* ---- Arrow ---- */
+
+.hint-arrow {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.hint-arrow__path {
+  /* Total path length is ~360 user-units; the explicit pathLength normalizes
+     so stroke-dashoffset math is reliable across browsers. */
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  /* Drawing animation runs once when the hint becomes visible. */
+}
+
+.is-visible .hint-arrow__path {
+  animation: hint-arrow-draw 900ms var(--ease-apple) 180ms both;
+}
+
+@keyframes hint-arrow-draw {
+  from { stroke-dashoffset: 100; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* Make sure pathLength="100" applies for stroke-dasharray normalization */
+.hint-arrow__path { /* attribute set inline in TSX (see component) is preferred; */ }
+
+/* ---- Text ---- */
+
+.hint-text {
+  display: block;
+  text-align: right;
+  font-family: var(--font-hand);
+  font-weight: 400;
+  font-style: italic;
+  /* Caveat reads naturally large — clamp keeps it on a calm reading scale */
+  font-size: clamp(15px, 1.9vmin, 22px);
+  letter-spacing: 0.005em;
+  line-height: 1.1;
+  color: var(--fg-muted);
+  opacity: 0.92;
+  text-shadow: 0 0.6% 1.2% color-mix(in oklab, var(--fg-muted) 40%, transparent);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ---- Mobile cutoff ---- */
+
+@media (max-width: 640px) {
+  .onboarding-hint { display: none; }
+}
+
+/* ---- Reduced motion ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-hint,
+  .is-visible .hint-arrow__path {
+    animation: none !important;
+    transition: opacity 200ms ease;
+    transform: none;
+  }
+  .hint-arrow__path {
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+}
