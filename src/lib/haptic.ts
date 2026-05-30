@@ -24,7 +24,10 @@
 
 let audioCtx: AudioContext | null = null;
 let lastTickMs = 0;
-const MIN_INTERVAL_MS = 30;
+/** Minimum gap between consecutive ticks. Below this, the motor or audio
+ *  envelope can't reproduce the pulse cleanly anyway. 18 ms lets ~55 ticks/s
+ *  through — fast enough that even rapid drags hit every minute mark. */
+const MIN_INTERVAL_MS = 18;
 
 function getCtx(): AudioContext | null {
   if (typeof window === 'undefined') return null;
@@ -40,14 +43,6 @@ function getCtx(): AudioContext | null {
   } catch {
     return null;
   }
-}
-
-function isTouchDevice(): boolean {
-  if (typeof navigator === 'undefined') return false;
-  // A device with > 1 touch points is almost certainly a phone/tablet with
-  // a real vibration motor. Excludes desktops with a single touch point
-  // (which are usually keyboard+mouse machines).
-  return navigator.maxTouchPoints > 1 || 'ontouchstart' in window;
 }
 
 function userHasMuted(): boolean {
@@ -128,9 +123,8 @@ export function prepareHaptic(): void {
 export function celebrate(): void {
   if (userHasMuted()) return;
 
-  // Vibration on touch devices — fires alongside audio, not as fallback.
+  // Vibration — always attempt (no-op on devices without hardware).
   if (
-    isTouchDevice() &&
     typeof navigator !== 'undefined' &&
     typeof navigator.vibrate === 'function'
   ) {
@@ -180,8 +174,30 @@ function playChime(): void {
 
 /**
  * Fire a single feedback tick. Safe to call from any user-gesture handler.
- * No-op if the previous tick was less than 30 ms ago, or if the user has
- * opted out via localStorage.
+ * No-op if the previous tick was less than MIN_INTERVAL_MS ago, or if the
+ * user has opted out via localStorage.
+ *
+ * Both channels fire in PARALLEL (no fallback semantics):
+ *
+ *   · navigator.vibrate(28 ms) — produces a real haptic tap on Android
+ *     phones; harmless no-op on iOS Safari and most desktops where the
+ *     hardware doesn't respond. 28 ms is past the typical 5-10 ms motor
+ *     spin-up time, so the user actually feels each tick. (Our previous
+ *     18 ms was being cut off mid-spin-up by some motors.)
+ *
+ *   · playAudioClick() — a brief, sharp 2 kHz sine click. Plays on every
+ *     device that hasn't been muted, so iOS users (with no working
+ *     vibration) still get sub-cortical feedback, and Android users get
+ *     audio + vibration together for extra presence.
+ *
+ * The previous "vibrate, return early on success" pattern was unreliable
+ * because navigator.vibrate() returns `true` whether the motor actually
+ * engaged or not. On any device where it silently no-ops (HTTP context,
+ * device on silent, weak motor) the user got no feedback at all. Firing
+ * both channels eliminates that single-point failure.
+ *
+ * Users who find the audio too present can set
+ * localStorage.setItem('wall.haptic.silent', 'true') to mute both.
  */
 export function tick(): void {
   const now =
@@ -191,26 +207,18 @@ export function tick(): void {
 
   if (userHasMuted()) return;
 
-  // Prefer vibration on touch devices that expose the Vibration API.
-  // 18 ms gives a sharp, percussive "click" — short enough to read as
-  // a tick, long enough that the user actually feels it. 8 ms (what we
-  // had before) is below the threshold most phone vibration motors can
-  // even reproduce, which is why the previous build felt like nothing.
+  // Vibration — always attempt. No-op on devices without hardware.
   if (
-    isTouchDevice() &&
     typeof navigator !== 'undefined' &&
     typeof navigator.vibrate === 'function'
   ) {
     try {
-      const ok = navigator.vibrate(18);
-      if (ok) return; // hardware accepted the call — done
+      navigator.vibrate(28);
     } catch {
-      /* fall through to audio */
+      /* ignore */
     }
   }
 
-  // Fallback for: desktops without vibration hardware, iOS Safari (where
-  // vibrate() exists but is a no-op), or any device where vibration was
-  // rejected.
+  // Audio — always play (alongside vibration if it fired).
   playAudioClick();
 }
