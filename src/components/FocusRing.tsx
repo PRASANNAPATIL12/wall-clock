@@ -1,5 +1,5 @@
-import { memo, useMemo, useRef } from 'react';
-import type { MouseEvent } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import type { PointerEvent } from 'react';
 import { useNow } from '../hooks/useNow';
 import { useFocusTrack } from '../hooks/useFocusTrack';
 import { getZonedTime } from '../lib/timezones';
@@ -10,10 +10,12 @@ interface Props {
 }
 
 /* viewBox geometry — all values in viewBox units (0..100). */
-const C = 50; // center
-const RING_R = 46; // ring radius — sits outside the face (face occupies ~43)
+const C = 50;
+const RING_R = 46;
 const STROKE = 0.9;
 const DROP_R = 1.4;
+/** Generous hit band — ~50 px on a 620 px clock, ~30 px on a 380 px clock. */
+const HIT_STROKE = 10;
 
 function polar(angleDeg: number, r: number) {
   const a = ((angleDeg - 90) * Math.PI) / 180;
@@ -22,9 +24,8 @@ function polar(angleDeg: number, r: number) {
 
 /** SVG arc path from one angle to another, going clockwise. */
 function arcPath(fromAngle: number, toAngle: number, r: number): string {
-  let delta = ((toAngle - fromAngle) % 360 + 360) % 360;
+  let delta = (((toAngle - fromAngle) % 360) + 360) % 360;
   if (delta < 0.3) return '';
-  // Cap at just under full circle to keep the path well-defined
   if (delta > 359.5) delta = 359.5;
   const from = polar(fromAngle, r);
   const to = polar(fromAngle + delta, r);
@@ -48,39 +49,101 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
 
   const data = useMemo(() => {
     if (state.kind === 'idle') {
-      return { start: null, end: null, head: null, elapsed: 0, target: null, complete: false };
+      return {
+        start: null as number | null,
+        end: null as number | null,
+        goalEnd: null as number | null,
+        bonusHead: null as number | null,
+        head: null as number | null,
+        elapsed: 0,
+        target: null as number | null,
+        bonus: 0,
+        complete: false,
+        lap: 1,
+      };
     }
 
-    // Start angle from the *displayed* timezone's minute — same source of
-    // truth as the analog minute hand, so the drop always lands where the
-    // user expects regardless of half-hour zone offsets.
     const startZt = getZonedTime(new Date(state.start), timezone);
     const startAngle = ((startZt.minutes + startZt.seconds / 60) * 6) % 360;
-
     const elapsedMs = now.getTime() - state.start;
-    const sweep = Math.min((elapsedMs / 60000) * 6, 359.5);
-    const head = (startAngle + sweep) % 360;
+    const sweep = (elapsedMs / 60000) * 6;
+    const realHead = (startAngle + sweep) % 360;
+    const lap = Math.floor(elapsedMs / 3_600_000) + 1;
 
     if (state.kind === 'tracking') {
-      return { start: startAngle, end: null, head, elapsed: elapsedMs, target: null, complete: false };
+      return {
+        start: startAngle,
+        end: null,
+        goalEnd: realHead,
+        bonusHead: null,
+        head: realHead,
+        elapsed: elapsedMs,
+        target: null,
+        bonus: 0,
+        complete: false,
+        lap,
+      };
     }
 
     const endZt = getZonedTime(new Date(state.end), timezone);
     const endAngle = ((endZt.minutes + endZt.seconds / 60) * 6) % 360;
     const targetMs = state.end - state.start;
     const complete = elapsedMs >= targetMs;
-    const cappedHead = complete ? endAngle : head;
+
+    if (!complete) {
+      return {
+        start: startAngle,
+        end: endAngle,
+        goalEnd: realHead,
+        bonusHead: null,
+        head: realHead,
+        elapsed: elapsedMs,
+        target: targetMs,
+        bonus: 0,
+        complete: false,
+        lap,
+      };
+    }
+
+    // Past target — goal arc is full (start→end), bonus arc grows past end.
+    const bonusMs = elapsedMs - targetMs;
+    const bonusDeg = Math.min((bonusMs / 60_000) * 6, 359.5);
+    const bonusArcEnd = (endAngle + bonusDeg) % 360;
+
     return {
       start: startAngle,
       end: endAngle,
-      head: cappedHead,
+      goalEnd: endAngle,
+      bonusHead: bonusArcEnd,
+      head: realHead, // drop head always follows the real minute hand
       elapsed: elapsedMs,
       target: targetMs,
-      complete,
+      bonus: bonusMs,
+      complete: true,
+      lap,
     };
   }, [state, now, timezone]);
 
-  const onClick = (e: MouseEvent<SVGElement>) => {
+  /* Fire celebration animations once, on the false→true transition for `complete`.
+     Won't replay on page refresh because we initialize the ref to the current
+     value on first run. */
+  const [celebrating, setCelebrating] = useState(false);
+  const prevCompleteRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (prevCompleteRef.current === null) {
+      prevCompleteRef.current = data.complete;
+      return;
+    }
+    if (data.complete && !prevCompleteRef.current) {
+      setCelebrating(true);
+      const t = window.setTimeout(() => setCelebrating(false), 2200);
+      prevCompleteRef.current = data.complete;
+      return () => window.clearTimeout(t);
+    }
+    prevCompleteRef.current = data.complete;
+  }, [data.complete]);
+
+  const onPointerDown = (e: PointerEvent<SVGElement>) => {
     if (!svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
@@ -92,20 +155,26 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
     handleClick(ang);
   };
 
-  // Floating timer position — just outside the start drop, radially outward
-  const timerPos =
-    data.start !== null ? polar(data.start, RING_R + 5.2) : null;
+  const timerPos = data.start !== null ? polar(data.start, RING_R + 5.2) : null;
+  const ringClass = [
+    'focus-ring',
+    state.kind !== 'idle' ? 'is-active' : 'is-resting',
+    data.complete ? 'is-complete' : '',
+    celebrating ? 'is-celebrating' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <>
       <svg
         ref={svgRef}
-        className={`focus-ring ${state.kind !== 'idle' ? 'is-active' : 'is-resting'} ${data.complete ? 'is-complete' : ''}`}
+        className={ringClass}
         viewBox="0 0 100 100"
         preserveAspectRatio="xMidYMid meet"
         role="presentation"
       >
-        {/* Ghost track — always faintly visible */}
+        {/* Ghost track — always there, faintly */}
         <circle
           cx={C}
           cy={C}
@@ -116,7 +185,7 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
           strokeDasharray="0.6 1.2"
         />
 
-        {/* To-do ghost arc (only in targeted state, before completion) */}
+        {/* To-do ghost arc — pre-target only */}
         {data.end !== null && data.head !== null && !data.complete && (
           <path
             d={arcPath(data.head, data.end, RING_R)}
@@ -127,49 +196,71 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
           />
         )}
 
-        {/* Progress arc — start to head */}
-        {data.start !== null && data.head !== null && (
+        {/* Goal arc — start to current (pre-target) or start to end (post-target) */}
+        {data.start !== null && data.goalEnd !== null && (
           <path
-            d={arcPath(data.start, data.head, RING_R)}
-            className="progress"
+            d={arcPath(data.start, data.goalEnd, RING_R)}
+            className="progress goal"
             fill="none"
             strokeWidth={STROKE}
             strokeLinecap="round"
           />
         )}
 
-        {/* Start drop — filled circle */}
-        {data.start !== null && (() => {
-          const p = polar(data.start, RING_R);
-          return (
-            <circle cx={p.x} cy={p.y} r={DROP_R} className="drop drop-start" />
-          );
-        })()}
+        {/* Bonus arc — only after target reached */}
+        {data.complete && data.end !== null && data.bonusHead !== null && (
+          <path
+            d={arcPath(data.end, data.bonusHead, RING_R)}
+            className="progress bonus"
+            fill="none"
+            strokeWidth={STROKE * 1.15}
+            strokeLinecap="round"
+          />
+        )}
 
-        {/* End drop — open ring */}
-        {data.end !== null && (() => {
-          const p = polar(data.end, RING_R);
-          return (
-            <circle
-              cx={p.x}
-              cy={p.y}
-              r={DROP_R}
-              className="drop drop-end"
-              fill="none"
-              strokeWidth={STROKE * 1.2}
-            />
-          );
-        })()}
+        {/* Start drop */}
+        {data.start !== null &&
+          (() => {
+            const p = polar(data.start, RING_R);
+            return <circle cx={p.x} cy={p.y} r={DROP_R} className="drop drop-start" />;
+          })()}
 
-        {/* Leading head — the "now" drop, gently pulses */}
-        {data.head !== null && !data.complete && (() => {
-          const p = polar(data.head, RING_R);
-          return (
-            <circle cx={p.x} cy={p.y} r={DROP_R * 0.78} className="drop drop-head" />
-          );
-        })()}
+        {/* End drop — open ring → fills on completion */}
+        {data.end !== null &&
+          (() => {
+            const p = polar(data.end, RING_R);
+            return (
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={DROP_R}
+                className="drop drop-end"
+                strokeWidth={STROKE * 1.2}
+              />
+            );
+          })()}
 
-        {/* Hit area — only the stroke is clickable */}
+        {/* Drop head — current minute hand position */}
+        {data.head !== null &&
+          (() => {
+            const p = polar(data.head, RING_R);
+            return <circle cx={p.x} cy={p.y} r={DROP_R * 0.78} className="drop drop-head" />;
+          })()}
+
+        {/* Completion ripples — render only during the 2.2s celebration */}
+        {celebrating &&
+          data.end !== null &&
+          (() => {
+            const p = polar(data.end, RING_R);
+            return (
+              <>
+                <circle cx={p.x} cy={p.y} className="ripple ripple-1" fill="none" />
+                <circle cx={p.x} cy={p.y} className="ripple ripple-2" fill="none" />
+              </>
+            );
+          })()}
+
+        {/* Hit band — generous, only stroke catches pointer */}
         <circle
           cx={C}
           cy={C}
@@ -177,22 +268,33 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
           className="hit"
           fill="none"
           stroke="transparent"
-          strokeWidth={5}
-          onClick={onClick}
+          strokeWidth={HIT_STROKE}
+          onPointerDown={onPointerDown}
         />
       </svg>
 
-      {/* Floating elapsed timer — small, muted, never aggressive */}
+      {/* Floating timer */}
       {data.start !== null && timerPos && (
         <div
           className="focus-timer"
           style={{ left: `${timerPos.x}%`, top: `${timerPos.y}%` }}
-          aria-live="off"
         >
-          <span className="focus-timer__elapsed">{fmt(data.elapsed)}</span>
-          {data.target !== null && (
-            <span className="focus-timer__target">/{fmt(data.target)}</span>
-          )}
+          <div className="focus-timer__line">
+            {!data.complete ? (
+              <>
+                <span className="focus-timer__elapsed">{fmt(data.elapsed)}</span>
+                {data.target !== null && (
+                  <span className="focus-timer__target"> /{fmt(data.target)}</span>
+                )}
+              </>
+            ) : (
+              <>
+                <span className="focus-timer__elapsed">{fmt(data.target!)}</span>
+                <span className="focus-timer__bonus">+{fmt(data.bonus)}</span>
+              </>
+            )}
+          </div>
+          {data.lap >= 2 && <div className="focus-timer__lap">lap {data.lap}</div>}
         </div>
       )}
     </>
