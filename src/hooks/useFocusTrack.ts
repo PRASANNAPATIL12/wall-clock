@@ -102,5 +102,25 @@ export function useFocusTrack(timezone: string) {
     });
   }, [timezone]);
 
-  return { state, handleClick };
+  /**
+   * Adjust the end timestamp while the user drags the end-drop circle.
+   * Uses the same future-projection math as click 2: the new end equals
+   * the nearest future moment when the minute hand reaches `angleDeg`.
+   *
+   * Only valid in `targeted` state; no-op otherwise.
+   */
+  const setDragEnd = useCallback((angleDeg: number) => {
+    setState((prev) => {
+      if (prev.kind !== 'targeted') return prev;
+      const now = Date.now();
+      const zt = getZonedTime(new Date(now), timezone);
+      const currentMinAngle = ((zt.minutes + zt.seconds / 60) * 6) % 360;
+      let delta = angleDeg - currentMinAngle;
+      if (delta <= 0.5) delta += 360;
+      const deltaMs = (delta / 6) * 60_000;
+      return { kind: 'targeted', start: prev.start, end: now + deltaMs };
+    });
+  }, [timezone]);
+
+  return { state, handleClick, setDragEnd };
 }

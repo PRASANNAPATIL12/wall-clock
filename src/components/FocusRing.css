@@ -130,15 +130,30 @@ body.idle .focus-ring .track {
   opacity: 0.92;
 }
 
-/* End drop — open ring by default, fills in on completion */
+/* End drop — open ring by default, fills in on completion. Becomes
+   draggable in `targeted` state — cursor signals affordance, and the
+   stroke gets slightly thicker on hover so the affordance is visible. */
 .focus-ring .drop-end {
   fill: currentColor;
   fill-opacity: 0;
   stroke: currentColor;
   stroke-opacity: 0.85;
+  cursor: grab;
+  pointer-events: auto;
   transition:
     fill-opacity 360ms var(--ease-apple),
-    stroke-opacity 360ms var(--ease-apple);
+    stroke-opacity 360ms var(--ease-apple),
+    stroke-width 200ms var(--ease-apple);
+  touch-action: none; /* prevent the browser from scrolling while we drag */
+}
+
+.focus-ring .drop-end:hover {
+  stroke-width: calc(0.9 * 1.5);
+}
+
+.focus-ring .drop-end.is-dragging,
+.focus-ring.is-dragging-end .drop-end {
+  cursor: grabbing;
 }
 
 .focus-ring.is-complete .drop-end {
@@ -313,10 +328,14 @@ body.idle .focus-ring .track {
   to   { opacity: 0.6; transform: translateY(0); }
 }
 
-/* Hide on very small screens */
-@media (max-width: 420px) {
-  .focus-ring { display: none; }
-  .focus-timer { display: none; }
+/* On narrow phone widths, scale down the floating timer so it doesn't
+   overflow into the corner controls' zone. The focus ring itself stays
+   visible and fully interactive in both portrait and landscape. */
+@media (max-width: 480px) {
+  .focus-timer {
+    max-width: 32vw;
+    font-size: clamp(8px, 1.6vmin, 11px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

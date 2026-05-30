@@ -1,8 +1,9 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent } from 'react';
 import { useNow } from '../hooks/useNow';
 import { useFocusTrack } from '../hooks/useFocusTrack';
 import { getZonedTime } from '../lib/timezones';
+import { tick as hapticTick } from '../lib/haptic';
 import { OnboardingHint } from './OnboardingHint';
 import './FocusRing.css';
 
@@ -46,7 +47,50 @@ function fmt(ms: number): string {
 export const FocusRing = memo(function FocusRing({ timezone }: Props) {
   const now = useNow('second');
   const svgRef = useRef<SVGSVGElement>(null);
-  const { state, handleClick } = useFocusTrack(timezone);
+  const endDropRef = useRef<SVGCircleElement>(null);
+  const { state, handleClick, setDragEnd } = useFocusTrack(timezone);
+
+  // Convert a pointer-event client position into the angular position on
+  // the focus ring (0° = top / 12, clockwise). Used by both the click
+  // handler and the drag handler.
+  const computeAngle = useCallback(
+    (clientX: number, clientY: number): number => {
+      if (!svgRef.current) return 0;
+      const rect = svgRef.current.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dx = clientX - cx;
+      const dy = clientY - cy;
+      let ang = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
+      if (ang < 0) ang += 360;
+      return ang;
+    },
+    [],
+  );
+
+  // Drag-end-point feedback: pulse the end-drop circle on each minute
+  // crossing using Web Animations API (restarts cleanly per call, so fast
+  // drags get visible feedback at every minute boundary).
+  const pulseEndDrop = useCallback(() => {
+    const el = endDropRef.current;
+    if (!el) return;
+    try {
+      el.animate(
+        [
+          { r: '1.4' },
+          { r: '1.85', easing: 'cubic-bezier(0.4, 0, 0.2, 1)', offset: 0.4 },
+          { r: '1.4' },
+        ],
+        { duration: 160, fill: 'forwards' },
+      );
+    } catch {
+      /* Web Animations API unsupported — graceful degrade */
+    }
+  }, []);
+
+  // Drag state for the end-point circle.
+  const [dragging, setDragging] = useState(false);
+  const lastDragMinuteRef = useRef<number>(-1);
 
   const data = useMemo(() => {
     if (state.kind === 'idle') {
@@ -157,14 +201,7 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
   }, [data.complete]);
 
   const onPointerDown = (e: PointerEvent<SVGElement>) => {
-    if (!svgRef.current) return;
-    const rect = svgRef.current.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const dx = e.clientX - cx;
-    const dy = e.clientY - cy;
-    let ang = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
-    if (ang < 0) ang += 360;
+    const ang = computeAngle(e.clientX, e.clientY);
 
     // Fire the comet only when transitioning from idle → tracking (click 1).
     if (state.kind === 'idle') {
@@ -179,6 +216,54 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
     handleClick(ang);
   };
 
+  /**
+   * Pointer-down on the end-drop circle: enter drag mode. Stops
+   * propagation so the main ring's hit area doesn't ALSO treat this as
+   * a click-3 (reset). Drag continues via window-level pointermove/up
+   * listeners installed by the effect below.
+   */
+  const onEndDropPointerDown = (e: PointerEvent<SVGCircleElement>) => {
+    if (state.kind !== 'targeted') return;
+    e.stopPropagation();
+    const ang = computeAngle(e.clientX, e.clientY);
+    lastDragMinuteRef.current = Math.floor(ang / 6) % 60;
+    setDragging(true);
+    // Capture the pointer so we keep receiving move events even if the
+    // cursor strays off the circle. (window-level listeners cover this too;
+    // capture is belt-and-suspenders for some touch UAs.)
+    try {
+      (e.target as Element).setPointerCapture?.(e.pointerId);
+    } catch {
+      /* unsupported — window listeners still work */
+    }
+  };
+
+  // While dragging, listen at the window level so the drag survives
+  // the cursor leaving the end-drop element. Each minute boundary
+  // crossed triggers haptic feedback + a scale pulse on the end drop.
+  useEffect(() => {
+    if (!dragging) return;
+    const onMove = (e: globalThis.PointerEvent) => {
+      const ang = computeAngle(e.clientX, e.clientY);
+      const minute = Math.floor(ang / 6) % 60;
+      if (minute !== lastDragMinuteRef.current) {
+        lastDragMinuteRef.current = minute;
+        hapticTick();
+        pulseEndDrop();
+      }
+      setDragEnd(ang);
+    };
+    const onUp = () => setDragging(false);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }, [dragging, computeAngle, setDragEnd, pulseEndDrop]);
+
   const timerPos = data.start !== null ? polar(data.start, RING_R + 4) : null;
   /* Outward direction unit vector — used to anchor the timer text
      so it extends *away* from the clock face, never over it. */
@@ -190,6 +275,7 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
     data.complete ? 'is-complete' : '',
     celebrating ? 'is-celebrating' : '',
     comet ? 'is-comet-playing' : '',
+    dragging ? 'is-dragging-end' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -254,17 +340,21 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
             return <circle cx={p.x} cy={p.y} r={DROP_R} className="drop drop-start" />;
           })()}
 
-        {/* End drop — open ring → fills on completion */}
+        {/* End drop — open ring → fills on completion. In `targeted` state
+            it is also draggable: pointer-down here intercepts the click so
+            the main ring doesn't treat the gesture as click-3 (reset). */}
         {data.end !== null &&
           (() => {
             const p = polar(data.end, RING_R);
             return (
               <circle
+                ref={endDropRef}
                 cx={p.x}
                 cy={p.y}
                 r={DROP_R}
-                className="drop drop-end"
+                className={`drop drop-end ${dragging ? 'is-dragging' : ''}`}
                 strokeWidth={STROKE * 1.2}
+                onPointerDown={onEndDropPointerDown}
               />
             );
           })()}
