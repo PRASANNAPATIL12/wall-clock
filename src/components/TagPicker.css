@@ -1,0 +1,63 @@
+/* Tag picker — appears below the floating timer when click-2 sets a goal.
+   Function-first styling. */
+
+.tag-picker {
+  position: fixed;
+  bottom: 96px; /* above the today-summary pill */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  animation: tag-picker-in 280ms var(--ease-spring);
+}
+
+@keyframes tag-picker-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+.tag-picker__btn {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 180ms var(--ease-apple), transform 180ms var(--ease-apple);
+}
+
+.tag-picker__btn:hover {
+  background: var(--fg-faint);
+  transform: translateY(-1px);
+}
+
+.tag-picker__btn.is-picked {
+  background: var(--fg-faint);
+  animation: tag-picked-pulse 220ms var(--ease-spring);
+}
+
+@keyframes tag-picked-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+body.idle .tag-picker { opacity: 0; pointer-events: none; }
+
+@media (max-width: 640px) {
+  .tag-picker { bottom: 120px; }
+  .tag-picker__btn { width: 28px; height: 28px; font-size: 14px; }
+}

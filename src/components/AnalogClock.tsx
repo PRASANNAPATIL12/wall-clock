@@ -6,6 +6,8 @@ import './AnalogClock.css';
 
 interface Props {
   timezone: string;
+  userId: string | null;
+  onSessionSaved?: () => void;
 }
 
 const C = 50; // center of 100x100 viewbox
@@ -62,7 +64,7 @@ const Numerals = memo(function Numerals({ currentHour }: { currentHour: number }
   return <g>{nums}</g>;
 });
 
-export const AnalogClock = memo(function AnalogClock({ timezone }: Props) {
+export const AnalogClock = memo(function AnalogClock({ timezone, userId, onSessionSaved }: Props) {
   const now = useNow('frame');
   const { hours, minutes, seconds, ms } = useMemo(
     () => getZonedTime(now, timezone),
@@ -77,7 +79,7 @@ export const AnalogClock = memo(function AnalogClock({ timezone }: Props) {
 
   return (
     <div className="analog">
-      <FocusRing timezone={timezone} />
+      <FocusRing timezone={timezone} userId={userId} onSessionSaved={onSessionSaved} />
       <div className="analog__face" aria-hidden>
         <svg className="analog__dial" viewBox="0 0 100 100" role="img" aria-label="Analog clock face">
           <Ticks />

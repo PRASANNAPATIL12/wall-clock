@@ -1,14 +1,21 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent } from 'react';
 import { useNow } from '../hooks/useNow';
-import { useFocusTrack } from '../hooks/useFocusTrack';
+import { useFocusTrack, type FocusSessionEnd } from '../hooks/useFocusTrack';
 import { getZonedTime } from '../lib/timezones';
 import { tick as hapticTick, prepareHaptic, celebrate } from '../lib/haptic';
+import { saveSession } from '../lib/sessionStore';
 import { OnboardingHint } from './OnboardingHint';
+import { TagPicker } from './TagPicker';
 import './FocusRing.css';
 
 interface Props {
   timezone: string;
+  /** Supabase user id, or null when not signed in. When null, sessions
+   *  are not persisted — the clock + focus ring still work fully. */
+  userId: string | null;
+  /** Called after a session is saved so the host can refresh stats. */
+  onSessionSaved?: () => void;
 }
 
 /* viewBox geometry — all values in viewBox units (0..100). */
@@ -44,11 +51,78 @@ function fmt(ms: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
-export const FocusRing = memo(function FocusRing({ timezone }: Props) {
+export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSaved }: Props) {
   const now = useNow('second');
   const svgRef = useRef<SVGSVGElement>(null);
   const endDropRef = useRef<SVGCircleElement>(null);
-  const { state, handleClick, setDragEnd } = useFocusTrack(timezone);
+
+  // Hold refs to the latest userId and current session tag so the
+  // session-end callback always reads the current values without needing
+  // to be recreated on each render.
+  const userIdRef = useRef(userId);
+  useEffect(() => {
+    userIdRef.current = userId;
+  }, [userId]);
+
+  // Tag for the current session — set by the TagPicker that appears on
+  // click 2. Null until the user picks one (or auto-dismisses).
+  const [sessionTag, setSessionTag] = useState<string | null>(null);
+  const sessionTagRef = useRef<string | null>(null);
+  useEffect(() => {
+    sessionTagRef.current = sessionTag;
+  }, [sessionTag]);
+
+  // Whether the TagPicker is currently open. Opens on click 2 if signed in,
+  // closes on selection / auto-dismiss / session end.
+  const [tagPickerOpen, setTagPickerOpen] = useState(false);
+
+  const handleSessionEnd = useCallback(
+    (s: FocusSessionEnd) => {
+      const uid = userIdRef.current;
+      const tag = sessionTagRef.current;
+      // Reset session-scoped state for the next session regardless of save.
+      setSessionTag(null);
+      setTagPickerOpen(false);
+      if (!uid) return; // anonymous — nothing to persist
+      saveSession({
+        userId: uid,
+        startTime: s.startTime,
+        goalTime: s.goalTime,
+        endTime: s.endTime,
+        completed: s.completed,
+        bonusSeconds: s.bonusSeconds,
+        tag,
+        timezone,
+      })
+        .then(() => onSessionSaved?.())
+        .catch(() => {
+          /* sessionStore already logs */
+        });
+    },
+    [timezone, onSessionSaved],
+  );
+
+  const { state, handleClick, setDragEnd } = useFocusTrack(timezone, handleSessionEnd);
+
+  // Open the TagPicker exactly once per session, when click 2 just landed
+  // (state becomes 'targeted' and we don't already have a tag). Closes
+  // automatically when state leaves 'targeted' or when the user picks/skips.
+  const prevKindRef = useRef(state.kind);
+  useEffect(() => {
+    const prev = prevKindRef.current;
+    prevKindRef.current = state.kind;
+    // Only react to the tracking→targeted transition; ignore drag updates
+    // (which keep state.kind == 'targeted' across renders).
+    if (prev !== 'targeted' && state.kind === 'targeted') {
+      if (userIdRef.current && sessionTagRef.current === null) {
+        setTagPickerOpen(true);
+      }
+    }
+    if (state.kind === 'idle') {
+      // Make sure picker is closed even if the user clicked through quickly.
+      setTagPickerOpen(false);
+    }
+  }, [state.kind]);
 
   // Convert a pointer-event client position into the angular position on
   // the focus ring (0° = top / 12, clockwise). Used by both the click
@@ -505,6 +579,16 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
           interactive. Each state's hint shows at most once per user, then
           never again. Independent of every other ring element. */}
       <OnboardingHint state={state} />
+
+      {/* Tag picker — appears once after click-2 lands, only for signed-in users */}
+      {tagPickerOpen && (
+        <TagPicker
+          onPick={(tag) => {
+            setSessionTag(tag);
+            setTagPickerOpen(false);
+          }}
+        />
+      )}
     </>
   );
 });

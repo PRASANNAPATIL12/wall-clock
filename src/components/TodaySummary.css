@@ -1,0 +1,45 @@
+/* Bottom-center summary pill — fades like the other corner controls. */
+
+.today-summary {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  transition:
+    color 250ms var(--ease-apple),
+    background-color 250ms var(--ease-apple),
+    opacity 600ms var(--ease-apple),
+    transform 600ms var(--ease-apple);
+}
+
+.today-summary:hover {
+  color: var(--fg);
+  background: var(--glass-bg-hover);
+}
+
+body.idle .today-summary {
+  opacity: 0;
+  transform: translateX(-50%) translateY(8px);
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .today-summary { bottom: 78px; font-size: 11.5px; height: 28px; padding: 0 12px; }
+}
