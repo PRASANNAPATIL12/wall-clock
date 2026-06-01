@@ -1,31 +1,27 @@
 /* =========================================================================
-   Hero message — SVG handwriting animation (stroke-dasharray technique).
+   Hero message — typewriter animation for anonymous visitors.
 
-   How it works:
-     1. SVG <text> with Caveat font: the browser internally converts each
-        glyph into vector paths with fill + stroke.
-     2. We set fill-opacity:0 and apply a very large stroke-dasharray with
-        an equally large stroke-dashoffset → nothing visible initially.
-     3. CSS @keyframes animate stroke-dashoffset to 0 → the glyph contours
-        progressively appear, tracing the outline of each character.
-     4. Because Caveat is a thin connected-script font, the contour-trace
-        reads visually as a pen drawing the letters.
-     5. After stroke completes: fill-opacity fades in (ink settling),
-        stroke-opacity fades out (no longer needed).
-     6. Final state: clean filled text, no stroke.
-     7. Then the whole element fades out.
+   Placement: ABOVE the clock face, between the top corner controls and
+   the clock itself. Exactly where it was in the original placement.
+   Does not overlap any other element.
 
-   This is a real path-drawing animation — no typewriter, no character
-   reveal, no opacity trick. The browser is literally drawing the SVG
-   path data that defines each letter glyph.
+   Font: Special Elite — a Google Font that authentically replicates
+   a worn mechanical typewriter typeface. Each character has its own
+   slight imperfections: uneven ink, baseline variation, individual
+   character weight differences. This creates the "old typing machine"
+   feel the user requested while remaining legible and premium-feeling
+   against the minimal clock background. Single weight (400), no bold,
+   no italic — the letterforms themselves carry all the character.
+
+   Animation: true typewriter — each character appears individually,
+   left to right, with a blinking block cursor tracking the insertion
+   point. Deliberate pace (68ms/char) — not rushed, each keystroke felt.
    ========================================================================= */
 
-/* ---- Container ---- */
 .hero-msg {
   position: fixed;
-  /* Below the clock, above the bottom controls.
-     Anonymous users have no TodaySummary, so this area is clear. */
-  bottom: max(80px, 11vh);
+  /* Above the clock face, clearing the corner controls */
+  top: max(52px, 10vh);
   left: 0;
   right: 0;
   display: flex;
@@ -40,90 +36,71 @@
   opacity: 0;
 }
 
-/* ---- SVG canvas ---- */
-.hero-svg {
-  width: min(88vw, 520px);
-  height: auto;
-  overflow: visible;
+/* Inner wrapper constrains width */
+.hero-msg__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
 
-/* ---- Text lines — shared base ----
-   The font: Caveat. Connected cursive, thin organic strokes, designed
-   for handwriting. Its glyph contours are close together (thin pen),
-   so the dashoffset trace reads as a single pen stroke, not as two
-   parallel outlines.
-
-   stroke-dasharray:3000 — larger than any reasonable text path length,
-   so the entire text is one "dash." stroke-dashoffset:3000 hides it
-   completely. Animating offset to 0 progressively reveals the stroke.
-*/
-.hero-line {
-  font-family: 'Caveat', 'Segoe Script', 'Bradley Hand', cursive;
-  font-size: 32px;
+/* Each typed line */
+.hero-msg__line {
+  margin: 0;
+  padding: 0;
+  /* Special Elite: authentic worn typewriter. Each letter prints slightly
+     differently — the hallmark of a mechanical keybolt striking ink ribbon.
+     Fallbacks: Courier New (clean mechanical), then generic monospace. */
+  font-family: 'Special Elite', 'Courier New', Courier, monospace;
+  font-size: clamp(12px, 1.2vw + 0.5vh, 15px);
   font-weight: 400;
-
-  /* Fill starts transparent — fades in after stroke drawing */
-  fill: var(--fg-muted);
-  fill-opacity: 0;
-
-  /* Stroke does the drawing */
-  stroke: var(--fg-muted);
-  stroke-width: 0.7;
-  stroke-opacity: 0.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-
-  /* The dash trick */
-  stroke-dasharray: 3000;
-  stroke-dashoffset: 3000;
+  letter-spacing: 0.06em;
+  /* Slightly muted — this message sits quietly above the clock, not competing */
+  color: var(--fg-muted);
+  opacity: 0.65;
+  line-height: 1.5;
+  text-align: center;
+  /* Prevent line-breaks mid-sentence on narrow viewports */
+  white-space: nowrap;
 }
 
-/* ---- Line 1: "Not here for your attention." ----
-   Draws over 3.0s, fill begins at 2.6s. */
-.hero-line--1 {
-  animation:
-    hero-draw 3.0s cubic-bezier(0.22, 0.61, 0.36, 1) forwards,
-    hero-fill 1.0s ease 2.6s forwards;
+/* Second line — same style, slightly lower opacity for visual hierarchy */
+.hero-msg__line--2 {
+  opacity: 0.52;
 }
 
-/* ---- Line 2: "Here for your focus." ----
-   Starts at 2.2s (while line 1 is still drawing — feels continuous).
-   Draws over 2.2s, fill begins at 3.8s. */
-.hero-line--2 {
-  animation:
-    hero-draw 2.2s cubic-bezier(0.22, 0.61, 0.36, 1) 2.2s forwards,
-    hero-fill 0.8s ease 3.8s forwards;
+/* Block cursor ▋ — blinks at the insertion point */
+.hero-msg__cursor {
+  display: inline;
+  margin-left: 1px;
+  color: var(--fg-muted);
+  opacity: 0;
+  animation: cursor-blink 0.6s step-end infinite;
+  /* Slightly thinner than the text to feel like a text cursor, not a box */
+  font-size: 0.85em;
+  vertical-align: -0.05em;
 }
 
-/* Stroke drawing: dashoffset → 0 reveals the glyph contours */
-@keyframes hero-draw {
-  to { stroke-dashoffset: 0; }
-}
-
-/* Fill settling: fill fades in, stroke fades out */
-@keyframes hero-fill {
-  to {
-    fill-opacity: 0.55;
-    stroke-opacity: 0;
-  }
+@keyframes cursor-blink {
+  0%,  100% { opacity: 0;    }
+  50%        { opacity: 0.55; }
 }
 
 /* ---- Responsive ---- */
 @media (max-width: 640px) {
-  .hero-svg {
-    width: min(94vw, 400px);
-  }
   .hero-msg {
-    bottom: max(90px, 14vh);
+    top: max(58px, 11vh);
+  }
+  .hero-msg__line {
+    font-size: clamp(10.5px, 2.8vw, 13px);
+    /* On narrow phones, allow wrapping */
+    white-space: normal;
+    max-width: 80vw;
+    text-align: center;
   }
 }
 
-/* ---- Reduced motion: skip animation, show final state ---- */
+/* Prefers reduced motion: skip animation, show final text immediately */
 @media (prefers-reduced-motion: reduce) {
-  .hero-line {
-    stroke-dashoffset: 0;
-    fill-opacity: 0.55;
-    stroke-opacity: 0;
-    animation: none;
-  }
+  .hero-msg__cursor { display: none; }
 }
