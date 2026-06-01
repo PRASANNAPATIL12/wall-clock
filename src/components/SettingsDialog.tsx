@@ -137,7 +137,7 @@ export function SettingsDialog({
             </button>
           </nav>
 
-          <section className="settings-pane">
+          <section className="settings-pane" data-pane={pane}>
             {pane === 'account' && <AccountPane user={user} />}
             {pane === 'history' && <HistoryPane user={user} refreshKey={refreshKey} />}
             {pane === 'stats'   && <StatsPane   user={user} refreshKey={refreshKey} />}

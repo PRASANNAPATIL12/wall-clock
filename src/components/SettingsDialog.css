@@ -177,6 +177,14 @@
   letter-spacing: -0.01em;
 }
 
+/* Stats pane needs to control its own scroll — no outer scroll */
+.settings-pane[data-pane='stats'] {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 12px;
+}
+
 /* ---- Mobile: nav becomes horizontal tab bar ---- */
 @media (max-width: 720px) {
   .settings-dialog { max-height: 90vh; border-radius: 20px 20px 16px 16px; }

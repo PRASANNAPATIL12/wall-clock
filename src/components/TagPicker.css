@@ -108,11 +108,13 @@
   border-color: var(--fg-muted);
 }
 
-/* ---- Glass tooltip ---- */
+/* ---- Tooltip — absolute so backdrop-filter on parent never misplaces it ---- */
 .tag-picker__tooltip {
-  position: fixed;
-  transform: translate(-50%, -100%);
-  margin-top: -6px;
+  position: absolute;
+  /* bottom of tooltip = 8px above top of .tag-picker pill */
+  bottom: calc(100% + 8px);
+  /* horizontally centered on the hovered button (left set by JS) */
+  transform: translateX(-50%);
   padding: 4px 9px;
   border-radius: 7px;
   background: var(--bg-tint-strong);
@@ -131,8 +133,8 @@
 }
 
 @keyframes tag-tooltip-in {
-  from { opacity: 0; transform: translate(-50%, -96%); }
-  to   { opacity: 1; transform: translate(-50%, -100%); }
+  from { opacity: 0; transform: translateX(-50%) translateY(3px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 body.idle .tag-picker { opacity: 0; pointer-events: none; }
