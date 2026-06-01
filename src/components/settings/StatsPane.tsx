@@ -225,24 +225,19 @@ export function StatsPane({ user, refreshKey }: Props) {
 
   const numMonths = monthBlocks.length;
 
-  /* Cell size: account for month gaps in month-block layout */
-  const cellSize = useMemo(() => {
-    if (cWidth <= 0) return CELL_MIN; // safe until measured
-    if (useMonthLayout && numMonths > 1) {
-      const available = cWidth - numMonths * MONTH_GAP - (COLS - 1) * GAP;
-      return Math.min(CELL_MAX, Math.max(CELL_MIN, Math.floor(available / COLS)));
-    }
-    return Math.min(CELL_MAX, Math.max(CELL_MIN, Math.floor((cWidth - (COLS-1)*GAP) / COLS)));
-  }, [cWidth, COLS, useMonthLayout, numMonths]);
+  /* Cell size — always CELL_MAX (18px). Horizontal scroll handles overflow.
+   * Use CELL_MIN only on initial render before ResizeObserver fires (avoids
+   * the 52×18=936px burst that caused the whole settings pane to scroll). */
+  const cellSize = cWidth > 0 ? CELL_MAX : CELL_MIN;
 
-  /* Need scroll when total width would exceed container */
+  /* Need scroll when the heatmap at CELL_MAX would exceed the container */
   const needsScroll = useMemo(() => {
     if (cWidth <= 0) return false;
     const total = useMonthLayout && numMonths > 1
-      ? COLS * cellSize + (COLS-1)*GAP + numMonths*MONTH_GAP
-      : COLS * cellSize + (COLS-1)*GAP;
+      ? COLS * CELL_MAX + (COLS-1)*GAP + numMonths*MONTH_GAP
+      : COLS * CELL_MAX + (COLS-1)*GAP;
     return total > cWidth;
-  }, [cWidth, COLS, cellSize, useMonthLayout, numMonths]);
+  }, [cWidth, COLS, useMonthLayout, numMonths]);
 
   /* Scroll hint */
   useEffect(() => {

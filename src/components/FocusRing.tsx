@@ -8,6 +8,8 @@ import { saveSession } from '../lib/sessionStore';
 import { OnboardingHint } from './OnboardingHint';
 import { useOnboardingHint } from '../hooks/useOnboardingHint';
 import { TagPicker } from './TagPicker';
+import { TagIcon } from './TagIcon';
+import { getTag } from '../lib/tags';
 import './FocusRing.css';
 
 interface Props {
@@ -19,6 +21,8 @@ interface Props {
   onSessionSaved?: () => void;
   /** Opens Settings → Tags pane (for the TagPicker "manage" button). */
   onManageTags?: () => void;
+  /** Extra ms to extend the first onboarding hint while the hero message types. */
+  hintBoostMs?: number;
 }
 
 /* viewBox geometry — all values in viewBox units (0..100). */
@@ -54,7 +58,7 @@ function fmt(ms: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
-export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSaved, onManageTags }: Props) {
+export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSaved, onManageTags, hintBoostMs = 0 }: Props) {
   const now = useNow('second');
   const svgRef = useRef<SVGSVGElement>(null);
   const endDropRef = useRef<SVGCircleElement>(null);
@@ -109,9 +113,11 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
 
   /* Onboarding hint — lifted here so FocusRing can add ring glow class.
    * Anonymous (userId=null): hints show on every visit (alwaysShow=true).
-   * Logged-in: hints show only once (alwaysShow=false, localStorage used). */
-  const { visible: hintVisible, hintKind } = useOnboardingHint(state, userId === null);
-  const showingIdleHint = hintVisible && hintKind === 'idle';
+   * Logged-in: hints show only once (alwaysShow=false, localStorage used).
+   * hintBoostMs extends the idle-hint visibility while the hero message plays. */
+  const { visible: hintVisible, hintKind } = useOnboardingHint(state, userId === null, hintBoostMs);
+  /** Ring pulses for ALL three hints, not just the first. */
+  const showingAnyHint = hintVisible;
 
   // Open the TagPicker exactly once per session, when click 2 just landed
   // (state becomes 'targeted' and we don't already have a tag). Closes
@@ -174,6 +180,9 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
   // Drag state for the end-point circle.
   const [dragging, setDragging] = useState(false);
   const lastDragMinuteRef = useRef<number>(-1);
+
+  // Hover state for the end-drop tooltip (logged-in, tag selected)
+  const [endDropHovered, setEndDropHovered] = useState(false);
 
   const data = useMemo(() => {
     if (state.kind === 'idle') {
@@ -391,7 +400,7 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
     celebrating ? 'is-celebrating' : '',
     comet ? 'is-comet-playing' : '',
     dragging ? 'is-dragging-end' : '',
-    showingIdleHint ? 'is-hint-first' : '',
+    showingAnyHint ? 'is-hint-active' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -539,6 +548,8 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
                   className={`drop-end-hit ${dragging ? 'is-dragging' : ''}`}
                   fill="transparent"
                   onPointerDown={onEndDropPointerDown}
+                  onMouseEnter={() => { if (userId && sessionTag) setEndDropHovered(true); }}
+                  onMouseLeave={() => setEndDropHovered(false)}
                 />
                 <circle
                   ref={endDropRef}
@@ -587,6 +598,22 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
 
       {/* Onboarding hint — anonymous users see it every visit; logged-in once */}
       <OnboardingHint visible={hintVisible} hintKind={hintKind} />
+
+      {/* End-drop tag tooltip — shows selected session tag on hover */}
+      {endDropHovered && userId && sessionTag && data.end !== null && svgRef.current && (() => {
+        const rect = svgRef.current!.getBoundingClientRect();
+        const scale = rect.width / 100;
+        const rad = ((data.end - 90) * Math.PI) / 180;
+        const px = rect.left + rect.width / 2 + Math.cos(rad) * RING_R * scale;
+        const py = rect.top + rect.height / 2 + Math.sin(rad) * RING_R * scale;
+        const def = getTag(sessionTag);
+        return (
+          <div className="end-drop-tooltip" style={{ left: px, top: py }} aria-hidden>
+            {def && <TagIcon def={def} size={11} />}
+            <span>{def?.label ?? sessionTag}</span>
+          </div>
+        );
+      })()}
 
       {/* Tag picker — appears once after click-2 lands, only for signed-in users */}
       {tagPickerOpen && (

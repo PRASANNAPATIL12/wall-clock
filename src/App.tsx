@@ -12,6 +12,7 @@ import { AccountIcon } from './components/AccountIcon';
 import { AuthModal } from './components/AuthModal';
 import { SettingsDialog, type PaneKey } from './components/SettingsDialog';
 import { TodaySummary } from './components/TodaySummary';
+import { HeroMessage } from './components/HeroMessage';
 import { useTodayStats } from './hooks/useTodayStats';
 import { useTheme } from './hooks/useTheme';
 import { useFullscreen } from './hooks/useFullscreen';
@@ -35,6 +36,9 @@ export default function App() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsInitialPane, setSettingsInitialPane] = useState<PaneKey>('history');
+  /** Extra ms to extend the idle onboarding hint while the hero message plays.
+   *  Set when HeroMessage mounts (anonymous only). */
+  const [hintBoostMs, setHintBoostMs] = useState(0);
 
   const openSettings = (pane: PaneKey = 'history') => {
     setSettingsInitialPane(pane);
@@ -73,6 +77,7 @@ export default function App() {
             userId={auth.user?.id ?? null}
             onSessionSaved={handleSessionSaved}
             onManageTags={() => openSettings('tags')}
+            hintBoostMs={hintBoostMs}
           />
         </div>
         <div className={`mode-layer ${!isAnalog ? 'is-in' : 'is-out-down'}`} aria-hidden={isAnalog}>
@@ -84,6 +89,11 @@ export default function App() {
       <div className="controls controls--tl">
         <ThemeToggle theme={theme} onToggle={toggleTheme} />
       </div>
+
+      {/* Hero message — anonymous visitors only, once per page load */}
+      {!auth.loading && !auth.user && (
+        <HeroMessage onStart={setHintBoostMs} />
+      )}
 
       {/* Account entry point — JoinPill for anonymous, AccountIcon for signed-in */}
       {!auth.loading && (

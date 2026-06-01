@@ -41,7 +41,12 @@ function markSeen(kind: HintKind) {
   } catch { /* private mode / quota */ }
 }
 
-export function useOnboardingHint(state: FocusState, alwaysShow = false) {
+/**
+ * @param state       Current focus state
+ * @param alwaysShow  true for anonymous — skip localStorage, show every session
+ * @param extraVisibleMs  Extra ms to keep the idle hint visible (used while hero message plays)
+ */
+export function useOnboardingHint(state: FocusState, alwaysShow = false, extraVisibleMs = 0) {
   const [visible,  setVisible]  = useState(false);
   const [hintKind, setHintKind] = useState<HintKind | null>(null);
   const isFirstRun = useRef(true);
@@ -64,9 +69,11 @@ export function useOnboardingHint(state: FocusState, alwaysShow = false) {
       setVisible(true);
     }, delay);
 
+    // Extend the idle hint while hero message types; other hints use normal timing.
+    const extra = kind === 'idle' ? extraVisibleMs : 0;
     const hideTimer = window.setTimeout(() => {
       setVisible(false);
-    }, delay + VISIBLE_MS);
+    }, delay + VISIBLE_MS + extra);
 
     return () => {
       window.clearTimeout(showTimer);

@@ -1,16 +1,19 @@
 /* =========================================================================
-   TodaySummary pill — matches .pill from Controls.css exactly.
-   Hover: translateY(-1px) + glass-bg-hover, same as CoffeeLink / all pills.
+   TodaySummary pill
+   Uses left:0/right:0/margin:auto for centering — decoupled from hover
+   transforms so clicking never causes position jumps.
    ========================================================================= */
 
 .today-summary {
-  /* Positioning */
+  /* Stable center: margin:auto on a fixed+left:0/right:0 element */
   position: fixed;
   bottom: 28px;
-  left: 50%;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: fit-content;
   z-index: 8;
 
-  /* Layout */
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -18,23 +21,20 @@
   padding: 0 14px;
   border-radius: 999px;
 
-  /* Glass */
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
   backdrop-filter: blur(24px) saturate(160%);
   -webkit-backdrop-filter: blur(24px) saturate(160%);
 
-  /* Typography */
   color: var(--fg-muted);
   font-family: var(--font-display);
   font-size: 12.5px;
   font-weight: 500;
   letter-spacing: -0.005em;
-
   cursor: pointer;
 
-  /* Transition — match .pill exactly (320ms ease-apple for bg/transform, 600ms for idle fade) */
+  /* Hover/active use translateY only — no translateX needed (centering is done by margin) */
   transition:
     background-color 320ms var(--ease-apple),
     color 320ms var(--ease-apple),
@@ -42,19 +42,17 @@
     opacity 600ms var(--ease-apple);
 }
 
-/* Exact same hover as .pill in Controls.css */
 .today-summary:hover {
   background: var(--glass-bg-hover);
-  transform: translateX(-50%) translateY(-1px);
   color: var(--fg);
+  transform: translateY(-1px);
 }
 
 .today-summary:active {
-  transform: translateX(-50%) translateY(0) scale(0.985);
+  transform: translateY(0) scale(0.985);
   transition-duration: 120ms;
 }
 
-/* ---- Separator dot ---- */
 .today-summary__dot {
   width: 2px;
   height: 2px;
@@ -64,7 +62,7 @@
   flex-shrink: 0;
 }
 
-/* ---- Glass tooltip — appears above the button on hover ---- */
+/* Glass tooltip above the button */
 .today-summary__tooltip {
   position: absolute;
   bottom: calc(100% + 8px);
@@ -91,10 +89,10 @@
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-/* ---- Idle fade ---- */
+/* Idle fade — translateY only, no X */
 body.idle .today-summary {
   opacity: 0;
-  transform: translateX(-50%) translateY(8px);
+  transform: translateY(8px);
   pointer-events: none;
 }
 
