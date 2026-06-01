@@ -16,6 +16,7 @@
   box-shadow: var(--glass-shadow);
   backdrop-filter: blur(24px) saturate(160%);
   -webkit-backdrop-filter: blur(24px) saturate(160%);
+  gap: 6px;
   color: var(--fg-muted);
   font-family: var(--font-display);
   font-size: 12.5px;
@@ -32,6 +33,14 @@
 .today-summary:hover {
   color: var(--fg);
   background: var(--glass-bg-hover);
+}
+
+.today-summary__dot {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: var(--fg-muted);
+  flex-shrink: 0;
 }
 
 body.idle .today-summary {

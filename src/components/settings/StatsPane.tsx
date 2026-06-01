@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { listSessionsByDateRange } from '../../lib/sessionStore';
 import type { SessionRow } from '../../lib/supabase';
@@ -9,8 +9,16 @@ interface Props {
   refreshKey?: number;
 }
 
-const DAYS = 84;
-const ROWS = 7; // 12 cols × 7 rows = 84 cells = the visible window
+interface Period {
+  label: string;
+  days: number;
+}
+
+const PERIODS: Period[] = [
+  { label: '12 weeks', days: 84 },
+  { label: '6 months', days: 180 },
+  { label: '1 year',   days: 365 },
+];
 
 function dateNDaysAgo(daysAgo: number): string {
   const d = new Date();
@@ -19,6 +27,7 @@ function dateNDaysAgo(daysAgo: number): string {
 }
 
 function fmtDuration(ms: number): string {
+  if (ms <= 0) return '—';
   const total = Math.floor(ms / 1000);
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
@@ -26,7 +35,6 @@ function fmtDuration(ms: number): string {
   return `${m}m`;
 }
 
-/** Bucket a daily total (ms) into one of 5 intensity levels (0–4). */
 function intensityBucket(ms: number): number {
   if (ms <= 0) return 0;
   const min = ms / 60000;
@@ -43,9 +51,23 @@ interface HeatCell {
   isToday: boolean;
 }
 
+interface Tooltip {
+  date: string;
+  ms: number;
+  x: number;
+  y: number;
+}
+
 export function StatsPane({ user, refreshKey }: Props) {
   const [rows, setRows] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [periodIdx, setPeriodIdx] = useState(0);
+  const [tooltip, setTooltip] = useState<Tooltip | null>(null);
+  const heatRef = useRef<HTMLDivElement>(null);
+
+  const period = PERIODS[periodIdx]!;
+  const DAYS = period.days;
+  const COLS = Math.ceil(DAYS / 7);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,9 +80,8 @@ export function StatsPane({ user, refreshKey }: Props) {
       setLoading(false);
     });
     return () => { cancelled = true; };
-  }, [user.id, refreshKey]);
+  }, [user.id, refreshKey, DAYS]);
 
-  // Sum durations per date.
   const totalsByDate = useMemo(() => {
     const m = new Map<string, number>();
     for (const r of rows) {
@@ -70,7 +91,6 @@ export function StatsPane({ user, refreshKey }: Props) {
     return m;
   }, [rows]);
 
-  // Build the heatmap grid — DAYS cells, oldest first.
   const cells = useMemo<HeatCell[]>(() => {
     const today = dateNDaysAgo(0);
     const result: HeatCell[] = [];
@@ -80,46 +100,72 @@ export function StatsPane({ user, refreshKey }: Props) {
       result.push({ date, ms, bucket: intensityBucket(ms), isToday: date === today });
     }
     return result;
-  }, [totalsByDate]);
+  }, [totalsByDate, DAYS]);
 
-  // Streak = consecutive days from today backward with > 0 focus time.
   const streak = useMemo(() => {
     let s = 0;
     for (let i = 0; i < 365; i++) {
       const d = dateNDaysAgo(i);
-      const ms = totalsByDate.get(d) ?? 0;
-      if (ms > 0) s++;
+      if ((totalsByDate.get(d) ?? 0) > 0) s++;
       else break;
     }
     return s;
   }, [totalsByDate]);
 
-  // Total time across the 84-day window.
   const windowTotalMs = useMemo(() => {
     let t = 0;
     for (const v of totalsByDate.values()) t += v;
     return t;
   }, [totalsByDate]);
 
+  const handleCellEnter = (cell: HeatCell, e: React.MouseEvent) => {
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    setTooltip({
+      date: cell.date,
+      ms: cell.ms,
+      x: rect.left + rect.width / 2,
+      y: rect.top,
+    });
+  };
+
+  const handleCellLeave = () => setTooltip(null);
+
+  const fmtTooltipDate = (d: string) =>
+    new Date(d + 'T00:00:00').toLocaleDateString(undefined, {
+      weekday: 'short', month: 'short', day: 'numeric',
+    });
+
   return (
     <div className="stats-pane">
-      <h3>Stats</h3>
+      {/* Header row: title + period selector */}
+      <div className="stats-pane__top">
+        <h3>Stats</h3>
+        <div className="stats-period" role="group" aria-label="Period">
+          {PERIODS.map((p, i) => (
+            <button
+              key={p.label}
+              type="button"
+              className={`stats-period__btn${periodIdx === i ? ' is-active' : ''}`}
+              onClick={() => setPeriodIdx(i)}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
+      {/* Summary cards */}
       <div className="stats-row">
         <div className="stats-card">
           <div className="stats-card__label">Current streak</div>
           <div className="stats-card__value">
-            {streak}{' '}
-            <span className="stats-card__unit">
-              day{streak === 1 ? '' : 's'} {streak >= 3 ? '🔥' : ''}
-            </span>
+            {streak}
+            <span className="stats-card__unit"> day{streak === 1 ? '' : 's'}</span>
           </div>
         </div>
         <div className="stats-card">
-          <div className="stats-card__label">Last {DAYS} days</div>
-          <div className="stats-card__value">
-            {fmtDuration(windowTotalMs)}
-          </div>
+          <div className="stats-card__label">{period.label} total</div>
+          <div className="stats-card__value stats-card__value--mono">{fmtDuration(windowTotalMs)}</div>
         </div>
       </div>
 
@@ -129,28 +175,32 @@ export function StatsPane({ user, refreshKey }: Props) {
 
       {!loading && (
         <>
-          <div className="stats-heatmap" role="img" aria-label={`${DAYS}-day focus heatmap`}>
+          {/* Heatmap — fills full width of content pane */}
+          <div
+            ref={heatRef}
+            className="stats-heatmap"
+            role="img"
+            aria-label={`${DAYS}-day focus heatmap`}
+            style={{ '--cols': COLS } as React.CSSProperties}
+          >
             {cells.map((cell, i) => {
-              // Compute grid position: 7-row vertical layout, 12-col horizontal.
-              // cells[0] is oldest; place it at column 0, row = (its weekday).
               const oldestDate = new Date(cells[0]!.date + 'T00:00:00');
               const oldestWeekday = oldestDate.getDay();
-              const col = Math.floor((i + oldestWeekday) / ROWS);
-              const row = (i + oldestWeekday) % ROWS;
+              const col = Math.floor((i + oldestWeekday) / 7);
+              const row = (i + oldestWeekday) % 7;
               return (
                 <span
                   key={cell.date}
                   className={`stats-heatmap__cell b${cell.bucket}${cell.isToday ? ' is-today' : ''}`}
-                  style={{
-                    gridColumn: col + 1,
-                    gridRow: row + 1,
-                  }}
-                  title={`${cell.date}: ${fmtDuration(cell.ms)}`}
+                  style={{ gridColumn: col + 1, gridRow: row + 1 }}
+                  onMouseEnter={(e) => handleCellEnter(cell, e)}
+                  onMouseLeave={handleCellLeave}
                 />
               );
             })}
           </div>
 
+          {/* Legend */}
           <div className="stats-legend" aria-hidden>
             <span>Less</span>
             <span className="stats-heatmap__cell b0" />
@@ -161,6 +211,18 @@ export function StatsPane({ user, refreshKey }: Props) {
             <span>More</span>
           </div>
         </>
+      )}
+
+      {/* Glass tooltip — fixed-positioned near the hovered cell */}
+      {tooltip && (
+        <div
+          className="stats-tooltip"
+          style={{ left: tooltip.x, top: tooltip.y - 8 }}
+          aria-hidden
+        >
+          <span className="stats-tooltip__date">{fmtTooltipDate(tooltip.date)}</span>
+          <span className="stats-tooltip__val">{fmtDuration(tooltip.ms)}</span>
+        </div>
       )}
     </div>
   );

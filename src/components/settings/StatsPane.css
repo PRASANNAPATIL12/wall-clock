@@ -1,29 +1,82 @@
-.stats-pane h3 { margin-bottom: 16px; }
+/* Stats pane — heatmap fills container width, green palette. */
 
+.stats-pane h3 { margin-bottom: 0; }
+
+/* ---- Header row: title + period selector ---- */
+.stats-pane__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ---- Period selector (segmented control) ---- */
+.stats-period {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.stats-period__btn {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-muted);
+  border: 1px solid var(--fg-faint);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition:
+    background-color 150ms var(--ease-apple),
+    color 150ms var(--ease-apple),
+    border-color 150ms var(--ease-apple);
+}
+
+.stats-period__btn:hover { color: var(--fg); border-color: var(--fg-hairline); }
+
+.stats-period__btn.is-active {
+  background: var(--fg);
+  color: var(--bg-elev);
+  border-color: var(--fg);
+}
+
+/* ---- Summary cards ---- */
 .stats-row {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 20px;
 }
 
 .stats-card {
   flex: 1;
-  padding: 12px 14px;
-  border-radius: 10px;
+  padding: 11px 14px;
+  border-radius: 12px;
   background: var(--fg-faint);
 }
 
 .stats-card__label {
-  font-size: 11.5px;
+  font-size: 10.5px;
+  font-weight: 500;
   color: var(--fg-muted);
-  margin-bottom: 4px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
 }
 
 .stats-card__value {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.stats-card__value--mono {
   font-family: var(--font-mono);
-  letter-spacing: -0.01em;
+  font-size: 20px;
 }
 
 .stats-card__unit {
@@ -32,49 +85,111 @@
   font-weight: 400;
 }
 
+/* ---- Heatmap — fills full container width ---- */
 .stats-heatmap {
   display: grid;
-  grid-template-columns: repeat(12, 12px);
-  grid-template-rows: repeat(7, 12px);
-  gap: 3px;
-  margin-bottom: 12px;
+  /* --cols injected inline from React */
+  grid-template-columns: repeat(var(--cols, 12), 1fr);
+  grid-template-rows: repeat(7, auto);
+  column-gap: 3px;
+  row-gap: 3px;
+  width: 100%;
+  margin-bottom: 10px;
 }
 
 .stats-heatmap__cell {
-  width: 12px;
-  height: 12px;
+  width: 100%;
+  aspect-ratio: 1;
   border-radius: 2px;
   background: var(--fg-faint);
+  cursor: default;
+  transition: transform 120ms var(--ease-apple);
 }
 
-.stats-heatmap__cell.b1 { background: var(--fg); opacity: 0.20; }
-.stats-heatmap__cell.b2 { background: var(--fg); opacity: 0.45; }
-.stats-heatmap__cell.b3 { background: var(--fg); opacity: 0.70; }
-.stats-heatmap__cell.b4 { background: var(--fg); opacity: 1.00; }
+.stats-heatmap__cell:hover {
+  transform: scale(1.18);
+  position: relative;
+  z-index: 1;
+}
 
+/* Green intensity — light mode */
+:root .stats-heatmap__cell.b0 { background: var(--fg-faint); }
+:root .stats-heatmap__cell.b1 { background: #4ac26b; opacity: 0.30; }
+:root .stats-heatmap__cell.b2 { background: #2da44e; opacity: 0.58; }
+:root .stats-heatmap__cell.b3 { background: #1a7f37; opacity: 0.82; }
+:root .stats-heatmap__cell.b4 { background: #116329; opacity: 1; }
+
+/* Green intensity — dark mode */
+[data-theme='dark'] .stats-heatmap__cell.b0 { background: var(--fg-faint); opacity: 1; }
+[data-theme='dark'] .stats-heatmap__cell.b1 { background: #39d353; opacity: 0.22; }
+[data-theme='dark'] .stats-heatmap__cell.b2 { background: #39d353; opacity: 0.48; }
+[data-theme='dark'] .stats-heatmap__cell.b3 { background: #39d353; opacity: 0.72; }
+[data-theme='dark'] .stats-heatmap__cell.b4 { background: #39d353; opacity: 1; }
+
+/* Today ring */
 .stats-heatmap__cell.is-today {
-  outline: 1px solid var(--hand-second);
+  outline: 1.5px solid var(--hand-second);
   outline-offset: 1px;
 }
 
+/* ---- Legend ---- */
 .stats-legend {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--fg-muted);
+  margin-bottom: 4px;
 }
 
 .stats-legend .stats-heatmap__cell {
   width: 10px;
-  height: 10px;
+  aspect-ratio: 1;
+  flex-shrink: 0;
+  cursor: default;
+}
+.stats-legend .stats-heatmap__cell:hover { transform: none; }
+
+/* ---- Glassmorphic tooltip (fixed-positioned) ---- */
+.stats-tooltip {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  margin-top: -6px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  background: var(--bg-tint-strong);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  pointer-events: none;
+  z-index: 200;
+  white-space: nowrap;
+  animation: stats-tooltip-in 120ms var(--ease-apple);
+}
+
+@keyframes stats-tooltip-in {
+  from { opacity: 0; transform: translate(-50%, -96%); }
+  to   { opacity: 1; transform: translate(-50%, -100%); }
+}
+
+.stats-tooltip__date {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--fg-muted);
+}
+
+.stats-tooltip__val {
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  color: var(--fg);
 }
 
 @media (max-width: 640px) {
-  .stats-heatmap {
-    grid-template-columns: repeat(12, 9px);
-    grid-template-rows: repeat(7, 9px);
-    gap: 2px;
-  }
-  .stats-heatmap__cell { width: 9px; height: 9px; }
+  .stats-row { flex-direction: column; }
+  .stats-pane__top { flex-direction: column; align-items: flex-start; }
 }

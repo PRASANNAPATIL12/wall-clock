@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { listSessionsPage } from '../../lib/sessionStore';
 import type { SessionRow } from '../../lib/supabase';
+import { getTag, FALLBACK_TAG } from '../../lib/tags';
+import { TagIcon } from '../TagIcon';
 import './HistoryPane.css';
 
 interface Props {
@@ -126,7 +128,9 @@ export function HistoryPane({ user, refreshKey }: Props) {
               const widthPct = Math.max(8, Math.round((ms / longestMs) * 100));
               return (
                 <li key={r.id} className="history-row">
-                  <span className="history-row__tag">{r.tag ?? '⏱️'}</span>
+                  <span className="history-row__tag">
+                    <TagIcon def={getTag(r.tag) ?? FALLBACK_TAG} size={13} />
+                  </span>
                   <span className="history-row__time">{fmtTime(r.start_time)}</span>
                   <span className="history-row__bar" aria-hidden>
                     <span
