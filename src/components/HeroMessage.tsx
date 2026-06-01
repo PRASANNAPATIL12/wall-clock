@@ -69,9 +69,9 @@ export function HeroMessage({ onStart }: Props) {
   const desktopTyped = FULL.slice(0, charIdx);
 
   /* ---- Mobile: two rows ---- */
-  const line1Text    = FULL.slice(0, Math.min(charIdx, L1));
-  const line2Text    = charIdx > L2_START ? LINE2.slice(0, charIdx - L2_START) : '';
-  const cursorLine2  = charIdx >= L2_START;
+  const line1Text   = FULL.slice(0, Math.min(charIdx, L1));
+  const line2Text   = charIdx > L2_START ? LINE2.slice(0, charIdx - L2_START) : '';
+  const cursorLine2 = charIdx >= L2_START;
 
   return (
     <div className={`hero-msg${phase === 'fading' ? ' is-fading' : ''}`} aria-hidden="true">
@@ -79,11 +79,9 @@ export function HeroMessage({ onStart }: Props) {
       {/* ─── Desktop: one row, anchor prevents leftward drift ─── */}
       <div className="hero-msg__desktop">
         <div className="hero-msg__anchor-wrap">
-          {/* Ghost — invisible, establishes fixed width of complete sentence */}
           <span className="hero-msg__ghost">{FULL}</span>
-          {/* Typed text — grows left-to-right inside the fixed container */}
           <span className="hero-msg__typed">
-            {desktopTyped}
+            <HighlightedText typed={desktopTyped} full={FULL} />
             {typing && <span className="hero-msg__cursor" aria-hidden>▋</span>}
           </span>
         </div>
@@ -97,12 +95,31 @@ export function HeroMessage({ onStart }: Props) {
         </p>
         {charIdx >= L1 && (
           <p className="hero-msg__line hero-msg__line--2">
-            {line2Text}
+            <HighlightedText typed={line2Text} full={LINE2} />
             {typing && cursorLine2 && <span className="hero-msg__cursor" aria-hidden>▋</span>}
           </p>
         )}
       </div>
 
     </div>
+  );
+}
+
+/* ---- Helper: renders typed text with 'focus' subtly highlighted ---- */
+function HighlightedText({ typed, full }: { typed: string; full: string }) {
+  const WORD = 'focus';
+  const fi   = full.indexOf(WORD);           // start of 'focus' in reference string
+  if (fi === -1 || typed.length <= fi) return <>{typed}</>;
+
+  const before = typed.slice(0, fi);
+  const word   = typed.slice(fi, Math.min(typed.length, fi + WORD.length));
+  const after  = typed.length > fi + WORD.length ? typed.slice(fi + WORD.length) : '';
+
+  return (
+    <>
+      {before}
+      <span className="hero-focus">{word}</span>
+      {after}
+    </>
   );
 }

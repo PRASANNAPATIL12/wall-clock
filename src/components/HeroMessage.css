@@ -94,6 +94,18 @@
 
 .hero-msg__line--2 { opacity: 0.50; }
 
+/* ---- 'focus' emphasis ----
+   Color: var(--hand-second) — the second-hand red from the design system.
+   The parent already has opacity:0.65, so the red lands at ~65% of its
+   value: muted, in the red family, quiet and intentional.
+   Size: 1.09em — barely perceptible enlargement, just enough to feel
+   weighted without disrupting the line. */
+.hero-focus {
+  color: var(--hand-second);
+  font-size: 1.09em;
+  /* Let line-height and other metrics inherit unchanged */
+}
+
 /* ---- Cursor ---- */
 .hero-msg__cursor {
   display: inline;
