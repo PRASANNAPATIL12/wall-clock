@@ -4,24 +4,21 @@ import type { FocusState } from './useFocusTrack';
 /**
  * Onboarding hint controller.
  *
- * Behaviour:
- *   · `alwaysShow = false` (logged-in users, default):
- *       Each hint is shown exactly once per user's lifetime. Once seen,
- *       it's stored in `wall.hint.seen` (localStorage) and never reappears.
+ * `alwaysShow = false` (logged-in users): each hint shown once per lifetime.
+ * `alwaysShow = true`  (anonymous users): hints show every session.
  *
- *   · `alwaysShow = true` (anonymous users):
- *       Hints are shown every time the user visits — no localStorage check,
- *       no write. The ring stays welcoming to first-timers on every session.
- *
- * Hint is visible for 5 s, then fades. State changes mid-display also hide
- * it (with a brief gap before the next one appears).
+ * `extraInitialDelayMs` — delays WHEN the idle hint first appears.
+ * Used by the hero message: the hint should start exactly when the hero's
+ * glow phase begins (HERO_GLOW_START_MS from page load) rather than at
+ * the default 800ms. This ensures hero and hint never overlap; the hint
+ * begins the moment the text brightens up.
  */
 
 export type HintKind = 'idle' | 'tracking' | 'targeted';
 const STORAGE_KEY   = 'wall.hint.seen';
 const VISIBLE_MS    = 5000;
-const FIRST_DELAY   = 800;  // ms before the very first hint
-const BETWEEN_DELAY = 450;  // ms gap between hints
+export const FIRST_DELAY   = 800;  // ms before the very first hint (exported for HeroMessage sync)
+const BETWEEN_DELAY = 450;  // ms gap between subsequent hints
 
 function loadSeen(): HintKind[] {
   if (typeof window === 'undefined') return [];
@@ -41,12 +38,11 @@ function markSeen(kind: HintKind) {
   } catch { /* private mode / quota */ }
 }
 
-/**
- * @param state       Current focus state
- * @param alwaysShow  true for anonymous — skip localStorage, show every session
- * @param extraVisibleMs  Extra ms to keep the idle hint visible (used while hero message plays)
- */
-export function useOnboardingHint(state: FocusState, alwaysShow = false, extraVisibleMs = 0) {
+export function useOnboardingHint(
+  state: FocusState,
+  alwaysShow = false,
+  extraInitialDelayMs = 0,  // extra delay before idle hint appears
+) {
   const [visible,  setVisible]  = useState(false);
   const [hintKind, setHintKind] = useState<HintKind | null>(null);
   const isFirstRun = useRef(true);
@@ -55,11 +51,14 @@ export function useOnboardingHint(state: FocusState, alwaysShow = false, extraVi
     const kind = state.kind as HintKind;
     setVisible(false);
 
-    const delay = isFirstRun.current ? FIRST_DELAY : BETWEEN_DELAY;
+    const baseDelay = isFirstRun.current ? FIRST_DELAY : BETWEEN_DELAY;
     isFirstRun.current = false;
 
+    // Apply extra initial delay only to the idle (first) hint
+    const extra = kind === 'idle' ? extraInitialDelayMs : 0;
+    const delay = baseDelay + extra;
+
     const showTimer = window.setTimeout(() => {
-      // For logged-in users: skip if already seen
       if (!alwaysShow) {
         const seen = loadSeen();
         if (seen.includes(kind)) return;
@@ -69,17 +68,15 @@ export function useOnboardingHint(state: FocusState, alwaysShow = false, extraVi
       setVisible(true);
     }, delay);
 
-    // Extend the idle hint while hero message types; other hints use normal timing.
-    const extra = kind === 'idle' ? extraVisibleMs : 0;
     const hideTimer = window.setTimeout(() => {
       setVisible(false);
-    }, delay + VISIBLE_MS + extra);
+    }, delay + VISIBLE_MS);
 
     return () => {
       window.clearTimeout(showTimer);
       window.clearTimeout(hideTimer);
     };
-  }, [state.kind, alwaysShow]);
+  }, [state.kind, alwaysShow, extraInitialDelayMs]);
 
   return { visible, hintKind };
 }

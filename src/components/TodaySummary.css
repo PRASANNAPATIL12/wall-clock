@@ -97,5 +97,8 @@ body.idle .today-summary {
 }
 
 @media (max-width: 640px) {
-  .today-summary { bottom: 78px; font-size: 11.5px; height: 28px; padding: 0 12px; }
+  /* Pushed up to clear the bottom-left control group (tz + mode toggle stacked
+     at bottom:18px; two 32px pills + 10px gap = 74px height → top at 92px).
+     130px gives a clean ~38px breathing room above those controls. */
+  .today-summary { bottom: 130px; font-size: 11.5px; height: 28px; padding: 0 12px; }
 }

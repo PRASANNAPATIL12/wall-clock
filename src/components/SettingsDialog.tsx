@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { AccountPane } from './settings/AccountPane';
 import { HistoryPane } from './settings/HistoryPane';
@@ -86,6 +86,23 @@ export function SettingsDialog({
 }: Props) {
   const [pane, setPane] = useState<PaneKey>(initialPane);
 
+  // Drag-to-close: track touch on the header. Only the header responds —
+  // dragging down > 60 px closes the sheet.
+  const dragStartY = useRef<number | null>(null);
+
+  const handleHeaderTouchStart = (e: React.TouchEvent) => {
+    dragStartY.current = e.touches[0]?.clientY ?? null;
+  };
+  const handleHeaderTouchMove = (e: React.TouchEvent) => {
+    if (dragStartY.current === null) return;
+    const delta = (e.touches[0]?.clientY ?? 0) - dragStartY.current;
+    if (delta > 60) {
+      dragStartY.current = null;
+      onClose();
+    }
+  };
+  const handleHeaderTouchEnd = () => { dragStartY.current = null; };
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
@@ -101,7 +118,14 @@ export function SettingsDialog({
         aria-label="Settings"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="settings-header">
+        <header
+          className="settings-header"
+          onTouchStart={handleHeaderTouchStart}
+          onTouchMove={handleHeaderTouchMove}
+          onTouchEnd={handleHeaderTouchEnd}
+        >
+          {/* Drag handle — only visible on mobile (CSS shows/hides) */}
+          <span className="settings-drag-handle" aria-hidden />
           <h2>Wall Clock</h2>
           <button className="settings-close" type="button" onClick={onClose} aria-label="Close">
             <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
@@ -128,9 +152,10 @@ export function SettingsDialog({
                 </li>
               ))}
             </ul>
+            {/* Sign out: in sidebar on desktop, hidden from nav on mobile (shown as footer) */}
             <button
               type="button"
-              className="settings-nav__signout"
+              className="settings-nav__signout settings-nav__signout--sidebar"
               onClick={onSignOut}
             >
               Sign out
@@ -145,6 +170,17 @@ export function SettingsDialog({
             {pane === 'sounds'  && <SoundsPane />}
             {pane === 'about'   && <AboutPane />}
           </section>
+        </div>
+
+        {/* Sign out button on mobile: footer below body, always visible */}
+        <div className="settings-footer-mobile">
+          <button
+            type="button"
+            className="settings-nav__signout settings-nav__signout--footer"
+            onClick={onSignOut}
+          >
+            Sign out
+          </button>
         </div>
       </div>
     </div>

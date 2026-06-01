@@ -43,6 +43,9 @@
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+/* ---- Drag handle — hidden on desktop ---- */
+.settings-drag-handle { display: none; }
+
 /* ---- Header ---- */
 .settings-header {
   display: flex;
@@ -158,13 +161,15 @@
 }
 .settings-nav__signout:hover { color: var(--fg); border-color: var(--fg-hairline); }
 
+/* Mobile footer sign-out — hidden on desktop */
+.settings-footer-mobile { display: none; }
+
 /* ---- Content pane ---- */
 .settings-pane {
   flex: 1;
   padding: 22px 26px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  /* Hide scrollbar — the content fades at bottom hint at more content */
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -177,12 +182,11 @@
   letter-spacing: -0.01em;
 }
 
-/* Stats pane — give it a little extra bottom breathing room */
-.settings-pane[data-pane='stats'] {
-  padding-bottom: 16px;
-}
+.settings-pane[data-pane='stats'] { padding-bottom: 16px; }
 
-/* ---- Mobile: nav becomes horizontal tab bar ---- */
+/* ====================================================================
+   MOBILE: nav becomes horizontal tab bar
+   ==================================================================== */
 @media (max-width: 720px) {
   .settings-dialog { max-height: 90vh; border-radius: 20px 20px 16px 16px; }
   .settings-body { flex-direction: column; }
@@ -203,7 +207,7 @@
   .settings-nav ul {
     display: flex;
     gap: 2px;
-    flex: none;
+    flex: 1;
   }
 
   .settings-nav__item {
@@ -215,6 +219,9 @@
     font-size: 10px;
     white-space: nowrap;
     letter-spacing: 0.01em;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
   }
 
   .settings-nav__item.is-active {
@@ -222,18 +229,76 @@
     border-bottom-color: var(--hand-second);
   }
 
-  .settings-nav__signout {
-    align-self: center;
-    margin: 0 6px;
-    height: 26px;
-    white-space: nowrap;
-    font-size: 11px;
-  }
+  /* Hide sign-out from the tab bar on mobile — shown in footer instead */
+  .settings-nav__signout--sidebar { display: none; }
 
   .settings-pane { padding: 18px 16px; }
 }
 
+/* ====================================================================
+   SMALL MOBILE (≤480px): bottom sheet — slides up from off-screen
+   ==================================================================== */
 @media (max-width: 480px) {
-  .settings-backdrop { padding: 0; align-items: flex-end; }
-  .settings-dialog { border-radius: 20px 20px 0 0; max-height: 88vh; }
+  .settings-backdrop {
+    padding: 0;
+    align-items: flex-end;
+    /* Slightly lighter backdrop so the sheet feels lighter */
+    background: rgba(0, 0, 0, 0.22);
+  }
+
+  .settings-dialog {
+    border-radius: 24px 24px 0 0;
+    /* 70% height so the clock and controls remain visible behind */
+    max-height: 70vh;
+    /* Override the desktop scale animation with a bottom-sheet slide */
+    animation: settings-sheet-in 400ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+
+  /* Slide up from below — fast start, decelerates smoothly into place.
+     cubic-bezier(0.32, 0.72, 0, 1) = Apple's standard sheet easing. */
+  @keyframes settings-sheet-in {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+
+  /* Drag handle pill — visible at top of header so user knows they can drag */
+  .settings-drag-handle {
+    display: block;
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--fg-hairline);
+    pointer-events: none;
+  }
+
+  /* Header: extra top padding to accommodate handle above, cursor tells user it's draggable */
+  .settings-header {
+    padding-top: 22px;
+    cursor: grab;
+    user-select: none;
+  }
+  .settings-header:active { cursor: grabbing; }
+
+  /* Footer: full-width sign-out button shown at bottom of sheet */
+  .settings-footer-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px 16px;
+    border-top: 1px solid var(--fg-faint);
+    flex-shrink: 0;
+  }
+
+  /* Footer sign-out button */
+  .settings-nav__signout--footer {
+    margin: 0;
+    width: 100%;
+    height: 40px;
+    border-radius: 10px;
+    font-size: 13px;
+  }
 }

@@ -18,7 +18,11 @@ function computePickerStyle(endAngleDeg: number | undefined): React.CSSPropertie
   const isMobilePortrait = vw <= 640 && vh > vw;
 
   if (isMobilePortrait || endAngleDeg === undefined) {
-    return { bottom: 92, left: '50%', transform: 'translateX(-50%)' };
+    // Sits in the gap between clock face and TodaySummary:
+    //   TodaySummary: bottom=130px, height=28px → top edge at 158px from screen bottom
+    //   TagPicker (46px tall) at bottom=170: top edge at 216px, leaves 12px clearance above summary
+    //   Clock bottom is ~275px from screen bottom (on a typical 375×812 phone) → 59px gap below clock ✓
+    return { bottom: 170, left: '50%', transform: 'translateX(-50%)' };
   }
 
   const cx = vw / 2;
