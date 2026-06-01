@@ -177,12 +177,9 @@
   letter-spacing: -0.01em;
 }
 
-/* Stats pane needs to control its own scroll — no outer scroll */
+/* Stats pane — give it a little extra bottom breathing room */
 .settings-pane[data-pane='stats'] {
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  padding-bottom: 12px;
+  padding-bottom: 16px;
 }
 
 /* ---- Mobile: nav becomes horizontal tab bar ---- */
