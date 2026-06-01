@@ -16,6 +16,8 @@ interface Props {
   userId: string | null;
   /** Called after a session is saved so the host can refresh stats. */
   onSessionSaved?: () => void;
+  /** Opens Settings → Tags pane (for the TagPicker "manage" button). */
+  onManageTags?: () => void;
 }
 
 /* viewBox geometry — all values in viewBox units (0..100). */
@@ -51,7 +53,7 @@ function fmt(ms: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
-export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSaved }: Props) {
+export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSaved, onManageTags }: Props) {
   const now = useNow('second');
   const svgRef = useRef<SVGSVGElement>(null);
   const endDropRef = useRef<SVGCircleElement>(null);
@@ -583,10 +585,12 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
       {/* Tag picker — appears once after click-2 lands, only for signed-in users */}
       {tagPickerOpen && (
         <TagPicker
+          endAngleDeg={data.end ?? undefined}
           onPick={(tag) => {
             setSessionTag(tag);
             setTagPickerOpen(false);
           }}
+          onManageTags={onManageTags}
         />
       )}
     </>

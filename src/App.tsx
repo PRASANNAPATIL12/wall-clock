@@ -10,7 +10,7 @@ import { CoffeeLink } from './components/controls/CoffeeLink';
 import { JoinPill } from './components/JoinPill';
 import { AccountIcon } from './components/AccountIcon';
 import { AuthModal } from './components/AuthModal';
-import { SettingsDialog } from './components/SettingsDialog';
+import { SettingsDialog, type PaneKey } from './components/SettingsDialog';
 import { TodaySummary } from './components/TodaySummary';
 import { useTodayStats } from './hooks/useTodayStats';
 import { useTheme } from './hooks/useTheme';
@@ -34,6 +34,12 @@ export default function App() {
   const auth = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsInitialPane, setSettingsInitialPane] = useState<PaneKey>('history');
+
+  const openSettings = (pane: PaneKey = 'history') => {
+    setSettingsInitialPane(pane);
+    setSettingsOpen(true);
+  };
   // Increments after every Supabase session save — child hooks subscribe
   // to it to refetch their data. (Avoids prop-drilling refetch callbacks.)
   const [sessionSavedTick, setSessionSavedTick] = useState(0);
@@ -66,6 +72,7 @@ export default function App() {
             timezone={tz}
             userId={auth.user?.id ?? null}
             onSessionSaved={handleSessionSaved}
+            onManageTags={() => openSettings('tags')}
           />
         </div>
         <div className={`mode-layer ${!isAnalog ? 'is-in' : 'is-out-down'}`} aria-hidden={isAnalog}>
@@ -81,7 +88,7 @@ export default function App() {
       {/* Account entry point — JoinPill for anonymous, AccountIcon for signed-in */}
       {!auth.loading && (
         auth.user ? (
-          <AccountIcon user={auth.user} onClick={() => setSettingsOpen(true)} />
+          <AccountIcon user={auth.user} onClick={() => openSettings()} />
         ) : (
           <JoinPill onClick={() => setAuthModalOpen(true)} />
         )
@@ -107,7 +114,7 @@ export default function App() {
 
       {/* Today summary — only renders when signed-in user has sessions today */}
       {auth.user && (
-        <TodaySummary stats={todayStats} onClick={() => setSettingsOpen(true)} />
+        <TodaySummary stats={todayStats} onClick={() => openSettings('history')} />
       )}
 
       {/* Modals */}
@@ -116,7 +123,9 @@ export default function App() {
       )}
       {settingsOpen && auth.user && (
         <SettingsDialog
+          key={settingsInitialPane}
           user={auth.user}
+          initialPane={settingsInitialPane}
           refreshKey={sessionSavedTick}
           onClose={() => setSettingsOpen(false)}
           onSignOut={async () => {

@@ -59,6 +59,42 @@ export const DEFAULT_TAGS: TagDef[] = [
     // Two people
     path: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
   },
+  // ---- Extended set ----
+  {
+    id: 'exercise',
+    label: 'Exercise',
+    path: 'M22 12h-4l-3 9L9 3l-3 9H2', // activity / pulse
+  },
+  {
+    id: 'read',
+    label: 'Read',
+    path: 'M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z', // bookmark
+  },
+  {
+    id: 'plan',
+    label: 'Plan',
+    path: 'M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 1 4 0M9 5a2 2 0 0 0 4 0M9 12l2 2 4-4', // clipboard+check
+  },
+  {
+    id: 'research',
+    label: 'Research',
+    path: 'M11 17a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM21 21l-4.35-4.35', // search
+  },
+  {
+    id: 'music',
+    label: 'Music',
+    path: 'M9 18V5l12-2v13M9 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM21 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', // music note
+  },
+  {
+    id: 'break',
+    label: 'Break',
+    path: 'M17 8h1a4 4 0 0 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z', // coffee cup
+  },
+  {
+    id: 'personal',
+    label: 'Personal',
+    path: 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z', // heart
+  },
   {
     id: 'other',
     label: 'Other',

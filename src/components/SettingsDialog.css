@@ -164,7 +164,11 @@
   padding: 22px 26px;
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* Hide scrollbar — the content fades at bottom hint at more content */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.settings-pane::-webkit-scrollbar { display: none; }
 
 .settings-pane h3 {
   margin: 0 0 18px;
@@ -186,7 +190,10 @@
     padding: 6px 6px 0;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
+  .settings-nav::-webkit-scrollbar { display: none; }
 
   .settings-nav ul {
     display: flex;
