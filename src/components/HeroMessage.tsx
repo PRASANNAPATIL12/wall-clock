@@ -2,77 +2,54 @@ import { useEffect, useRef, useState } from 'react';
 import './HeroMessage.css';
 
 /**
- * Hero message for anonymous visitors — fixed above the clock face.
+ * Hero message — typewriter animation, above the clock.
  *
- * Animation: classic typewriter. Each character is revealed one at a time
- * with a blinking cursor, exactly like a mechanical typing machine.
- * Chosen over the SVG stroke-dasharray approach because:
- *   - The typewriter metaphor is philosophically coherent: "we're a tool,
- *     not a feed". A mechanical typewriter is intentional, deliberate, human.
- *   - Font: 'Special Elite' — an authentic worn typewriter typeface with
- *     individual character personality. Every keystroke reads as deliberate.
- *     Fallback: 'Courier New', then generic monospace.
- *   - The slight irregularity of Special Elite's letterforms creates the
- *     same organic quality as handwriting but without SVG complexity.
+ * Desktop: single row. The full sentence stays in place; characters
+ * appear from left to right within a fixed-width container (anchor
+ * technique — an invisible ghost of the complete text sets the width,
+ * so the visible typed text never shifts horizontally).
  *
- * Positioning: top of viewport, between corner controls and clock face.
- * Does NOT overlap with the clock, onboarding hints, or any other element.
- *
- * Two lines typed sequentially:
- *   Line 1: "Not here for your attention."
- *   Line 2 (after 400ms gap): "Here for your focus."
+ * Mobile (≤640px): two rows, LINE1 then LINE2 with a gap between.
  */
 
 const LINE1 = 'Not here for your attention.';
 const LINE2 = 'Here for your focus.';
+const FULL  = `${LINE1} ${LINE2}`;   // single-row desktop string
 
-/* ---- Timing constants ---- */
-const CHAR_MS   = 68;   // ms per character — deliberate, not rushed
-const GAP_MS    = 480;  // pause between lines (like pressing Enter slowly)
-const HOLD_MS   = 2600; // how long the complete text stays visible
-const FADE_MS   = 1400; // CSS opacity fade-out duration
+const L1       = LINE1.length;       // gap fires after this many chars
+const L2_START = L1 + 1;             // LINE2 starts here in FULL (skip space)
 
-// Total line lengths
-const L1 = LINE1.length;              // 29 chars
-const L2 = LINE2.length;              // 20 chars
-const TYPING_MS = (L1 + L2) * CHAR_MS + GAP_MS;  // ~3900ms
+/* ---- Timing ---- */
+const CHAR_MS = 68;   // ms per character
+const GAP_MS  = 420;  // pause after LINE1 (period pause / Enter pause on mobile)
+const HOLD_MS = 2600;
+const FADE_MS = 1400;
 
-export const HERO_TOTAL_MS = TYPING_MS + HOLD_MS + FADE_MS; // ~7900ms
+const TYPING_MS    = FULL.length * CHAR_MS + GAP_MS;
+export const HERO_TOTAL_MS = TYPING_MS + HOLD_MS + FADE_MS;
 
 interface Props {
-  /** Called immediately so the onboarding hint can extend its visible duration. */
   onStart?: (ms: number) => void;
 }
 
 export function HeroMessage({ onStart }: Props) {
-  // charIndex counts across both lines combined (0..L1+L2)
   const [charIdx, setCharIdx] = useState(0);
-  const [phase, setPhase] = useState<'typing' | 'hold' | 'fading' | 'done'>('typing');
+  const [phase,   setPhase]   = useState<'typing' | 'hold' | 'fading' | 'done'>('typing');
   const started = useRef(false);
 
-  // Report total duration once on mount
   useEffect(() => {
-    if (!started.current) {
-      started.current = true;
-      onStart?.(HERO_TOTAL_MS);
-    }
+    if (!started.current) { started.current = true; onStart?.(HERO_TOTAL_MS); }
   }, [onStart]);
 
-  // Drive the typewriter counter
   useEffect(() => {
     if (phase !== 'typing') return;
-    const total = L1 + L2;
-    if (charIdx >= total) {
-      setPhase('hold');
-      return;
-    }
-    // Add the inter-line gap after line 1 completes
+    if (charIdx >= FULL.length) { setPhase('hold'); return; }
+    // Natural pause after the period at end of LINE1
     const delay = charIdx === L1 ? GAP_MS : CHAR_MS;
     const t = window.setTimeout(() => setCharIdx(n => n + 1), delay);
     return () => window.clearTimeout(t);
   }, [charIdx, phase]);
 
-  // Hold → fading → done
   useEffect(() => {
     if (phase === 'hold') {
       const t = window.setTimeout(() => setPhase('fading'), HOLD_MS);
@@ -86,35 +63,46 @@ export function HeroMessage({ onStart }: Props) {
 
   if (phase === 'done') return null;
 
-  // Split charIdx across the two lines
-  const line1Text = LINE1.slice(0, Math.min(charIdx, L1));
-  const line2Text = charIdx > L1 ? LINE2.slice(0, charIdx - L1) : '';
-  const showCursor = phase === 'typing';
-  const cursorOnLine2 = charIdx > L1;
+  const typing = phase === 'typing';
+
+  /* ---- Desktop: single row ---- */
+  const desktopTyped = FULL.slice(0, charIdx);
+
+  /* ---- Mobile: two rows ---- */
+  const line1Text    = FULL.slice(0, Math.min(charIdx, L1));
+  const line2Text    = charIdx > L2_START ? LINE2.slice(0, charIdx - L2_START) : '';
+  const cursorLine2  = charIdx >= L2_START;
 
   return (
-    <div
-      className={`hero-msg${phase === 'fading' ? ' is-fading' : ''}`}
-      aria-hidden="true"
-    >
-      <div className="hero-msg__inner">
+    <div className={`hero-msg${phase === 'fading' ? ' is-fading' : ''}`} aria-hidden="true">
+
+      {/* ─── Desktop: one row, anchor prevents leftward drift ─── */}
+      <div className="hero-msg__desktop">
+        <div className="hero-msg__anchor-wrap">
+          {/* Ghost — invisible, establishes fixed width of complete sentence */}
+          <span className="hero-msg__ghost">{FULL}</span>
+          {/* Typed text — grows left-to-right inside the fixed container */}
+          <span className="hero-msg__typed">
+            {desktopTyped}
+            {typing && <span className="hero-msg__cursor" aria-hidden>▋</span>}
+          </span>
+        </div>
+      </div>
+
+      {/* ─── Mobile: two rows ─── */}
+      <div className="hero-msg__mobile">
         <p className="hero-msg__line">
           {line1Text}
-          {showCursor && !cursorOnLine2 && (
-            <span className="hero-msg__cursor" aria-hidden>▋</span>
-          )}
+          {typing && !cursorLine2 && <span className="hero-msg__cursor" aria-hidden>▋</span>}
         </p>
-
-        {/* Line 2 only mounts after line 1 is fully typed */}
         {charIdx >= L1 && (
           <p className="hero-msg__line hero-msg__line--2">
             {line2Text}
-            {showCursor && cursorOnLine2 && (
-              <span className="hero-msg__cursor" aria-hidden>▋</span>
-            )}
+            {typing && cursorLine2 && <span className="hero-msg__cursor" aria-hidden>▋</span>}
           </p>
         )}
       </div>
+
     </div>
   );
 }
