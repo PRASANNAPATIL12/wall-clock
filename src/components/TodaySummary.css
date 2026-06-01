@@ -1,0 +1,101 @@
+/* =========================================================================
+   TodaySummary pill
+   Uses left:0/right:0/margin:auto for centering — decoupled from hover
+   transforms so clicking never causes position jumps.
+   ========================================================================= */
+
+.today-summary {
+  /* Stable center: margin:auto on a fixed+left:0/right:0 element */
+  position: fixed;
+  bottom: 28px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: fit-content;
+  z-index: 8;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+
+  /* Hover/active use translateY only — no translateX needed (centering is done by margin) */
+  transition:
+    background-color 320ms var(--ease-apple),
+    color 320ms var(--ease-apple),
+    transform 320ms var(--ease-apple),
+    opacity 600ms var(--ease-apple);
+}
+
+.today-summary:hover {
+  background: var(--glass-bg-hover);
+  color: var(--fg);
+  transform: translateY(-1px);
+}
+
+.today-summary:active {
+  transform: translateY(0) scale(0.985);
+  transition-duration: 120ms;
+}
+
+.today-summary__dot {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.45;
+  flex-shrink: 0;
+}
+
+/* Glass tooltip above the button */
+.today-summary__tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 9px;
+  border-radius: 7px;
+  background: var(--bg-tint-strong);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fg);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: today-tip-in 110ms var(--ease-apple);
+  z-index: 1;
+}
+
+@keyframes today-tip-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(3px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Idle fade — translateY only, no X */
+body.idle .today-summary {
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .today-summary { bottom: 78px; font-size: 11.5px; height: 28px; padding: 0 12px; }
+}

@@ -45,6 +45,29 @@ function getCtx(): AudioContext | null {
   }
 }
 
+/**
+ * Read user sound preferences (set in the Sounds settings pane).
+ * Defaults are: goal = 'bell', ticks = 'on'.
+ */
+export type GoalSound = 'bell' | 'tok' | 'silent';
+export type TickSound = 'on' | 'off';
+
+export function readGoalSound(): GoalSound {
+  try {
+    const v = window.localStorage.getItem('wall.sound.goal');
+    if (v === 'bell' || v === 'tok' || v === 'silent') return v;
+  } catch { /* ignore */ }
+  return 'bell';
+}
+
+export function readTickSound(): TickSound {
+  try {
+    const v = window.localStorage.getItem('wall.sound.ticks');
+    if (v === 'on' || v === 'off') return v;
+  } catch { /* ignore */ }
+  return 'on';
+}
+
 function userHasMuted(): boolean {
   try {
     return window.localStorage.getItem('wall.haptic.silent') === 'true';
@@ -135,7 +158,46 @@ export function celebrate(): void {
     }
   }
 
-  playChime();
+  // Audio chime depends on user preference.
+  const choice = readGoalSound();
+  if (choice === 'bell') playChime();
+  else if (choice === 'tok') playTok();
+  // 'silent' — vibration still fires above, but no audio
+}
+
+/** Public — used by the Sounds settings pane for the preview button. */
+export function previewGoalSound(choice: GoalSound): void {
+  if (choice === 'bell') playChime();
+  else if (choice === 'tok') playTok();
+}
+
+/** Soft "tok" — a low 300 Hz sine with a quick exponential decay.
+ *  Reads as a wooden block tap. Used as an alternative goal-completion
+ *  sound for users who find the A-major chord too bright. */
+function playTok(): void {
+  const ctx = getCtx();
+  if (!ctx) return;
+  try {
+    if (ctx.state === 'suspended') ctx.resume();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.value = 300;
+    const t = ctx.currentTime;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.18, t + 0.002);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
+    osc.start(t);
+    osc.stop(t + 0.1);
+    osc.onended = () => {
+      osc.disconnect();
+      gain.disconnect();
+    };
+  } catch {
+    /* ignore */
+  }
 }
 
 function playChime(): void {
@@ -206,6 +268,7 @@ export function tick(): void {
   lastTickMs = now;
 
   if (userHasMuted()) return;
+  if (readTickSound() === 'off') return;
 
   // Vibration — always attempt. No-op on devices without hardware.
   if (

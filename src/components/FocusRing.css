@@ -61,6 +61,22 @@ body.idle .focus-ring .track {
   transition: opacity 600ms var(--ease-apple) 0s;
 }
 
+/* ---- Ring breathe — when the "click anywhere on the ring" hint is showing ----
+   Slow sinusoidal pulse (2.8 s) signals to the user: "there is a ring here."
+   The stroke-dasharray creates a short visible arc that rotates, but here we
+   only animate opacity so the effect is a gentle breathing glow without
+   disturbing the existing animation on .track. */
+/* Fires for all 3 onboarding hints (idle / tracking / targeted).
+   Pulses the ghost track so users know where to click. */
+.focus-ring.is-hint-active .track {
+  animation: ring-breathe 2.8s ease-in-out infinite !important;
+}
+
+@keyframes ring-breathe {
+  0%,  100% { opacity: 0.07; }
+  50%       { opacity: 0.40; }
+}
+
 /* While the comet is orbiting, EVERY other ring element is invisible —
    the comet's tail is the only thing on the ring. After the comet ends
    and the class is removed, the drops fade back in via their own
@@ -299,11 +315,11 @@ body.idle .focus-ring .track {
     calc(-50% + var(--oy, 0) * 50%)
   );
   font-family: var(--font-mono);
-  font-weight: 200;
-  font-size: clamp(9.5px, 1.4vmin, 12px);
+  font-weight: 300;
+  font-size: clamp(11.5px, 1.8vmin, 14.5px);
   letter-spacing: -0.01em;
   color: var(--fg-muted);
-  opacity: 0.78;
+  opacity: 0.90;
   pointer-events: none;
   white-space: nowrap;
   user-select: none;
@@ -315,7 +331,7 @@ body.idle .focus-ring .track {
 
 @keyframes timer-in {
   from { opacity: 0; scale: 0.94; }
-  to   { opacity: 0.78; scale: 1; }
+  to   { opacity: 0.90; scale: 1; }
 }
 
 .focus-timer__line {
@@ -355,9 +371,38 @@ body.idle .focus-ring .track {
    visible and fully interactive in both portrait and landscape. */
 @media (max-width: 480px) {
   .focus-timer {
-    max-width: 32vw;
-    font-size: clamp(8px, 1.6vmin, 11px);
+    max-width: 34vw;
+    font-size: clamp(10px, 1.8vmin, 12.5px);
   }
+}
+
+/* ---- End-drop tag tooltip ---- */
+.end-drop-tooltip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 10px));
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px 4px 7px;
+  border-radius: 7px;
+  background: var(--bg-tint-strong);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fg);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9;
+  animation: end-drop-tip-in 120ms var(--ease-apple);
+}
+
+@keyframes end-drop-tip-in {
+  from { opacity: 0; transform: translate(-50%, calc(-96% - 10px)); }
+  to   { opacity: 1; transform: translate(-50%, calc(-100% - 10px)); }
 }
 
 @media (prefers-reduced-motion: reduce) {

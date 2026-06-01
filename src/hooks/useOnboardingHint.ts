@@ -4,22 +4,24 @@ import type { FocusState } from './useFocusTrack';
 /**
  * Onboarding hint controller.
  *
- *  · Watches the focus state.
- *  · For each state (idle / tracking / targeted), shows a hint exactly once
- *    in the user's lifetime. After it's shown, the state.kind is appended
- *    to `wall.hint.seen` in localStorage and never reappears.
- *  · Hint is visible for 5 s, then fades. State changes mid-display also
- *    hide it (with a smooth gap before the next one).
+ * Behaviour:
+ *   · `alwaysShow = false` (logged-in users, default):
+ *       Each hint is shown exactly once per user's lifetime. Once seen,
+ *       it's stored in `wall.hint.seen` (localStorage) and never reappears.
  *
- *  Pure side-effect-free for SSR: reads localStorage lazily inside the
- *  effect, never during render.
+ *   · `alwaysShow = true` (anonymous users):
+ *       Hints are shown every time the user visits — no localStorage check,
+ *       no write. The ring stays welcoming to first-timers on every session.
+ *
+ * Hint is visible for 5 s, then fades. State changes mid-display also hide
+ * it (with a brief gap before the next one appears).
  */
 
 export type HintKind = 'idle' | 'tracking' | 'targeted';
-const STORAGE_KEY = 'wall.hint.seen';
-const VISIBLE_MS = 5000;
-const SWAP_DELAY_INITIAL = 800; // delay before the very first hint shows
-const SWAP_DELAY_AFTER = 450; // delay between fading out one hint and showing the next
+const STORAGE_KEY   = 'wall.hint.seen';
+const VISIBLE_MS    = 5000;
+const FIRST_DELAY   = 800;  // ms before the very first hint
+const BETWEEN_DELAY = 450;  // ms gap between hints
 
 function loadSeen(): HintKind[] {
   if (typeof window === 'undefined') return [];
@@ -28,9 +30,7 @@ function loadSeen(): HintKind[] {
     if (!raw) return [];
     const arr = JSON.parse(raw);
     return Array.isArray(arr) ? (arr as HintKind[]) : [];
-  } catch {
-    return [];
-  }
+  } catch { return []; }
 }
 
 function markSeen(kind: HintKind) {
@@ -38,43 +38,48 @@ function markSeen(kind: HintKind) {
     const seen = loadSeen();
     if (seen.includes(kind)) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...seen, kind]));
-  } catch {
-    /* private mode / quota — ignore */
-  }
+  } catch { /* private mode / quota */ }
 }
 
-export function useOnboardingHint(state: FocusState) {
-  const [visible, setVisible] = useState(false);
+/**
+ * @param state       Current focus state
+ * @param alwaysShow  true for anonymous — skip localStorage, show every session
+ * @param extraVisibleMs  Extra ms to keep the idle hint visible (used while hero message plays)
+ */
+export function useOnboardingHint(state: FocusState, alwaysShow = false, extraVisibleMs = 0) {
+  const [visible,  setVisible]  = useState(false);
   const [hintKind, setHintKind] = useState<HintKind | null>(null);
   const isFirstRun = useRef(true);
 
   useEffect(() => {
     const kind = state.kind as HintKind;
-    // Hide whatever is currently showing — give the previous hint time to
-    // fade out before showing the next.
     setVisible(false);
 
-    const delay = isFirstRun.current ? SWAP_DELAY_INITIAL : SWAP_DELAY_AFTER;
+    const delay = isFirstRun.current ? FIRST_DELAY : BETWEEN_DELAY;
     isFirstRun.current = false;
 
     const showTimer = window.setTimeout(() => {
-      const seen = loadSeen();
-      if (seen.includes(kind)) return;
-
+      // For logged-in users: skip if already seen
+      if (!alwaysShow) {
+        const seen = loadSeen();
+        if (seen.includes(kind)) return;
+        markSeen(kind);
+      }
       setHintKind(kind);
       setVisible(true);
-      markSeen(kind);
     }, delay);
 
+    // Extend the idle hint while hero message types; other hints use normal timing.
+    const extra = kind === 'idle' ? extraVisibleMs : 0;
     const hideTimer = window.setTimeout(() => {
       setVisible(false);
-    }, delay + VISIBLE_MS);
+    }, delay + VISIBLE_MS + extra);
 
     return () => {
       window.clearTimeout(showTimer);
       window.clearTimeout(hideTimer);
     };
-  }, [state.kind]);
+  }, [state.kind, alwaysShow]);
 
   return { visible, hintKind };
 }

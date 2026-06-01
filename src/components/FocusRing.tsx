@@ -1,14 +1,28 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent } from 'react';
 import { useNow } from '../hooks/useNow';
-import { useFocusTrack } from '../hooks/useFocusTrack';
+import { useFocusTrack, type FocusSessionEnd } from '../hooks/useFocusTrack';
 import { getZonedTime } from '../lib/timezones';
 import { tick as hapticTick, prepareHaptic, celebrate } from '../lib/haptic';
+import { saveSession } from '../lib/sessionStore';
 import { OnboardingHint } from './OnboardingHint';
+import { useOnboardingHint } from '../hooks/useOnboardingHint';
+import { TagPicker } from './TagPicker';
+import { TagIcon } from './TagIcon';
+import { getTag } from '../lib/tags';
 import './FocusRing.css';
 
 interface Props {
   timezone: string;
+  /** Supabase user id, or null when not signed in. When null, sessions
+   *  are not persisted — the clock + focus ring still work fully. */
+  userId: string | null;
+  /** Called after a session is saved so the host can refresh stats. */
+  onSessionSaved?: () => void;
+  /** Opens Settings → Tags pane (for the TagPicker "manage" button). */
+  onManageTags?: () => void;
+  /** Extra ms to extend the first onboarding hint while the hero message types. */
+  hintBoostMs?: number;
 }
 
 /* viewBox geometry — all values in viewBox units (0..100). */
@@ -44,11 +58,86 @@ function fmt(ms: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
-export const FocusRing = memo(function FocusRing({ timezone }: Props) {
+export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSaved, onManageTags, hintBoostMs = 0 }: Props) {
   const now = useNow('second');
   const svgRef = useRef<SVGSVGElement>(null);
   const endDropRef = useRef<SVGCircleElement>(null);
-  const { state, handleClick, setDragEnd } = useFocusTrack(timezone);
+
+  // Hold refs to the latest userId and current session tag so the
+  // session-end callback always reads the current values without needing
+  // to be recreated on each render.
+  const userIdRef = useRef(userId);
+  useEffect(() => {
+    userIdRef.current = userId;
+  }, [userId]);
+
+  // Tag for the current session — set by the TagPicker that appears on
+  // click 2. Null until the user picks one (or auto-dismisses).
+  const [sessionTag, setSessionTag] = useState<string | null>(null);
+  const sessionTagRef = useRef<string | null>(null);
+  useEffect(() => {
+    sessionTagRef.current = sessionTag;
+  }, [sessionTag]);
+
+  // Whether the TagPicker is currently open. Opens on click 2 if signed in,
+  // closes on selection / auto-dismiss / session end.
+  const [tagPickerOpen, setTagPickerOpen] = useState(false);
+
+  const handleSessionEnd = useCallback(
+    (s: FocusSessionEnd) => {
+      const uid = userIdRef.current;
+      const tag = sessionTagRef.current;
+      // Reset session-scoped state for the next session regardless of save.
+      setSessionTag(null);
+      setTagPickerOpen(false);
+      if (!uid) return; // anonymous — nothing to persist
+      saveSession({
+        userId: uid,
+        startTime: s.startTime,
+        goalTime: s.goalTime,
+        endTime: s.endTime,
+        completed: s.completed,
+        bonusSeconds: s.bonusSeconds,
+        tag,
+        timezone,
+      })
+        .then(() => onSessionSaved?.())
+        .catch(() => {
+          /* sessionStore already logs */
+        });
+    },
+    [timezone, onSessionSaved],
+  );
+
+  const { state, handleClick, setDragEnd } = useFocusTrack(timezone, handleSessionEnd);
+
+  /* Onboarding hint — lifted here so FocusRing can add ring glow class.
+   * Anonymous (userId=null): hints show on every visit (alwaysShow=true).
+   * Logged-in: hints show only once (alwaysShow=false, localStorage used).
+   * hintBoostMs extends the idle-hint visibility while the hero message plays. */
+  const { visible: hintVisible, hintKind } = useOnboardingHint(state, userId === null, hintBoostMs);
+  /** Ring pulses for ALL three hints, not just the first. */
+  const showingAnyHint = hintVisible;
+
+  // Open the TagPicker exactly once per session, when click 2 just landed
+  // (state becomes 'targeted' and we don't already have a tag). Closes
+  // automatically when state leaves 'targeted' or when the user picks/skips.
+  const prevKindRef = useRef(state.kind);
+  useEffect(() => {
+    const prev = prevKindRef.current;
+    prevKindRef.current = state.kind;
+    // Only react to the tracking→targeted transition; ignore drag updates
+    // (which keep state.kind == 'targeted' across renders).
+    if (prev !== 'targeted' && state.kind === 'targeted') {
+      if (userIdRef.current && sessionTagRef.current === null) {
+        setTagPickerOpen(true);
+      }
+    }
+    if (state.kind === 'idle') {
+      // Make sure picker is closed even if the user clicked through quickly.
+      setTagPickerOpen(false);
+    }
+  }, [state.kind]);
 
   // Convert a pointer-event client position into the angular position on
   // the focus ring (0° = top / 12, clockwise). Used by both the click
@@ -91,6 +180,9 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
   // Drag state for the end-point circle.
   const [dragging, setDragging] = useState(false);
   const lastDragMinuteRef = useRef<number>(-1);
+
+  // Hover state for the end-drop tooltip (logged-in, tag selected)
+  const [endDropHovered, setEndDropHovered] = useState(false);
 
   const data = useMemo(() => {
     if (state.kind === 'idle') {
@@ -308,6 +400,7 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
     celebrating ? 'is-celebrating' : '',
     comet ? 'is-comet-playing' : '',
     dragging ? 'is-dragging-end' : '',
+    showingAnyHint ? 'is-hint-active' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -455,6 +548,8 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
                   className={`drop-end-hit ${dragging ? 'is-dragging' : ''}`}
                   fill="transparent"
                   onPointerDown={onEndDropPointerDown}
+                  onMouseEnter={() => { if (userId && sessionTag) setEndDropHovered(true); }}
+                  onMouseLeave={() => setEndDropHovered(false)}
                 />
                 <circle
                   ref={endDropRef}
@@ -501,10 +596,36 @@ export const FocusRing = memo(function FocusRing({ timezone }: Props) {
         </div>
       )}
 
-      {/* Onboarding hint — whispers to first-time users that the ring is
-          interactive. Each state's hint shows at most once per user, then
-          never again. Independent of every other ring element. */}
-      <OnboardingHint state={state} />
+      {/* Onboarding hint — anonymous users see it every visit; logged-in once */}
+      <OnboardingHint visible={hintVisible} hintKind={hintKind} />
+
+      {/* End-drop tag tooltip — shows selected session tag on hover */}
+      {endDropHovered && userId && sessionTag && data.end !== null && svgRef.current && (() => {
+        const rect = svgRef.current!.getBoundingClientRect();
+        const scale = rect.width / 100;
+        const rad = ((data.end - 90) * Math.PI) / 180;
+        const px = rect.left + rect.width / 2 + Math.cos(rad) * RING_R * scale;
+        const py = rect.top + rect.height / 2 + Math.sin(rad) * RING_R * scale;
+        const def = getTag(sessionTag);
+        return (
+          <div className="end-drop-tooltip" style={{ left: px, top: py }} aria-hidden>
+            {def && <TagIcon def={def} size={11} />}
+            <span>{def?.label ?? sessionTag}</span>
+          </div>
+        );
+      })()}
+
+      {/* Tag picker — appears once after click-2 lands, only for signed-in users */}
+      {tagPickerOpen && (
+        <TagPicker
+          endAngleDeg={data.end ?? undefined}
+          onPick={(tag) => {
+            setSessionTag(tag);
+            setTagPickerOpen(false);
+          }}
+          onManageTags={onManageTags}
+        />
+      )}
     </>
   );
 });

@@ -1,0 +1,144 @@
+/* Tag picker — appears after click-2, scroll-hint shows more tags. */
+
+.tag-picker {
+  position: fixed;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  /* Note: no padding here — the inner scroll div has it */
+  border-radius: 999px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  animation: tag-picker-in 300ms var(--ease-spring);
+  /* Overflow must be visible so tooltip isn't clipped */
+  overflow: visible;
+}
+
+@keyframes tag-picker-in {
+  from { opacity: 0; transform: scale(0.94) translateY(6px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+/* ---- Scrollable row ---- */
+.tag-picker__scroll {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 8px;
+  overflow-x: auto;
+  overflow-y: visible;
+  max-width: min(90vw, 360px);
+  border-radius: 999px;
+  /* Hide scrollbar on all browsers */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.tag-picker__scroll::-webkit-scrollbar { display: none; }
+
+/* ---- Icon buttons ---- */
+.tag-picker__btn {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+  position: relative;
+  transition:
+    background-color 160ms var(--ease-apple),
+    color 160ms var(--ease-apple),
+    transform 160ms var(--ease-apple);
+}
+
+.tag-picker__btn:hover {
+  background: var(--fg-faint);
+  color: var(--fg);
+  transform: translateY(-1px);
+}
+
+.tag-picker__btn.is-picked {
+  background: var(--fg);
+  color: var(--bg-elev);
+  animation: tag-picked-pulse 240ms var(--ease-spring);
+}
+
+@keyframes tag-picked-pulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+
+/* ---- Divider ---- */
+.tag-picker__divider {
+  flex-shrink: 0;
+  width: 1px;
+  height: 20px;
+  background: var(--glass-border);
+  margin: 0 2px;
+}
+
+/* ---- "Manage tags" + button ---- */
+.tag-picker__manage {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1.5px dashed var(--fg-hairline);
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition:
+    background-color 160ms var(--ease-apple),
+    color 160ms var(--ease-apple),
+    border-color 160ms var(--ease-apple);
+}
+
+.tag-picker__manage:hover {
+  background: var(--fg-faint);
+  color: var(--fg);
+  border-color: var(--fg-muted);
+}
+
+/* ---- Tooltip — absolute so backdrop-filter on parent never misplaces it ---- */
+.tag-picker__tooltip {
+  position: absolute;
+  /* bottom of tooltip = 8px above top of .tag-picker pill */
+  bottom: calc(100% + 8px);
+  /* horizontally centered on the hovered button (left set by JS) */
+  transform: translateX(-50%);
+  padding: 4px 9px;
+  border-radius: 7px;
+  background: var(--bg-tint-strong);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fg);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9;
+  animation: tag-tooltip-in 110ms var(--ease-apple);
+}
+
+@keyframes tag-tooltip-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(3px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+body.idle .tag-picker { opacity: 0; pointer-events: none; }
+
+@media (max-width: 640px) {
+  .tag-picker__scroll { max-width: calc(100vw - 32px); }
+}
