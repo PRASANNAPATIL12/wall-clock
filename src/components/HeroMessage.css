@@ -122,9 +122,44 @@
   50%       { opacity: 0.55; }
 }
 
+/* ---- Glow phase (before fading) ----
+   Breath animation: typed text and mobile lines brighten from 0.65 → 0.95
+   then settle. This runs for 900ms, after which the parent .is-fading
+   class transitions the whole element to opacity:0. The glow signals
+   "I'm done writing" and draws the eye to the ring at the same moment
+   the onboarding hint appears. */
+.hero-msg.is-glowing .hero-msg__typed {
+  animation: hero-breathe 900ms ease-in-out;
+}
+.hero-msg.is-glowing .hero-msg__line {
+  animation: hero-breathe 900ms ease-in-out;
+}
+.hero-msg.is-glowing .hero-msg__line--2 {
+  animation: hero-breathe 900ms ease-in-out 80ms; /* slight cascade */
+}
+
+@keyframes hero-breathe {
+  0%   { opacity: 0.65; }
+  45%  { opacity: 0.95; }  /* peak brightness — feels like a breath-in */
+  100% { opacity: 0.65; }  /* returns to base before fade takes over */
+}
+
+/* The 'focus' word gets its own matching glow */
+.hero-msg.is-glowing .hero-focus {
+  animation: hero-focus-breathe 900ms ease-in-out;
+}
+@keyframes hero-focus-breathe {
+  0%  { filter: brightness(1); }
+  45% { filter: brightness(1.25); }
+  100%{ filter: brightness(1); }
+}
+
 /* Skip animation for users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .hero-msg__typed  { opacity: 0.65; }
   .hero-msg__ghost  { /* still needed for sizing */ }
   .hero-msg__cursor { display: none; }
+  .hero-msg.is-glowing .hero-msg__typed,
+  .hero-msg.is-glowing .hero-msg__line,
+  .hero-msg.is-glowing .hero-msg__line--2 { animation: none; }
 }
