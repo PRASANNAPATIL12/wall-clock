@@ -40,7 +40,7 @@ interface Props {
  */
 
 const TEXTS: Record<string, string> = {
-  idle: 'click anywhere on the ring to start a timer',
+  idle: 'click anywhere on the ring to start tracking',
   tracking: 'click again to set your goal end-time',
   targeted: 'click once more to clear',
 };
