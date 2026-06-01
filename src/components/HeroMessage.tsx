@@ -26,13 +26,14 @@ const L2_START = L1 + 1;
 /* ---- Timing ---- */
 const CHAR_MS = 68;
 const GAP_MS  = 420;
-const HOLD_MS = 2600;
-const GLOW_MS = 900;   // breathe effect before fade
+// No hold pause — glow begins IMMEDIATELY when the last character is typed.
+// GLOW_MS absorbs the old hold duration so total visible time is similar.
+const GLOW_MS = 3200;  // old HOLD (2600) + old GLOW (900) ≈ 3200ms of gentle brightness
 const FADE_MS = 1400;
 
-export const TYPING_MS         = FULL.length * CHAR_MS + GAP_MS;
-export const HERO_GLOW_START_MS = TYPING_MS + HOLD_MS;   // t when glow begins
-export const HERO_TOTAL_MS      = TYPING_MS + HOLD_MS + GLOW_MS + FADE_MS;
+export const TYPING_MS          = FULL.length * CHAR_MS + GAP_MS;
+export const HERO_GLOW_START_MS  = TYPING_MS;  // glow starts immediately after typing
+export const HERO_TOTAL_MS       = TYPING_MS + GLOW_MS + FADE_MS;
 
 interface Props {
   /**
@@ -49,7 +50,7 @@ const HINT_FIRST_DELAY = 800;
 
 export function HeroMessage({ onStart }: Props) {
   const [charIdx, setCharIdx] = useState(0);
-  const [phase,   setPhase]   = useState<'typing' | 'hold' | 'glowing' | 'fading' | 'done'>('typing');
+  const [phase,   setPhase]   = useState<'typing' | 'glowing' | 'fading' | 'done'>('typing');
   const started = useRef(false);
 
   useEffect(() => {
@@ -62,10 +63,10 @@ export function HeroMessage({ onStart }: Props) {
     }
   }, [onStart]);
 
-  // Typewriter
+  // Typewriter — goes directly to 'glowing' (no hold pause)
   useEffect(() => {
     if (phase !== 'typing') return;
-    if (charIdx >= FULL.length) { setPhase('hold'); return; }
+    if (charIdx >= FULL.length) { setPhase('glowing'); return; }
     const delay = charIdx === L1 ? GAP_MS : CHAR_MS;
     const t = window.setTimeout(() => setCharIdx(n => n + 1), delay);
     return () => window.clearTimeout(t);
@@ -73,10 +74,6 @@ export function HeroMessage({ onStart }: Props) {
 
   // Phase transitions
   useEffect(() => {
-    if (phase === 'hold') {
-      const t = window.setTimeout(() => setPhase('glowing'), HOLD_MS);
-      return () => window.clearTimeout(t);
-    }
     if (phase === 'glowing') {
       const t = window.setTimeout(() => setPhase('fading'), GLOW_MS);
       return () => window.clearTimeout(t);
@@ -89,9 +86,9 @@ export function HeroMessage({ onStart }: Props) {
 
   if (phase === 'done') return null;
 
-  const typing    = phase === 'typing';
-  const glowing   = phase === 'glowing';
-  const fading    = phase === 'fading';
+  const typing  = phase === 'typing';
+  const glowing = phase === 'glowing';
+  const fading  = phase === 'fading';
 
   const desktopTyped = FULL.slice(0, charIdx);
   const line1Text    = FULL.slice(0, Math.min(charIdx, L1));

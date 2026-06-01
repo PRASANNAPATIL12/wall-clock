@@ -26,10 +26,11 @@
   opacity: 0;
 }
 
-body.idle .onboarding-hint {
-  opacity: 0;
-  transition: opacity 600ms var(--ease-apple);
-}
+/* NOTE: the hint is intentionally NOT faded by body.idle.
+   Controls (buttons, pills) fade when idle, but the onboarding hint
+   is the only thing teaching the user how to interact. If it faded
+   with the controls, a new user who watches the typing animation
+   without moving their mouse would never see the instruction. */
 
 .hint-canvas {
   position: absolute;

@@ -211,7 +211,9 @@ export function StatsPane({ user, refreshKey }: Props) {
       if (key !== lastKey) {
         blocks.push({
           key,
-          label: d.toLocaleDateString(undefined, { month: DAYS <= 90 ? 'short' : 'narrow' }),
+          // Always 'short' (e.g. "Jun") — 'narrow' gives ambiguous single
+          // letters ("J" for Jan, Jun, and Jul) that confuse the user.
+          label: d.toLocaleDateString(undefined, { month: 'short' }),
           firstAbsCol: col,
           numCols: 1,
         });
@@ -239,17 +241,33 @@ export function StatsPane({ user, refreshKey }: Props) {
     return total > cWidth;
   }, [cWidth, COLS, useMonthLayout, numMonths]);
 
-  /* Scroll hint */
+  /* Auto-scroll to right (newest data) on render, then hint left to show history exists.
+   * This is critical: the heatmap shows oldest→newest left→right. A new user has
+   * sessions only in the last few days, which live at the FAR RIGHT. Without this,
+   * they'd see only empty old months and think their data is missing. */
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || !needsScroll) return;
-    let cancel: (() => void) | null = null; let t2 = 0;
+    // After layout settles, jump to the right end to show most recent data
+    const raf = requestAnimationFrame(() => {
+      el.scrollLeft = el.scrollWidth - el.clientWidth;
+    });
+    // Then after a beat, nudge left slightly to hint "history exists to the left"
+    let cancelNudge: (() => void) | null = null; let t2 = 0;
     const t1 = window.setTimeout(() => {
-      cancel = animateScroll(el, 0, 40, 750, () => {
-        t2 = window.setTimeout(() => { cancel = animateScroll(el, 40, 0, 550); }, 650);
+      const startPos = el.scrollLeft || el.scrollWidth - el.clientWidth;
+      cancelNudge = animateScroll(el, startPos, startPos - 48, 700, () => {
+        t2 = window.setTimeout(() => {
+          cancelNudge = animateScroll(el, startPos - 48, startPos, 550);
+        }, 650);
       });
-    }, 350);
-    return () => { window.clearTimeout(t1); window.clearTimeout(t2); cancel?.(); };
+    }, 600);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      cancelNudge?.();
+    };
   }, [needsScroll, periodIdx]);
 
   /* Streak + total */
@@ -261,14 +279,25 @@ export function StatsPane({ user, refreshKey }: Props) {
 
   const windowTotalMs = useMemo(() => { let t = 0; for (const v of totalsByDate.values()) t += v; return t; }, [totalsByDate]);
 
-  /* Col labels for simple grid */
+  /* Col labels for simple grid (1W and 1M only — multi-month uses month blocks) */
   const colLabels = useMemo<string[]>(() => {
     if (isWeek) return cells.map(c => DOW_SHORT[new Date(c.date + 'T00:00:00').getDay()]!);
     const labels = Array<string>(COLS).fill('');
-    if (!useMonthLayout && DAYS <= 31) {
+    if (!useMonthLayout) {
+      // 1-month: show short month name at the start of each new month.
+      // Old behaviour (date numbers like "3, 10, 17, 24") was confusing — users
+      // saw random numbers and didn't know which month they were looking at.
+      let lastMonth = -1;
       for (let col = 0; col < COLS; col++) {
-        const idx = Math.max(0, col*7 - oldestWeekday);
-        if (idx < cells.length) labels[col] = String(new Date(cells[idx]!.date + 'T00:00:00').getDate());
+        const idx = Math.max(0, col * 7 - oldestWeekday);
+        if (idx < cells.length) {
+          const d = new Date(cells[idx]!.date + 'T00:00:00');
+          const m = d.getMonth();
+          if (m !== lastMonth) {
+            labels[col] = d.toLocaleDateString(undefined, { month: 'short' });
+            lastMonth = m;
+          }
+        }
       }
     }
     return labels;

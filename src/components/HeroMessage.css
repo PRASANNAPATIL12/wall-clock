@@ -128,30 +128,34 @@
    class transitions the whole element to opacity:0. The glow signals
    "I'm done writing" and draws the eye to the ring at the same moment
    the onboarding hint appears. */
+/* Glow runs for 3200ms (absorbs the old 2600ms hold + 600ms extra).
+   One slow breath: text peaks at opacity 0.95 around the 30% mark then
+   gently settles. The onboarding hint appears at the same moment glow
+   starts, so the "look up at the ring" cue and the instruction arrive
+   together in one coherent moment. */
 .hero-msg.is-glowing .hero-msg__typed {
-  animation: hero-breathe 900ms ease-in-out;
+  animation: hero-breathe 3200ms ease-in-out;
 }
 .hero-msg.is-glowing .hero-msg__line {
-  animation: hero-breathe 900ms ease-in-out;
+  animation: hero-breathe 3200ms ease-in-out;
 }
 .hero-msg.is-glowing .hero-msg__line--2 {
-  animation: hero-breathe 900ms ease-in-out 80ms; /* slight cascade */
+  animation: hero-breathe 3200ms ease-in-out 80ms;
 }
 
 @keyframes hero-breathe {
   0%   { opacity: 0.65; }
-  45%  { opacity: 0.95; }  /* peak brightness — feels like a breath-in */
-  100% { opacity: 0.65; }  /* returns to base before fade takes over */
+  30%  { opacity: 0.95; }   /* peak — "I've finished writing" */
+  100% { opacity: 0.65; }   /* settle back before fade takes over */
 }
 
-/* The 'focus' word gets its own matching glow */
 .hero-msg.is-glowing .hero-focus {
-  animation: hero-focus-breathe 900ms ease-in-out;
+  animation: hero-focus-breathe 3200ms ease-in-out;
 }
 @keyframes hero-focus-breathe {
-  0%  { filter: brightness(1); }
-  45% { filter: brightness(1.25); }
-  100%{ filter: brightness(1); }
+  0%   { filter: brightness(1); }
+  30%  { filter: brightness(1.25); }
+  100% { filter: brightness(1); }
 }
 
 /* Skip animation for users who prefer reduced motion */
