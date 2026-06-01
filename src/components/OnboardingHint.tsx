@@ -1,11 +1,12 @@
 import { memo, useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { useOnboardingHint } from '../hooks/useOnboardingHint';
-import type { FocusState } from '../hooks/useFocusTrack';
+import type { HintKind } from '../hooks/useOnboardingHint';
 import './OnboardingHint.css';
 
+/** Props are now provided externally (hook is lifted to FocusRing). */
 interface Props {
-  state: FocusState;
+  visible: boolean;
+  hintKind: HintKind | null;
 }
 
 /**
@@ -156,8 +157,7 @@ function useFontReady(family: string): boolean {
   return ready;
 }
 
-export const OnboardingHint = memo(function OnboardingHint({ state }: Props) {
-  const { visible, hintKind } = useOnboardingHint(state);
+export const OnboardingHint = memo(function OnboardingHint({ visible, hintKind }: Props) {
   const [vp, setVp] = useState<Viewport>(readViewport);
   const fontReady = useFontReady('Caveat');
 

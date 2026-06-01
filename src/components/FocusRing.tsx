@@ -6,6 +6,7 @@ import { getZonedTime } from '../lib/timezones';
 import { tick as hapticTick, prepareHaptic, celebrate } from '../lib/haptic';
 import { saveSession } from '../lib/sessionStore';
 import { OnboardingHint } from './OnboardingHint';
+import { useOnboardingHint } from '../hooks/useOnboardingHint';
 import { TagPicker } from './TagPicker';
 import './FocusRing.css';
 
@@ -105,6 +106,12 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
   );
 
   const { state, handleClick, setDragEnd } = useFocusTrack(timezone, handleSessionEnd);
+
+  /* Onboarding hint — lifted here so FocusRing can add ring glow class.
+   * Anonymous (userId=null): hints show on every visit (alwaysShow=true).
+   * Logged-in: hints show only once (alwaysShow=false, localStorage used). */
+  const { visible: hintVisible, hintKind } = useOnboardingHint(state, userId === null);
+  const showingIdleHint = hintVisible && hintKind === 'idle';
 
   // Open the TagPicker exactly once per session, when click 2 just landed
   // (state becomes 'targeted' and we don't already have a tag). Closes
@@ -384,6 +391,7 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
     celebrating ? 'is-celebrating' : '',
     comet ? 'is-comet-playing' : '',
     dragging ? 'is-dragging-end' : '',
+    showingIdleHint ? 'is-hint-first' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -577,10 +585,8 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
         </div>
       )}
 
-      {/* Onboarding hint — whispers to first-time users that the ring is
-          interactive. Each state's hint shows at most once per user, then
-          never again. Independent of every other ring element. */}
-      <OnboardingHint state={state} />
+      {/* Onboarding hint — anonymous users see it every visit; logged-in once */}
+      <OnboardingHint visible={hintVisible} hintKind={hintKind} />
 
       {/* Tag picker — appears once after click-2 lands, only for signed-in users */}
       {tagPickerOpen && (

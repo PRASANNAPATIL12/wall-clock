@@ -155,21 +155,55 @@
 
 .stats-loading { font-size: 13px; color: var(--fg-muted); }
 
-/* Measure div — full width, invisible */
-.stats-heatmap-measure { width: 100%; }
+/* Measure div — full width, clips initial overflow before ResizeObserver fires */
+.stats-heatmap-measure { width: 100%; overflow: hidden; }
 
-/* Scroll container */
+/* Scroll container — only the graph area scrolls, never the cards or legend */
 .stats-heatmap-scroll {
-  overflow-x: visible;
+  overflow-x: clip;
   overflow-y: visible;
 }
 
 .stats-heatmap-scroll.is-scrollable {
   overflow-x: auto;
+  overflow-y: visible;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 .stats-heatmap-scroll.is-scrollable::-webkit-scrollbar { display: none; }
+
+/* =========================================================
+   Month-block layout (2M, 3M, 4M, 6M, 1Y)
+   ========================================================= */
+
+.stats-months-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  width: fit-content;
+}
+
+.stats-month-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Each month's cell grid — grid-template set via inline style */
+.stats-month-grid {
+  display: grid;
+}
+
+.stats-month-name {
+  font-size: 8.5px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  opacity: 0.65;
+  text-align: center;
+  user-select: none;
+  white-space: nowrap;
+}
 
 /* The grid itself */
 .stats-heatmap {

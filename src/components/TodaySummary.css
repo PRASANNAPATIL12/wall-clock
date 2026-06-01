@@ -1,48 +1,97 @@
-/* Bottom-center summary pill — fades like the other corner controls. */
+/* =========================================================================
+   TodaySummary pill — matches .pill from Controls.css exactly.
+   Hover: translateY(-1px) + glass-bg-hover, same as CoffeeLink / all pills.
+   ========================================================================= */
 
 .today-summary {
+  /* Positioning */
   position: fixed;
   bottom: 28px;
   left: 50%;
-  transform: translateX(-50%);
   z-index: 8;
+
+  /* Layout */
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   height: 32px;
   padding: 0 14px;
   border-radius: 999px;
+
+  /* Glass */
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
   backdrop-filter: blur(24px) saturate(160%);
   -webkit-backdrop-filter: blur(24px) saturate(160%);
-  gap: 6px;
+
+  /* Typography */
   color: var(--fg-muted);
   font-family: var(--font-display);
   font-size: 12.5px;
   font-weight: 500;
   letter-spacing: -0.005em;
+
   cursor: pointer;
+
+  /* Transition — match .pill exactly (320ms ease-apple for bg/transform, 600ms for idle fade) */
   transition:
-    color 250ms var(--ease-apple),
-    background-color 250ms var(--ease-apple),
-    opacity 600ms var(--ease-apple),
-    transform 600ms var(--ease-apple);
+    background-color 320ms var(--ease-apple),
+    color 320ms var(--ease-apple),
+    transform 320ms var(--ease-apple),
+    opacity 600ms var(--ease-apple);
 }
 
+/* Exact same hover as .pill in Controls.css */
 .today-summary:hover {
-  color: var(--fg);
   background: var(--glass-bg-hover);
+  transform: translateX(-50%) translateY(-1px);
+  color: var(--fg);
 }
 
+.today-summary:active {
+  transform: translateX(-50%) translateY(0) scale(0.985);
+  transition-duration: 120ms;
+}
+
+/* ---- Separator dot ---- */
 .today-summary__dot {
   width: 2px;
   height: 2px;
   border-radius: 50%;
-  background: var(--fg-muted);
+  background: currentColor;
+  opacity: 0.45;
   flex-shrink: 0;
 }
 
+/* ---- Glass tooltip — appears above the button on hover ---- */
+.today-summary__tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 9px;
+  border-radius: 7px;
+  background: var(--bg-tint-strong);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fg);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: today-tip-in 110ms var(--ease-apple);
+  z-index: 1;
+}
+
+@keyframes today-tip-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(3px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ---- Idle fade ---- */
 body.idle .today-summary {
   opacity: 0;
   transform: translateX(-50%) translateY(8px);
