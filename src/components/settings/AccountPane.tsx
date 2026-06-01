@@ -3,7 +3,11 @@ import type { User } from '@supabase/supabase-js';
 import { listAllSessions } from '../../lib/sessionStore';
 import { supabase } from '../../lib/supabase';
 
-interface Props { user: User }
+interface Props {
+  user: User;
+  /** Called when the user taps Sign out (passed down from SettingsDialog). */
+  onSignOut: () => Promise<void>;
+}
 
 /**
  * Account pane — shows identity, joined date, plus data tools:
@@ -13,7 +17,7 @@ interface Props { user: User }
  *                            Supabase dashboard if you ever need to —
  *                            client SDK has no admin permissions)
  */
-export function AccountPane({ user }: Props) {
+export function AccountPane({ user, onSignOut }: Props) {
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -104,6 +108,20 @@ export function AccountPane({ user }: Props) {
       </div>
 
       {msg && <p style={{ ...hintStyle, color: 'var(--fg)' }}>{msg}</p>}
+
+      {/* ---- Sign out ---- */}
+      <div style={{ ...section, marginTop: 28, borderTop: '1px solid var(--fg-faint)', paddingTop: 18 }}>
+        <div style={labelStyle}>Session</div>
+        <button
+          type="button"
+          onClick={onSignOut}
+          disabled={busy}
+          style={btnGhost}
+        >
+          Sign out
+        </button>
+        <p style={hintStyle}>Signs you out on this device. Your data stays in the cloud.</p>
+      </div>
     </div>
   );
 }

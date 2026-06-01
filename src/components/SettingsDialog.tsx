@@ -163,7 +163,7 @@ export function SettingsDialog({
           </nav>
 
           <section className="settings-pane" data-pane={pane}>
-            {pane === 'account' && <AccountPane user={user} />}
+            {pane === 'account' && <AccountPane user={user} onSignOut={onSignOut} />}
             {pane === 'history' && <HistoryPane user={user} refreshKey={refreshKey} />}
             {pane === 'stats'   && <StatsPane   user={user} refreshKey={refreshKey} />}
             {pane === 'tags'    && <TagsPane />}
@@ -172,16 +172,8 @@ export function SettingsDialog({
           </section>
         </div>
 
-        {/* Sign out button on mobile: footer below body, always visible */}
-        <div className="settings-footer-mobile">
-          <button
-            type="button"
-            className="settings-nav__signout settings-nav__signout--footer"
-            onClick={onSignOut}
-          >
-            Sign out
-          </button>
-        </div>
+        {/* Sign out is in the Account pane (accessible on all screen sizes).
+            The sidebar sign-out button remains on desktop for quick access. */}
       </div>
     </div>
   );

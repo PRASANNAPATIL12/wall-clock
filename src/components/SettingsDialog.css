@@ -283,22 +283,5 @@
   }
   .settings-header:active { cursor: grabbing; }
 
-  /* Footer: full-width sign-out button shown at bottom of sheet */
-  .settings-footer-mobile {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px 16px 16px;
-    border-top: 1px solid var(--fg-faint);
-    flex-shrink: 0;
-  }
-
-  /* Footer sign-out button */
-  .settings-nav__signout--footer {
-    margin: 0;
-    width: 100%;
-    height: 40px;
-    border-radius: 10px;
-    font-size: 13px;
-  }
+  /* Sign out is in the Account pane — no footer sign-out button on mobile. */
 }
