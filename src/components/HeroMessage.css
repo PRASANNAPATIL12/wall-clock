@@ -1,62 +1,129 @@
 /* =========================================================================
-   Hero message — typewriter intro for anonymous visitors.
-   Quiet, literary, light — not competing with the clock.
+   Hero message — SVG handwriting animation (stroke-dasharray technique).
+
+   How it works:
+     1. SVG <text> with Caveat font: the browser internally converts each
+        glyph into vector paths with fill + stroke.
+     2. We set fill-opacity:0 and apply a very large stroke-dasharray with
+        an equally large stroke-dashoffset → nothing visible initially.
+     3. CSS @keyframes animate stroke-dashoffset to 0 → the glyph contours
+        progressively appear, tracing the outline of each character.
+     4. Because Caveat is a thin connected-script font, the contour-trace
+        reads visually as a pen drawing the letters.
+     5. After stroke completes: fill-opacity fades in (ink settling),
+        stroke-opacity fades out (no longer needed).
+     6. Final state: clean filled text, no stroke.
+     7. Then the whole element fades out.
+
+   This is a real path-drawing animation — no typewriter, no character
+   reveal, no opacity trick. The browser is literally drawing the SVG
+   path data that defines each letter glyph.
    ========================================================================= */
 
+/* ---- Container ---- */
 .hero-msg {
   position: fixed;
-  /* Between the top controls (~28px) and the clock face.
-     Using top: max() ensures it clears the controls on all screen sizes. */
-  top: max(52px, 10vh);
+  /* Below the clock, above the bottom controls.
+     Anonymous users have no TodaySummary, so this area is clear. */
+  bottom: max(80px, 11vh);
   left: 0;
   right: 0;
-  text-align: center;
+  display: flex;
+  justify-content: center;
   pointer-events: none;
   z-index: 7;
-  /* Fade-out transition */
   opacity: 1;
-  transition: opacity 1500ms ease;
+  transition: opacity 1400ms ease;
 }
 
 .hero-msg.is-fading {
   opacity: 0;
 }
 
-.hero-msg__text {
-  /* Inter light italic — quiet, literary, matches the minimalist aesthetic.
-     No extra font import needed: Inter 300 italic is already loaded. */
-  font-family: var(--font-display);
-  font-size: clamp(13px, 1.5vw + 0.4vh, 17px);
-  font-weight: 300;
-  font-style: italic;
-  color: var(--fg-muted);
-  letter-spacing: 0.04em;
-  line-height: 1.6;
-  opacity: 0.75;
+/* ---- SVG canvas ---- */
+.hero-svg {
+  width: min(88vw, 520px);
+  height: auto;
+  overflow: visible;
 }
 
-/* Blinking insertion cursor during typing */
-.hero-msg__cursor {
-  display: inline;
-  margin-left: 1px;
-  opacity: 0;
-  animation: cursor-blink 0.75s step-end infinite;
-  font-style: normal;
-  font-weight: 300;
-  color: var(--fg-muted);
+/* ---- Text lines — shared base ----
+   The font: Caveat. Connected cursive, thin organic strokes, designed
+   for handwriting. Its glyph contours are close together (thin pen),
+   so the dashoffset trace reads as a single pen stroke, not as two
+   parallel outlines.
+
+   stroke-dasharray:3000 — larger than any reasonable text path length,
+   so the entire text is one "dash." stroke-dashoffset:3000 hides it
+   completely. Animating offset to 0 progressively reveals the stroke.
+*/
+.hero-line {
+  font-family: 'Caveat', 'Segoe Script', 'Bradley Hand', cursive;
+  font-size: 32px;
+  font-weight: 400;
+
+  /* Fill starts transparent — fades in after stroke drawing */
+  fill: var(--fg-muted);
+  fill-opacity: 0;
+
+  /* Stroke does the drawing */
+  stroke: var(--fg-muted);
+  stroke-width: 0.7;
+  stroke-opacity: 0.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  /* The dash trick */
+  stroke-dasharray: 3000;
+  stroke-dashoffset: 3000;
 }
 
-@keyframes cursor-blink {
-  0%,  100% { opacity: 0; }
-  50%       { opacity: 0.65; }
+/* ---- Line 1: "Not here for your attention." ----
+   Draws over 3.0s, fill begins at 2.6s. */
+.hero-line--1 {
+  animation:
+    hero-draw 3.0s cubic-bezier(0.22, 0.61, 0.36, 1) forwards,
+    hero-fill 1.0s ease 2.6s forwards;
 }
 
-/* On mobile portrait, move lower to clear the corner controls */
-@media (max-width: 640px) {
-  .hero-msg {
-    top: max(60px, 12vh);
+/* ---- Line 2: "Here for your focus." ----
+   Starts at 2.2s (while line 1 is still drawing — feels continuous).
+   Draws over 2.2s, fill begins at 3.8s. */
+.hero-line--2 {
+  animation:
+    hero-draw 2.2s cubic-bezier(0.22, 0.61, 0.36, 1) 2.2s forwards,
+    hero-fill 0.8s ease 3.8s forwards;
+}
+
+/* Stroke drawing: dashoffset → 0 reveals the glyph contours */
+@keyframes hero-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Fill settling: fill fades in, stroke fades out */
+@keyframes hero-fill {
+  to {
+    fill-opacity: 0.55;
+    stroke-opacity: 0;
   }
-  .hero-msg__text {
-    font-size: clamp(11.5px, 3.2vw, 14px);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 640px) {
+  .hero-svg {
+    width: min(94vw, 400px);
+  }
+  .hero-msg {
+    bottom: max(90px, 14vh);
+  }
+}
+
+/* ---- Reduced motion: skip animation, show final state ---- */
+@media (prefers-reduced-motion: reduce) {
+  .hero-line {
+    stroke-dashoffset: 0;
+    fill-opacity: 0.55;
+    stroke-opacity: 0;
+    animation: none;
   }
 }
