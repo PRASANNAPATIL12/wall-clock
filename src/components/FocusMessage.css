@@ -1,0 +1,43 @@
+/* =========================================================================
+   FocusMessage — subtle auto-fading label inside the clock face.
+
+   Position: centered horizontally at 63 % from the top of .analog.
+   This places it below the clock hands and pivot (~50 %), above the
+   6-o'clock numeral (~87 %), comfortably inside the face circle.
+
+   The text is deliberately quiet — not bold, very low opacity at peak —
+   so it never competes with the clock face. It reads as a whisper.
+   ========================================================================= */
+
+.focus-msg {
+  /* ---- Positioning: inside .analog (position:relative) ---- */
+  position: absolute;
+  left: 50%;
+  top: 63%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 3;                 /* above face numerals, below floating timer */
+  white-space: nowrap;
+  text-align: center;
+
+  /* ---- Typography ---- */
+  font-family: var(--font-display);
+  font-size: 11.5px;
+  font-weight: 300;           /* deliberately light — not assertive */
+  letter-spacing: 0.03em;
+  color: var(--fg-muted);
+
+  /* ---- Lifecycle animation ----
+     8 % = fade-in (≈ 8 % × duration ms)
+     75 % = hold at peak opacity
+     100 % = fade-out
+     Peak opacity is 0.52 — visible but never bold or demanding. */
+  animation: focus-msg-lifecycle linear both;
+}
+
+@keyframes focus-msg-lifecycle {
+  0%   { opacity: 0;    transform: translateX(-50%) translateY(5px); }
+  8%   { opacity: 0.52; transform: translateX(-50%) translateY(0);   }
+  72%  { opacity: 0.52; transform: translateX(-50%) translateY(0);   }
+  100% { opacity: 0;    transform: translateX(-50%) translateY(-3px); }
+}

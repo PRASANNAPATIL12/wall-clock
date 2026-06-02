@@ -13,6 +13,7 @@ import { TagIcon } from './TagIcon';
 import { getTag } from '../lib/tags';
 import { PlannedRingsLayer, RingsTooltipCard, type RingsTooltip } from './PlannedRingsLayer';
 import { useUpcomingPlanned } from '../hooks/usePlannedSessions';
+import { FocusMessage } from './FocusMessage';
 import './PlannedRings.css';
 import './FocusRing.css';
 
@@ -227,6 +228,59 @@ export const FocusRing = memo(function FocusRing({
   // Hover state for the end-drop tooltip (logged-in, tag selected)
   const [endDropHovered, setEndDropHovered] = useState(false);
 
+  // ---- Subtle in-face feedback messages --------------------------------
+  const [feedback, setFeedback] = useState<{ text: string; key: number; duration: number } | null>(null);
+  const feedbackTimerRef       = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** True once the first drag-start hint has been shown this session. */
+  const dragHintShownRef       = useRef(false);
+  /** True once the first drag-release message has been shown this session. */
+  const dragUpdateShownRef     = useRef(false);
+  /** Tracks tagPickerOpen previous value to detect close transition. */
+  const prevTagPickerOpenRef   = useRef(false);
+  /** Tracks state.kind previous value for transition detection. */
+  const prevStateKindForMsgRef = useRef(state.kind);
+
+  const showFeedback = useCallback((text: string, duration: number) => {
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    setFeedback({ text, key: Date.now(), duration });
+    // Unmount after animation completes (duration + 200ms buffer for fade-out)
+    feedbackTimerRef.current = setTimeout(() => setFeedback(null), duration + 200);
+  }, []);
+
+  // Message: Tracking started / Goal set / Session cleared
+  useEffect(() => {
+    const prev = prevStateKindForMsgRef.current;
+    prevStateKindForMsgRef.current = state.kind;
+
+    // Click 1: idle → tracking
+    if (prev === 'idle' && state.kind === 'tracking') {
+      showFeedback('Tracking started', 3000);
+    }
+
+    // Click 2: tracking → targeted (anonymous user: show goal immediately)
+    if (prev !== 'targeted' && state.kind === 'targeted' && !userIdRef.current) {
+      const mins = Math.round((state.end - state.start) / 60000);
+      if (mins > 0) showFeedback(`Goal set · ${mins} min`, 3500);
+    }
+
+    // Click 3: any → idle (session cleared)
+    if (prev !== 'idle' && state.kind === 'idle') {
+      showFeedback('Session cleared', 2000);
+    }
+  }, [state, showFeedback]);
+
+  // Message: Goal set (logged-in user) — fires when tag picker closes
+  useEffect(() => {
+    const wasOpen = prevTagPickerOpenRef.current;
+    prevTagPickerOpenRef.current = tagPickerOpen;
+
+    if (wasOpen && !tagPickerOpen && state.kind === 'targeted' && userIdRef.current) {
+      const mins = Math.round((state.end - state.start) / 60000);
+      if (mins > 0) showFeedback(`Goal set · ${mins} min`, 3500);
+    }
+  }, [tagPickerOpen, state, showFeedback]);
+  // -----------------------------------------------------------------------
+
   const data = useMemo(() => {
     if (state.kind === 'idle') {
       return {
@@ -389,6 +443,12 @@ export const FocusRing = memo(function FocusRing({
     lastDragMinuteRef.current = Math.floor(startAng / 6) % 60;
     setDragging(true);
 
+    // First drag start → hint message (only the very first time this session)
+    if (!dragHintShownRef.current) {
+      dragHintShownRef.current = true;
+      showFeedback('Drag to adjust end time', 3000);
+    }
+
     const pointerId = e.pointerId;
     const target = e.target as Element;
     try {
@@ -420,6 +480,11 @@ export const FocusRing = memo(function FocusRing({
         target.releasePointerCapture?.(pointerId);
       } catch {
         /* ignore */
+      }
+      // First drag release → "End time updated" (only once per session)
+      if (!dragUpdateShownRef.current) {
+        dragUpdateShownRef.current = true;
+        setTimeout(() => showFeedback('End time updated', 2500), 150);
       }
     };
 
@@ -658,6 +723,15 @@ export const FocusRing = memo(function FocusRing({
 
       {/* Onboarding hint — anonymous users see it every visit; logged-in once */}
       <OnboardingHint visible={hintVisible} hintKind={hintKind} />
+
+      {/* Subtle in-face feedback message — centered inside the clock face */}
+      {feedback && (
+        <FocusMessage
+          text={feedback.text}
+          duration={feedback.duration}
+          msgKey={feedback.key}
+        />
+      )}
 
       {/* Rings tooltip — glass pill above hovered segment */}
       {ringsTooltip && <RingsTooltipCard tooltip={ringsTooltip} />}
