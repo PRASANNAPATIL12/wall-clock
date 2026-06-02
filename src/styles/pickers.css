@@ -1,0 +1,75 @@
+/* =========================================================================
+   Shared picker popup styles — used by Date, Time, Duration, Activity pickers.
+   All pickers are rendered via createPortal → document.body so they escape
+   any ancestor stacking context.
+   ========================================================================= */
+
+/* ---- Transparent backdrop — catches outside clicks ---- */
+.picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 29;
+  background: transparent;
+  cursor: default;
+}
+
+/* ---- Popup card ---- */
+.picker-popup {
+  position: fixed;
+  z-index: 30;
+  background: var(--bg-tint-strong);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow:
+    var(--shadow-pop),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  font-family: var(--font-display);
+  color: var(--fg);
+  animation: picker-popup-in 220ms var(--ease-soft-spring) both;
+}
+
+@keyframes picker-popup-in {
+  from {
+    opacity: 0;
+    transform: scale(0.93) translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ---- Footer with Cancel / OK ---- */
+.picker-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--fg-faint);
+}
+
+.picker-btn {
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 9px;
+  border: none;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 150ms var(--ease-apple);
+  letter-spacing: -0.005em;
+}
+.picker-btn:hover { opacity: 0.8; }
+.picker-btn--ghost   { background: transparent; color: var(--fg-muted); }
+.picker-btn--primary { background: var(--fg); color: var(--bg-elev); }
+
+/* ---- Section divider ---- */
+.picker-divider {
+  height: 1px;
+  background: var(--fg-faint);
+  margin: 0;
+}
