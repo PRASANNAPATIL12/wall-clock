@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { PointerEvent } from 'react';
 import { useNow } from '../hooks/useNow';
 import { useFocusTrack, type FocusSessionEnd } from '../hooks/useFocusTrack';
@@ -10,6 +11,9 @@ import { useOnboardingHint } from '../hooks/useOnboardingHint';
 import { TagPicker } from './TagPicker';
 import { TagIcon } from './TagIcon';
 import { getTag } from '../lib/tags';
+import { PlannedRingsLayer, RingsTooltipCard, type RingsTooltip } from './PlannedRingsLayer';
+import { useUpcomingPlanned } from '../hooks/usePlannedSessions';
+import './PlannedRings.css';
 import './FocusRing.css';
 
 interface Props {
@@ -23,6 +27,12 @@ interface Props {
   onManageTags?: () => void;
   /** Extra ms to extend the first onboarding hint while the hero message types. */
   hintBoostMs?: number;
+  /** Bump to refresh upcoming planned sessions. */
+  planRefreshKey?: number;
+  /** When true, show the concentric day-ring visualization. */
+  schedulingViewOpen?: boolean;
+  /** Close the scheduling view (click-outside, etc.). */
+  onScheduleClose?: () => void;
 }
 
 /* viewBox geometry — all values in viewBox units (0..100). */
@@ -58,7 +68,16 @@ function fmt(ms: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
-export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSaved, onManageTags, hintBoostMs = 0 }: Props) {
+export const FocusRing = memo(function FocusRing({
+  timezone,
+  userId,
+  onSessionSaved,
+  onManageTags,
+  hintBoostMs = 0,
+  planRefreshKey = 0,
+  schedulingViewOpen = false,
+  onScheduleClose,
+}: Props) {
   const now = useNow('second');
   const svgRef = useRef<SVGSVGElement>(null);
   const endDropRef = useRef<SVGCircleElement>(null);
@@ -110,6 +129,30 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
   );
 
   const { state, handleClick, setDragEnd } = useFocusTrack(timezone, handleSessionEnd);
+
+  // Upcoming planned sessions (next 4 days) for the concentric rings view
+  const { byDay: plannedByDay } = useUpcomingPlanned(userId, planRefreshKey);
+
+  // Tooltip state for the rings view
+  const [ringsTooltip, setRingsTooltip] = useState<RingsTooltip | null>(null);
+
+  // Close scheduling view when user clicks anywhere outside the .analog container.
+  // The backdrop is pointer-events:none so it won't block ring hover events.
+  useEffect(() => {
+    if (!schedulingViewOpen) return;
+    const handle = (e: MouseEvent) => {
+      const analog = svgRef.current?.closest('.analog');
+      if (analog && analog.contains(e.target as Node)) return;
+      setRingsTooltip(null);
+      onScheduleClose?.();
+    };
+    // Small delay so this listener doesn't fire on the same click that opened the view
+    const t = window.setTimeout(() => document.addEventListener('click', handle), 50);
+    return () => {
+      window.clearTimeout(t);
+      document.removeEventListener('click', handle);
+    };
+  }, [schedulingViewOpen, onScheduleClose]);
 
   /* Onboarding hint — lifted here so FocusRing can add ring glow class.
    * Anonymous (userId=null): hints show on every visit (alwaysShow=true).
@@ -407,6 +450,13 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
 
   return (
     <>
+      {/* Backdrop — purely visual dim; pointer-events:none so it never
+          blocks hover/click on the ring arcs. Close-on-click-outside is
+          handled by the document listener above. */}
+      {schedulingViewOpen && (
+        <div className="rings-backdrop" style={{ pointerEvents: 'none' }} />
+      )}
+
       <svg
         ref={svgRef}
         className={ringClass}
@@ -424,6 +474,16 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
           strokeWidth={STROKE * 0.65}
           strokeDasharray="0.6 1.2"
         />
+
+        {/* Concentric day rings — shown when scheduling view is open */}
+        {schedulingViewOpen && (
+          <PlannedRingsLayer
+            sessionsByDay={plannedByDay}
+            C={C}
+            svgEl={svgRef.current}
+            onTooltip={setRingsTooltip}
+          />
+        )}
 
         {/* To-do ghost arc — pre-target only */}
         {data.end !== null && data.head !== null && !data.complete && (
@@ -599,6 +659,9 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
       {/* Onboarding hint — anonymous users see it every visit; logged-in once */}
       <OnboardingHint visible={hintVisible} hintKind={hintKind} />
 
+      {/* Rings tooltip — glass pill above hovered segment */}
+      {ringsTooltip && <RingsTooltipCard tooltip={ringsTooltip} />}
+
       {/* End-drop tag tooltip — shows selected session tag on hover */}
       {endDropHovered && userId && sessionTag && data.end !== null && svgRef.current && (() => {
         const rect = svgRef.current!.getBoundingClientRect();
@@ -615,8 +678,12 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
         );
       })()}
 
-      {/* Tag picker — appears once after click-2 lands, only for signed-in users */}
-      {tagPickerOpen && (
+      {/* Tag picker — rendered via portal to document.body so it escapes
+          any ancestor stacking context (mode-layer opacity transition
+          creates one, trapping z-index comparisons inside it). The portal
+          guarantees z-index 50 is evaluated in the root stacking context,
+          above ScheduleBadge (8) and TodaySummary (8) on all devices. */}
+      {tagPickerOpen && createPortal(
         <TagPicker
           endAngleDeg={data.end ?? undefined}
           onPick={(tag) => {
@@ -624,7 +691,8 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
             setTagPickerOpen(false);
           }}
           onManageTags={onManageTags}
-        />
+        />,
+        document.body,
       )}
     </>
   );

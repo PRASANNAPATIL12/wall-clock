@@ -2,7 +2,10 @@
 
 .tag-picker {
   position: fixed;
-  z-index: 8;
+  /* z-index 50 — above all controls (10), summary pills (8), and planned
+     ring backdrops (6/7). This is a one-time action element; it must
+     render above everything except auth/settings dialogs (90+). */
+  z-index: 50;
   display: flex;
   align-items: center;
   /* Note: no padding here — the inner scroll div has it */

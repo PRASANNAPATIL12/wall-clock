@@ -9,7 +9,7 @@
   -webkit-backdrop-filter: blur(10px) saturate(120%);
   display: grid;
   place-items: center;
-  padding: 16px;
+  padding: 20px;
   animation: settings-backdrop-in 300ms var(--ease-apple);
 }
 
@@ -21,9 +21,11 @@
 .settings-dialog {
   position: relative;
   width: 100%;
-  max-width: 760px;
+  /* Expanded to match a full settings window experience —
+     similar proportions to the Claude.ai settings dialog */
+  max-width: min(92vw, 960px);
   height: 100%;
-  max-height: 600px;
+  max-height: min(88vh, 720px);
   background: var(--bg-tint-strong);
   backdrop-filter: blur(40px) saturate(180%);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
@@ -51,14 +53,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 15px 18px;
+  padding: 18px 24px;
   border-bottom: 1px solid var(--fg-faint);
   flex-shrink: 0;
 }
 
 .settings-header h2 {
   margin: 0;
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 500;
   letter-spacing: -0.005em;
   color: var(--fg-muted);
@@ -67,8 +69,8 @@
 .settings-close {
   display: inline-grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 8px;
   background: none;
   border: none;
@@ -87,9 +89,9 @@
 
 /* ---- Sidebar nav ---- */
 .settings-nav {
-  width: 172px;
+  width: 200px;
   border-right: 1px solid var(--fg-faint);
-  padding: 10px 0;
+  padding: 14px 0 10px;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -106,13 +108,13 @@
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 8px 14px;
+  gap: 10px;
+  padding: 9px 16px;
   border: none;
   background: none;
   color: var(--fg-muted);
   font: inherit;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 400;
   cursor: pointer;
   text-align: left;
@@ -138,7 +140,7 @@
   display: inline-grid;
   place-items: center;
   flex-shrink: 0;
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
 .settings-nav__item.is-active .settings-nav__icon,
@@ -148,14 +150,14 @@
 
 /* ---- Sign out ---- */
 .settings-nav__signout {
-  margin: 10px 10px 4px;
-  height: 30px;
+  margin: 10px 12px 6px;
+  height: 32px;
   border-radius: 8px;
   background: none;
   border: 1px solid var(--fg-faint);
   color: var(--fg-muted);
   font: inherit;
-  font-size: 12px;
+  font-size: 12.5px;
   cursor: pointer;
   transition: color 150ms var(--ease-apple), border-color 150ms var(--ease-apple);
 }
@@ -167,7 +169,7 @@
 /* ---- Content pane ---- */
 .settings-pane {
   flex: 1;
-  padding: 22px 26px;
+  padding: 28px 32px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
@@ -176,19 +178,29 @@
 .settings-pane::-webkit-scrollbar { display: none; }
 
 .settings-pane h3 {
-  margin: 0 0 18px;
-  font-size: 15px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  margin: 0 0 20px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
 }
 
 .settings-pane[data-pane='stats'] { padding-bottom: 16px; }
+/* Plan pane uses its own internal layout — no outer padding scroll */
+.settings-pane[data-pane='plan'] {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
 
 /* ====================================================================
-   MOBILE: nav becomes horizontal tab bar
+   TABLET: nav becomes horizontal tab bar
    ==================================================================== */
 @media (max-width: 720px) {
-  .settings-dialog { max-height: 90vh; border-radius: 20px 20px 16px 16px; }
+  .settings-dialog {
+    max-height: 90vh;
+    border-radius: 20px 20px 16px 16px;
+  }
   .settings-body { flex-direction: column; }
 
   .settings-nav {
@@ -229,39 +241,33 @@
     border-bottom-color: var(--hand-second);
   }
 
-  /* Hide sign-out from the tab bar on mobile — shown in footer instead */
   .settings-nav__signout--sidebar { display: none; }
 
   .settings-pane { padding: 18px 16px; }
+  .settings-pane[data-pane='plan'] { padding: 0; }
 }
 
 /* ====================================================================
-   SMALL MOBILE (≤480px): bottom sheet — slides up from off-screen
+   SMALL MOBILE (≤480px): bottom sheet
    ==================================================================== */
 @media (max-width: 480px) {
   .settings-backdrop {
     padding: 0;
     align-items: flex-end;
-    /* Slightly lighter backdrop so the sheet feels lighter */
     background: rgba(0, 0, 0, 0.22);
   }
 
   .settings-dialog {
     border-radius: 24px 24px 0 0;
-    /* 70% height so the clock and controls remain visible behind */
     max-height: 70vh;
-    /* Override the desktop scale animation with a bottom-sheet slide */
     animation: settings-sheet-in 400ms cubic-bezier(0.32, 0.72, 0, 1) both;
   }
 
-  /* Slide up from below — fast start, decelerates smoothly into place.
-     cubic-bezier(0.32, 0.72, 0, 1) = Apple's standard sheet easing. */
   @keyframes settings-sheet-in {
     from { transform: translateY(100%); }
     to   { transform: translateY(0); }
   }
 
-  /* Drag handle pill — visible at top of header so user knows they can drag */
   .settings-drag-handle {
     display: block;
     position: absolute;
@@ -275,13 +281,10 @@
     pointer-events: none;
   }
 
-  /* Header: extra top padding to accommodate handle above, cursor tells user it's draggable */
   .settings-header {
     padding-top: 22px;
     cursor: grab;
     user-select: none;
   }
   .settings-header:active { cursor: grabbing; }
-
-  /* Sign out is in the Account pane — no footer sign-out button on mobile. */
 }

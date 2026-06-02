@@ -1,0 +1,95 @@
+/* =========================================================================
+   ScrollPicker — iOS-style haptic drum picker.
+   Centered item is selected; items above/below fade via CSS mask.
+   ========================================================================= */
+
+.scroll-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.scroll-picker__label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: 6px;
+}
+
+/* ---- Scrollable drum ---- */
+.scroll-picker__drum {
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scroll-snap-type: y mandatory;
+  /* Hide scrollbar on all browsers */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  /* Fade items into transparency at top/bottom */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 28%,
+    black 72%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 28%,
+    black 72%,
+    transparent 100%
+  );
+  /* Performance */
+  will-change: scroll-position;
+  position: relative;
+  z-index: 1;
+}
+.scroll-picker__drum::-webkit-scrollbar { display: none; }
+
+/* ---- Individual drum items ---- */
+.scroll-picker__item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--fg-muted);
+  transition: color 140ms var(--ease-apple), transform 140ms var(--ease-apple);
+  white-space: nowrap;
+}
+
+.scroll-picker__item.is-active {
+  color: var(--fg);
+  font-weight: 500;
+}
+
+/* ---- Center selection highlight ---- */
+.scroll-picker__selection {
+  position: absolute;
+  /* Vertically centered */
+  top: calc(50% - 44px / 2 + 18px); /* 18px = label space approx */
+  left: 6px;
+  right: 6px;
+  border-radius: 8px;
+  background: var(--fg-faint);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Nudge the selection down when there is no label */
+.scroll-picker:not(:has(.scroll-picker__label)) .scroll-picker__selection {
+  top: calc(50% - 44px / 2);
+}

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { AccountPane } from './settings/AccountPane';
 import { HistoryPane } from './settings/HistoryPane';
+import { PlanPane } from './settings/PlanPane';
 import { StatsPane } from './settings/StatsPane';
 import { TagsPane } from './settings/TagsPane';
 import { SoundsPane } from './settings/SoundsPane';
@@ -14,11 +15,14 @@ interface Props {
   onClose: () => void;
   onSignOut: () => Promise<void>;
   refreshKey?: number;
+  /** Increments after a planned session is saved — triggers clock ring refresh. */
+  onScheduleChanged?: () => void;
 }
 
 export type PaneKey =
   | 'account'
   | 'history'
+  | 'plan'
   | 'stats'
   | 'tags'
   | 'sounds'
@@ -56,6 +60,12 @@ const NAV: Array<{ key: PaneKey; label: string; iconPath: string }> = [
     iconPath: 'M12 2a10 10 0 1 0 10 10M12 6v6l4 2',
   },
   {
+    key: 'plan',
+    label: 'Plan',
+    // Calendar icon — schedule future sessions
+    iconPath: 'M3 4h18v18H3zM16 2v4M8 2v4M3 10h18',
+  },
+  {
     key: 'stats',
     label: 'Stats',
     iconPath: 'M18 20V10M12 20V4M6 20v-6',
@@ -83,6 +93,7 @@ export function SettingsDialog({
   onClose,
   onSignOut,
   refreshKey,
+  onScheduleChanged,
 }: Props) {
   const [pane, setPane] = useState<PaneKey>(initialPane);
 
@@ -165,6 +176,7 @@ export function SettingsDialog({
           <section className="settings-pane" data-pane={pane}>
             {pane === 'account' && <AccountPane user={user} onSignOut={onSignOut} />}
             {pane === 'history' && <HistoryPane user={user} refreshKey={refreshKey} />}
+            {pane === 'plan'    && <PlanPane    user={user} onScheduleChanged={onScheduleChanged} />}
             {pane === 'stats'   && <StatsPane   user={user} refreshKey={refreshKey} />}
             {pane === 'tags'    && <TagsPane />}
             {pane === 'sounds'  && <SoundsPane />}

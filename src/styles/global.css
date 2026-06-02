@@ -37,6 +37,11 @@
   --hand-shadow: rgba(26, 26, 26, 0.35);
   --hand-second-shadow: rgba(120, 20, 20, 0.35);
 
+  /* Planned-session arc on the clock ring — soft indigo, distinct from
+     the warm red/gold palette already in use. Reads as "future / scheduled". */
+  --plan-arc: rgba(99, 102, 241, 0.80);        /* indigo-500, full opacity */
+  --plan-arc-faint: rgba(99, 102, 241, 0.10);  /* very soft background */
+
   /* Focus-ring bonus tint — warm muted gold for "past target" mode.
      Distinct from the seconds-hand red so the eye reads it as celebration,
      not alert. Still subdued enough to keep the page calm. */
@@ -80,6 +85,10 @@
   --hand-second-soft: rgba(224, 70, 63, 0.9);
   --hand-shadow: rgba(0, 0, 0, 0.55);
   --hand-second-shadow: rgba(0, 0, 0, 0.5);
+
+  /* Planned-session arc — lighter indigo for dark backgrounds */
+  --plan-arc: rgba(129, 140, 248, 0.85);       /* indigo-400 */
+  --plan-arc-faint: rgba(129, 140, 248, 0.12);
 
   /* Focus-ring bonus tint — warm honey for dark mode */
   --bonus: #e6b85c;

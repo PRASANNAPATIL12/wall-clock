@@ -10,6 +10,9 @@ interface Props {
   onSessionSaved?: () => void;
   onManageTags?: () => void;
   hintBoostMs?: number;
+  planRefreshKey?: number;
+  schedulingViewOpen?: boolean;
+  onScheduleClose?: () => void;
 }
 
 const C = 50; // center of 100x100 viewbox
@@ -66,7 +69,7 @@ const Numerals = memo(function Numerals({ currentHour }: { currentHour: number }
   return <g>{nums}</g>;
 });
 
-export const AnalogClock = memo(function AnalogClock({ timezone, userId, onSessionSaved, onManageTags, hintBoostMs }: Props) {
+export const AnalogClock = memo(function AnalogClock({ timezone, userId, onSessionSaved, onManageTags, hintBoostMs, planRefreshKey, schedulingViewOpen, onScheduleClose }: Props) {
   const now = useNow('frame');
   const { hours, minutes, seconds, ms } = useMemo(
     () => getZonedTime(now, timezone),
@@ -80,8 +83,19 @@ export const AnalogClock = memo(function AnalogClock({ timezone, userId, onSessi
   const currentHour = hours % 12 === 0 ? 12 : hours % 12;
 
   return (
-    <div className="analog">
-      <FocusRing timezone={timezone} userId={userId} onSessionSaved={onSessionSaved} onManageTags={onManageTags} hintBoostMs={hintBoostMs} />
+    /* rings-open elevates the clock above the rings backdrop (z-index:6),
+       so SVG ring arcs receive pointer events even when backdrop is rendered */
+    <div className={`analog${schedulingViewOpen ? ' rings-open' : ''}`}>
+      <FocusRing
+        timezone={timezone}
+        userId={userId}
+        onSessionSaved={onSessionSaved}
+        onManageTags={onManageTags}
+        hintBoostMs={hintBoostMs}
+        planRefreshKey={planRefreshKey}
+        schedulingViewOpen={schedulingViewOpen}
+        onScheduleClose={onScheduleClose}
+      />
       <div className="analog__face" aria-hidden>
         <svg className="analog__dial" viewBox="0 0 100 100" role="img" aria-label="Analog clock face">
           <Ticks />
