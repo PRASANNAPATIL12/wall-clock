@@ -10,6 +10,8 @@ import { useOnboardingHint } from '../hooks/useOnboardingHint';
 import { TagPicker } from './TagPicker';
 import { TagIcon } from './TagIcon';
 import { getTag } from '../lib/tags';
+import { PlannedArcs } from './PlannedArcs';
+import { useTodayPlanned } from '../hooks/usePlannedSessions';
 import './FocusRing.css';
 
 interface Props {
@@ -23,6 +25,8 @@ interface Props {
   onManageTags?: () => void;
   /** Extra ms to extend the first onboarding hint while the hero message types. */
   hintBoostMs?: number;
+  /** Bump to refresh today's planned session arcs on the ring. */
+  planRefreshKey?: number;
 }
 
 /* viewBox geometry — all values in viewBox units (0..100). */
@@ -58,7 +62,7 @@ function fmt(ms: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
-export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSaved, onManageTags, hintBoostMs = 0 }: Props) {
+export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSaved, onManageTags, hintBoostMs = 0, planRefreshKey = 0 }: Props) {
   const now = useNow('second');
   const svgRef = useRef<SVGSVGElement>(null);
   const endDropRef = useRef<SVGCircleElement>(null);
@@ -110,6 +114,9 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
   );
 
   const { state, handleClick, setDragEnd } = useFocusTrack(timezone, handleSessionEnd);
+
+  // Today's planned sessions — visualised as indigo arc segments on the ring
+  const plannedSessions = useTodayPlanned(userId, planRefreshKey);
 
   /* Onboarding hint — lifted here so FocusRing can add ring glow class.
    * Anonymous (userId=null): hints show on every visit (alwaysShow=true).
@@ -423,6 +430,14 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
           className="track"
           strokeWidth={STROKE * 0.65}
           strokeDasharray="0.6 1.2"
+        />
+
+        {/* Planned session arcs — indigo marks outside the ring, visible on hover */}
+        <PlannedArcs
+          sessions={plannedSessions}
+          ringR={RING_R}
+          C={C}
+          svgEl={svgRef.current}
         />
 
         {/* To-do ghost arc — pre-target only */}

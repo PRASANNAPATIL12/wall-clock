@@ -44,10 +44,13 @@ export default function App() {
     setSettingsInitialPane(pane);
     setSettingsOpen(true);
   };
-  // Increments after every Supabase session save — child hooks subscribe
-  // to it to refetch their data. (Avoids prop-drilling refetch callbacks.)
+  // Increments after every focus session save — triggers stats/history refetch.
   const [sessionSavedTick, setSessionSavedTick] = useState(0);
   const handleSessionSaved = () => setSessionSavedTick((n) => n + 1);
+
+  // Increments after a planned session is saved — triggers ring arc refresh.
+  const [planRefreshKey, setPlanRefreshKey] = useState(0);
+  const handleScheduleChanged = () => setPlanRefreshKey((n) => n + 1);
 
   const todayStats = useTodayStats(auth.user?.id ?? null, tz, sessionSavedTick);
 
@@ -78,6 +81,7 @@ export default function App() {
             onSessionSaved={handleSessionSaved}
             onManageTags={() => openSettings('tags')}
             hintBoostMs={hintBoostMs}
+            planRefreshKey={planRefreshKey}
           />
         </div>
         <div className={`mode-layer ${!isAnalog ? 'is-in' : 'is-out-down'}`} aria-hidden={isAnalog}>
@@ -137,6 +141,7 @@ export default function App() {
           user={auth.user}
           initialPane={settingsInitialPane}
           refreshKey={sessionSavedTick}
+          onScheduleChanged={handleScheduleChanged}
           onClose={() => setSettingsOpen(false)}
           onSignOut={async () => {
             await auth.signOut();

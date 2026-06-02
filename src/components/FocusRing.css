@@ -405,6 +405,84 @@ body.idle .focus-ring .track {
   to   { opacity: 1; transform: translate(-50%, calc(-100% - 10px)); }
 }
 
+/* ---- Planned session arcs on the ring ---- */
+
+/* The <g> container hides at rest, reveals on analog hover — same as .track */
+.planned-arcs {
+  opacity: 0;
+  transition: opacity 320ms var(--ease-apple);
+  pointer-events: none;
+}
+
+.analog:hover .planned-arcs {
+  opacity: 1;
+}
+
+body.idle .planned-arcs { opacity: 0; }
+
+/* Individual arc strokes */
+.planned-arc {
+  stroke: var(--plan-arc);
+  pointer-events: stroke; /* only the stroke catches events */
+  transition:
+    stroke-width 200ms var(--ease-apple),
+    opacity 200ms var(--ease-apple),
+    filter 200ms var(--ease-apple);
+  cursor: default;
+}
+
+.planned-arc:hover {
+  stroke-width: 3.5 !important;
+  filter: drop-shadow(0 0 1.2px var(--plan-arc));
+}
+
+/* Planned arc glass tooltip — same glass language as end-drop tooltip */
+.planned-arc-tooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 8px));
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: var(--bg-tint-strong);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: none;
+  z-index: 9;
+  white-space: nowrap;
+  animation: plan-tip-in 120ms var(--ease-apple);
+}
+
+@keyframes plan-tip-in {
+  from { opacity: 0; transform: translate(-50%, calc(-94% - 8px)); }
+  to   { opacity: 1; transform: translate(-50%, calc(-100% - 8px)); }
+}
+
+.planned-arc-tooltip__row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg);
+  font-family: var(--font-display);
+}
+
+.planned-arc-tooltip__icon {
+  color: var(--plan-arc);
+}
+
+.planned-arc-tooltip__label { }
+
+.planned-arc-tooltip__time {
+  font-size: 10.5px;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .focus-ring .track,
   .focus-ring .progress,
