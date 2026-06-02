@@ -21,15 +21,13 @@
   to   { opacity: 1; }
 }
 
-/* ---- Layer entrance — spring scale from clock center ---- */
-.planned-rings-layer {
-  animation: rings-layer-in 360ms var(--ease-soft-spring) both;
-}
-
-@keyframes rings-layer-in {
-  from { opacity: 0; transform: scale(0.88); }
-  to   { opacity: 1; transform: scale(1); }
-}
+/* ---- Layer: no layer-wide animation ----
+   Previously this had a scale(0.88→1) animation over 360ms. Removed
+   because it compounded with each ring's own ring-day-in animation:
+   rings entering before 360ms experienced BOTH transforms simultaneously
+   (compound scale) while rings entering after 360ms only got their own
+   transform — visually inconsistent. Now each ring is self-contained. */
+.planned-rings-layer { /* no animation — each ring animates independently */ }
 
 /* ---- Day ring stagger ----
    Every ring gets its own scale(0.93→1) from the clock center so the

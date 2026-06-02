@@ -207,16 +207,18 @@ function ArcSegment({ session, r, C, svgEl, onTooltip, tappedId, onTap, animDela
         <path
           d={d}
           fill="none"
-          stroke={color}
-          strokeWidth={isActive ? RING_STROKE + 0.9 : RING_STROKE}
-          strokeOpacity={isActive ? 1 : 0.80}
           strokeLinecap="round"
-          /* pathLength="1000" normalises the path so strokeDasharray/Offset
-             of 1000 always means "the whole path length", regardless of the
-             actual SVG geometric length. Ensures the draw-in animation works
-             identically on every ring, inner or outer. */
           pathLength={1000}
           style={{
+            /* stroke, strokeWidth, strokeOpacity are set here as CSS properties
+               (not SVG attributes) so CSS transitions fire reliably on ALL rings,
+               including outer rings that extend beyond the SVG viewport.
+               CSS transitions only animate CSS properties, NOT SVG presentation
+               attributes — mixing the two causes outer rings to snap instead
+               of transition. */
+            stroke:        color,
+            strokeWidth:   isActive ? RING_STROKE + 0.9 : RING_STROKE,
+            strokeOpacity: isActive ? 1 : 0.80,
             strokeDasharray:  1000,
             strokeDashoffset: 1000,
             animation: `ring-arc-draw 580ms cubic-bezier(0.22,0.61,0.36,1) ${animDelay}ms both`,
@@ -262,7 +264,9 @@ export function PlannedRingsLayer({ sessionsByDay, C, svgEl, onTooltip }: LayerP
           <g
             key={date}
             className="planned-ring-day"
-            style={{ animationDelay: `${dayIdx * 65}ms`, pointerEvents: 'all' }}
+            /* 40ms stagger (was 65ms) — rings enter closer together
+               so outer rings don't lag noticeably behind inner ones */
+            style={{ animationDelay: `${dayIdx * 40}ms`, pointerEvents: 'all' }}
           >
             {/* Ghost track — dotted circle marking the day ring boundary */}
             <circle
@@ -285,7 +289,7 @@ export function PlannedRingsLayer({ sessionsByDay, C, svgEl, onTooltip }: LayerP
                 onTooltip={onTooltip}
                 tappedId={tappedId}
                 onTap={setTappedId}
-                animDelay={dayIdx * 65 + sIdx * 40 + 80}
+                animDelay={dayIdx * 40 + sIdx * 35 + 60}
               />
             ))}
           </g>
