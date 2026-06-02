@@ -9,9 +9,14 @@ function dateOffsetLocal(daysAhead: number): string {
 }
 
 /**
- * Fetches the next 4 days of non-completed planned sessions, grouped
- * by date. Returns a stable Map<'YYYY-MM-DD', PlannedSession[]>.
- * Used by PlannedRingsLayer for the concentric ring visualization.
+ * Fetches ALL non-completed planned sessions up to 60 days ahead,
+ * grouped by date. Only dates that actually have sessions appear in
+ * the Map — so if the user planned days 4, 5, 7, 9 (skipping 6, 8),
+ * the Map has exactly 4 entries and the ring layer shows exactly
+ * 4 concentric rings.
+ *
+ * Used by PlannedRingsLayer for the concentric ring visualization
+ * and by ScheduleBadge for the session count.
  */
 export function useUpcomingPlanned(
   userId: string | null,
@@ -23,7 +28,8 @@ export function useUpcomingPlanned(
     if (!userId) { setByDay(new Map()); return; }
     let cancelled = false;
 
-    listPlannedSessions(userId, todayLocalDate(), dateOffsetLocal(3))
+    // Fetch up to 60 days ahead so all upcoming plans are covered
+    listPlannedSessions(userId, todayLocalDate(), dateOffsetLocal(60))
       .then(rows => {
         if (cancelled) return;
         const m = new Map<string, PlannedSession[]>();

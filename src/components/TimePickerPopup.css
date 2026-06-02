@@ -1,0 +1,92 @@
+/* ---- Time preview (large digital display) ---- */
+.time-picker__preview {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 18px 14px;
+}
+
+.time-picker__digit {
+  font-size: 40px;
+  font-weight: 300;
+  font-family: var(--font-mono);
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  background: var(--fg-faint);
+  border-radius: 10px;
+  padding: 4px 10px;
+  min-width: 60px;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.time-picker__colon {
+  font-size: 36px;
+  font-weight: 300;
+  font-family: var(--font-mono);
+  color: var(--fg-muted);
+  margin: 0 2px;
+  line-height: 1;
+  align-self: center;
+}
+
+/* AM/PM stacked buttons */
+.time-picker__period {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+.time-picker__period-btn {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 140ms var(--ease-apple), color 140ms var(--ease-apple);
+}
+.time-picker__period-btn:hover { background: var(--fg-faint); color: var(--fg); }
+.time-picker__period-btn.is-active {
+  background: var(--plan-arc);
+  border-color: var(--plan-arc);
+  color: white;
+  font-weight: 600;
+}
+
+/* ---- Scroll drums ---- */
+.time-picker__drums {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px 4px;
+  gap: 0;
+}
+
+.time-picker__drum-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.time-picker__drum-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.time-picker__drum-sep {
+  width: 1px;
+  height: 160px;
+  background: var(--fg-faint);
+  flex-shrink: 0;
+  margin: 20px 6px 0;
+}

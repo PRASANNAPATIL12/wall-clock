@@ -234,7 +234,11 @@ interface LayerProps {
 
 export function PlannedRingsLayer({ sessionsByDay, C, svgEl, onTooltip }: LayerProps) {
   const [tappedId, setTappedId] = useState<string | null>(null);
-  const days = Array.from(sessionsByDay.keys()).sort().slice(0, 4);
+  // Show ALL planned days — only dates that have sessions appear in the Map.
+  // If the user planned days 4, 5, 7, 9 (skipping 6 and 8), only those
+  // 4 days are in the Map so exactly 4 rings render. No artificial cap.
+  // Sorted chronologically so the nearest day is the innermost ring.
+  const days = Array.from(sessionsByDay.keys()).sort();
   if (days.length === 0) return null;
 
   return (

@@ -176,7 +176,7 @@ export function SettingsDialog({
           <section className="settings-pane" data-pane={pane}>
             {pane === 'account' && <AccountPane user={user} onSignOut={onSignOut} />}
             {pane === 'history' && <HistoryPane user={user} refreshKey={refreshKey} />}
-            {pane === 'plan'    && <PlanPane    user={user} onScheduleChanged={onScheduleChanged} />}
+            {pane === 'plan'    && <PlanPane    user={user} onScheduleChanged={onScheduleChanged} onManageTags={() => setPane('tags')} />}
             {pane === 'stats'   && <StatsPane   user={user} refreshKey={refreshKey} />}
             {pane === 'tags'    && <TagsPane />}
             {pane === 'sounds'  && <SoundsPane />}

@@ -1,5 +1,5 @@
 /* =========================================================================
-   PlanPane — two-column layout on desktop, stacked on mobile.
+   PlanPane — two-column layout with compact field buttons.
 
    Desktop (>720px):
      [  Add Focus Block form  |  Scheduled history  ]
@@ -24,7 +24,6 @@
   overflow: hidden;
 }
 
-/* ---- Column base ---- */
 .plan-col {
   display: flex;
   flex-direction: column;
@@ -36,7 +35,7 @@
 .plan-col--history { flex: 1; }
 
 .plan-col__header {
-  padding: 22px 24px 14px;
+  padding: 22px 24px 12px;
   flex-shrink: 0;
 }
 
@@ -54,7 +53,7 @@
   line-height: 1.4;
 }
 
-/* ---- Vertical divider between columns ---- */
+/* ---- Vertical divider ---- */
 .plan-col-divider {
   width: 1px;
   background: var(--fg-faint);
@@ -62,94 +61,119 @@
   align-self: stretch;
 }
 
-/* ---- Add form (left column body) ---- */
+/* ---- Add form body ---- */
 .plan-form {
   flex: 1;
   overflow-y: auto;
-  padding: 0 24px 24px;
+  padding: 0 20px 20px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  min-height: 0;
 }
 .plan-form::-webkit-scrollbar { display: none; }
 
-/* ---- Three scroll pickers ---- */
-.plan-pickers {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-  background: var(--fg-faint);
-  border-radius: 12px;
-  overflow: hidden;
-  height: 200px;
-}
+/* ---- Timeline section label ---- */
+.plan-section { display: flex; flex-direction: column; gap: 6px; }
 
-.plan-pickers__sep {
-  width: 1px;
-  background: var(--glass-border);
-  flex-shrink: 0;
-  align-self: stretch;
-  margin: 10px 0;
-}
-
-/* ---- Activity vertical list ---- */
-.plan-activities {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.plan-activities__label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+.plan-section__label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--fg-muted);
+  opacity: 0.7;
 }
 
-.plan-activities__list {
-  max-height: 160px;
-  overflow-y: auto;
-  border-radius: 10px;
-  background: var(--fg-faint);
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+/* ---- Row for date + time ---- */
+.plan-field-row {
+  display: flex;
+  gap: 8px;
 }
-.plan-activities__list::-webkit-scrollbar { display: none; }
 
-.plan-activity-row {
+/* ========================================================
+   Field button — compact pill that opens a picker popup
+   ======================================================== */
+.plan-field-btn {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 8px 12px;
-  border: none;
-  background: transparent;
-  color: var(--fg-muted);
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 11px;
+  background: var(--fg-faint);
+  border: 1px solid transparent;
+  color: var(--fg);
   font-family: var(--font-display);
-  font-size: 13px;
-  text-align: left;
   cursor: pointer;
-  border-bottom: 1px solid var(--fg-faint);
-  transition: background-color 130ms var(--ease-apple), color 130ms var(--ease-apple);
+  transition:
+    background-color 160ms var(--ease-apple),
+    border-color 160ms var(--ease-apple),
+    box-shadow 160ms var(--ease-apple);
+  text-align: left;
+  overflow: hidden;
 }
-.plan-activity-row:last-child { border-bottom: none; }
-.plan-activity-row:hover { background: var(--glass-bg-hover); color: var(--fg); }
-.plan-activity-row.is-selected { color: var(--fg); font-weight: 500; }
 
-.plan-activity-row__icon {
+.plan-field-btn:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border);
+}
+
+.plan-field-btn.is-open {
+  background: var(--glass-bg-hover);
+  border-color: var(--plan-arc);
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
+}
+
+.plan-field-btn--wide { flex: none; width: 100%; }
+
+.plan-field-btn__icon {
   display: inline-grid;
   place-items: center;
-  width: 26px; height: 26px;
-  border-radius: 7px;
-  background: var(--fg-faint);
+  color: var(--fg-muted);
   flex-shrink: 0;
 }
-.plan-activity-row.is-selected .plan-activity-row__icon { background: var(--plan-arc-faint); }
-.plan-activity-row__label { flex: 1; }
-.plan-activity-row__check { color: var(--plan-arc); flex-shrink: 0; }
+
+.plan-field-btn__label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  flex-shrink: 0;
+}
+
+.plan-field-btn__value {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-left: 2px;
+}
+
+.plan-field-btn__chevron {
+  flex-shrink: 0;
+  color: var(--fg-muted);
+  transition: transform 200ms var(--ease-apple);
+}
+
+.plan-field-btn.is-open .plan-field-btn__chevron {
+  transform: rotate(180deg);
+}
+
+/* ---- Footer: toggle + save ---- */
+.plan-form__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
 
 /* ---- Calendar toggle ---- */
 .plan-toggle-row {
@@ -163,11 +187,10 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--fg-muted);
 }
 
-/* Premium glass toggle */
 .plan-toggle {
   position: relative;
   width: 42px; height: 24px;
@@ -178,7 +201,7 @@
   transition: background-color 260ms var(--ease-apple);
   flex-shrink: 0;
 }
-.plan-toggle.is-on { background: var(--plan-arc); }
+.plan-toggle.is-on { background: var(--plan-arc); border-color: var(--plan-arc); }
 .plan-toggle__thumb {
   position: absolute;
   top: 3px; left: 3px;
@@ -203,21 +226,21 @@
   cursor: pointer;
   transition: opacity 200ms var(--ease-apple);
   letter-spacing: -0.005em;
-  flex-shrink: 0;
 }
 .plan-save:hover:not(:disabled) { opacity: 0.85; }
 .plan-save:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ---- History column (right) ---- */
+/* ---- History column ---- */
 .plan-history {
   flex: 1;
   overflow-y: auto;
-  padding: 0 24px 24px;
+  padding: 0 20px 20px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  min-height: 0;
 }
 .plan-history::-webkit-scrollbar { display: none; }
 
@@ -226,20 +249,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   flex: 1;
   min-height: 120px;
   color: var(--fg-muted);
-  opacity: 0.5;
 }
+.plan-history__empty p { margin:0; font-size:12.5px; text-align:center; line-height:1.5; }
 
-.plan-history__empty p {
-  margin: 0;
-  font-size: 13px;
-  text-align: center;
-}
-
-/* ---- Session list ---- */
 .plan-list__group { display: flex; flex-direction: column; gap: 6px; }
 
 .plan-list__date {
@@ -272,70 +288,31 @@
   flex-shrink: 0;
 }
 
-.plan-card__info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
+.plan-card__info { flex:1; display:flex; flex-direction:column; gap:1px; min-width:0; }
+.plan-card__tag  { font-size:13px; font-weight:500; color:var(--fg); line-height:1.2; }
+.plan-card__time { font-size:11.5px; color:var(--fg-muted); font-family:var(--font-mono); }
 
-.plan-card__tag {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--fg);
-  line-height: 1.2;
-}
-
-.plan-card__time {
-  font-size: 11.5px;
-  color: var(--fg-muted);
-  font-family: var(--font-mono);
-}
-
-.plan-card__cal {
-  display: inline-grid;
-  place-items: center;
-  color: var(--plan-arc);
-  opacity: 0.7;
-}
+.plan-card__cal  { display:inline-grid; place-items:center; color:var(--plan-arc); opacity:0.7; }
 
 .plan-card__delete {
-  display: inline-grid;
-  place-items: center;
-  width: 24px; height: 24px;
-  border-radius: 6px;
-  background: transparent;
-  border: none;
-  color: var(--fg-muted);
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 120ms var(--ease-apple), background-color 120ms var(--ease-apple);
+  display:inline-grid; place-items:center;
+  width:24px; height:24px; border-radius:6px;
+  background:transparent; border:none; color:var(--fg-muted); cursor:pointer;
+  opacity:0; transition: opacity 120ms var(--ease-apple), background-color 120ms var(--ease-apple);
 }
-.plan-card:hover .plan-card__delete { opacity: 1; }
-.plan-card__delete:hover { background: var(--fg-faint); color: var(--hand-second); }
+.plan-card:hover .plan-card__delete { opacity:1; }
+.plan-card__delete:hover { background:var(--fg-faint); color:var(--hand-second); }
 
 /* ====================================================================
    MOBILE: stack columns vertically
    ==================================================================== */
 @media (max-width: 720px) {
-  .plan-columns {
-    flex-direction: column;
-    overflow-y: auto;
-  }
-
-  .plan-col--form    { flex: none; }
-  .plan-col--history { flex: none; min-height: 200px; }
-
-  .plan-col-divider {
-    width: auto;
-    height: 1px;
-    align-self: auto;
-    margin: 0 20px;
-  }
-
+  .plan-columns { flex-direction: column; overflow-y: auto; }
+  .plan-col-divider { width: 100%; height: 1px; align-self: auto; }
+  .plan-col--form, .plan-col--history { flex: none; }
   .plan-col__header { padding: 16px 16px 10px; }
   .plan-form { padding: 0 16px 16px; }
-  .plan-history { padding: 0 16px 16px; flex: none; }
-  .plan-pickers { height: 176px; }
+  .plan-history { padding: 0 16px 16px; }
+  .plan-field-row { flex-direction: column; }
+  .plan-field-btn { flex: none; width: 100%; }
 }
