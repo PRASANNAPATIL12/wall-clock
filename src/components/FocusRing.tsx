@@ -267,11 +267,16 @@ export const FocusRing = memo(function FocusRing({
     showFeedback(goalMsg, 3500);
 
     const t1 = setTimeout(() => {
-      showFeedback('Drag to adjust end time', 3000);
+      // Only show drag hint if the user hasn't already dragged.
+      // If they dragged within the first 4s, they already know how — don't
+      // tell them to do something they just finished doing.
+      if (!dragUpdateShownRef.current) {
+        showFeedback('Drag to adjust end time', 3000);
+      }
 
       const t2 = setTimeout(() => {
         showFeedback('Click once more to clear', 3000);
-      }, 3500); // 0.5 s gap after drag hint ends
+      }, dragUpdateShownRef.current ? 500 : 3500); // shorter gap if drag hint was skipped
       hintSeqTimersRef.current.push(t2);
     }, 4000); // 0.5 s gap after goal msg ends
     hintSeqTimersRef.current.push(t1);

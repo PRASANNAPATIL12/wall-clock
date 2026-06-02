@@ -211,6 +211,11 @@ function ArcSegment({ session, r, C, svgEl, onTooltip, tappedId, onTap, animDela
           strokeWidth={isActive ? RING_STROKE + 0.9 : RING_STROKE}
           strokeOpacity={isActive ? 1 : 0.80}
           strokeLinecap="round"
+          /* pathLength="1000" normalises the path so strokeDasharray/Offset
+             of 1000 always means "the whole path length", regardless of the
+             actual SVG geometric length. Ensures the draw-in animation works
+             identically on every ring, inner or outer. */
+          pathLength={1000}
           style={{
             strokeDasharray:  1000,
             strokeDashoffset: 1000,

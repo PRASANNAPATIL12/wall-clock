@@ -31,15 +31,23 @@
   to   { opacity: 1; transform: scale(1); }
 }
 
-/* ---- Day ring stagger ---- */
+/* ---- Day ring stagger ----
+   Every ring gets its own scale(0.93→1) from the clock center so the
+   entrance effect is IDENTICAL for ring 1, ring 5, ring 10 — regardless
+   of when each one enters relative to the layer-wide animation.
+
+   transform-box:view-box + transform-origin:50% 50% anchors the scale
+   to the SVG viewBox center (50,50 = clock center). */
 .planned-ring-day {
   opacity: 0;
-  animation: ring-day-in 400ms var(--ease-apple) both;
+  animation: ring-day-in 420ms var(--ease-soft-spring) both;
+  transform-box: view-box;
+  transform-origin: 50% 50%;
 }
 
 @keyframes ring-day-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from { opacity: 0; transform: scale(0.93); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 /* ---- Arc draw-in (stroke-dashoffset trick) ---- */
