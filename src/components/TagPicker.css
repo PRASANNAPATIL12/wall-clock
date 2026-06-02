@@ -2,7 +2,9 @@
 
 .tag-picker {
   position: fixed;
-  z-index: 8;
+  /* z-index 15 — above all corner controls (10) and summary pills (8)
+     so the picker is always the topmost interactive element on screen */
+  z-index: 15;
   display: flex;
   align-items: center;
   /* Note: no padding here — the inner scroll div has it */

@@ -6,6 +6,12 @@
   place-items: center;
 }
 
+/* When concentric rings are open, elevate the clock above the backdrop
+   (z-index:6) so SVG ring arcs receive pointer events. */
+.analog.rings-open {
+  z-index: 7;
+}
+
 .analog__face {
   position: relative;
   width: 87%;

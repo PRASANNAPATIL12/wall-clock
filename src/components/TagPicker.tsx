@@ -37,6 +37,24 @@ function computePickerStyle(endAngleDeg: number | undefined): React.CSSPropertie
   const PW = 320;
   const PH = 46;
   const MARGIN = 14;
+
+  // Bottom-zone guard: if the picker would land within 110px of the screen
+  // bottom (where controls live at ~80–90px), redirect to a side placement.
+  // Angles 110°–250° cover the 4-o'clock to 8-o'clock arc of the clock face.
+  const BOTTOM_SAFE = 110;
+  const isBottomZone = py + PH / 2 > vh - BOTTOM_SAFE;
+
+  if (isBottomZone) {
+    // Endpoint in right-bottom (90°–180°) → place picker to the RIGHT
+    // Endpoint in left-bottom  (180°–270°) → place picker to the LEFT
+    const isRightSide = endAngleDeg <= 180;
+    const sideLeft = isRightSide
+      ? Math.min(vw - PW - MARGIN, cx + clockR + PADDING)          // right of clock
+      : Math.max(MARGIN,           cx - clockR - PADDING - PW);     // left of clock
+    const sideTop = Math.max(MARGIN, Math.min(vh - PH - BOTTOM_SAFE, cy - PH / 2));
+    return { left: sideLeft, top: sideTop };
+  }
+
   const left = Math.max(MARGIN, Math.min(vw - PW - MARGIN, px - PW / 2));
   const top  = Math.max(MARGIN, Math.min(vh - PH - MARGIN, py - PH / 2));
   return { left, top };

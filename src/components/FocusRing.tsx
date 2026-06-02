@@ -135,6 +135,24 @@ export const FocusRing = memo(function FocusRing({
   // Tooltip state for the rings view
   const [ringsTooltip, setRingsTooltip] = useState<RingsTooltip | null>(null);
 
+  // Close scheduling view when user clicks anywhere outside the .analog container.
+  // The backdrop is pointer-events:none so it won't block ring hover events.
+  useEffect(() => {
+    if (!schedulingViewOpen) return;
+    const handle = (e: MouseEvent) => {
+      const analog = svgRef.current?.closest('.analog');
+      if (analog && analog.contains(e.target as Node)) return;
+      setRingsTooltip(null);
+      onScheduleClose?.();
+    };
+    // Small delay so this listener doesn't fire on the same click that opened the view
+    const t = window.setTimeout(() => document.addEventListener('click', handle), 50);
+    return () => {
+      window.clearTimeout(t);
+      document.removeEventListener('click', handle);
+    };
+  }, [schedulingViewOpen, onScheduleClose]);
+
   /* Onboarding hint — lifted here so FocusRing can add ring glow class.
    * Anonymous (userId=null): hints show on every visit (alwaysShow=true).
    * Logged-in: hints show only once (alwaysShow=false, localStorage used).
@@ -431,15 +449,11 @@ export const FocusRing = memo(function FocusRing({
 
   return (
     <>
-      {/* Backdrop — transparent click-to-close layer when rings are open */}
+      {/* Backdrop — purely visual dim; pointer-events:none so it never
+          blocks hover/click on the ring arcs. Close-on-click-outside is
+          handled by the document listener above. */}
       {schedulingViewOpen && (
-        <div
-          className="rings-backdrop"
-          onClick={() => {
-            setRingsTooltip(null);
-            onScheduleClose?.();
-          }}
-        />
+        <div className="rings-backdrop" style={{ pointerEvents: 'none' }} />
       )}
 
       <svg

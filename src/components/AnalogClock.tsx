@@ -83,7 +83,9 @@ export const AnalogClock = memo(function AnalogClock({ timezone, userId, onSessi
   const currentHour = hours % 12 === 0 ? 12 : hours % 12;
 
   return (
-    <div className="analog">
+    /* rings-open elevates the clock above the rings backdrop (z-index:6),
+       so SVG ring arcs receive pointer events even when backdrop is rendered */
+    <div className={`analog${schedulingViewOpen ? ' rings-open' : ''}`}>
       <FocusRing
         timezone={timezone}
         userId={userId}
