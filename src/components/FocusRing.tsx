@@ -231,8 +231,8 @@ export const FocusRing = memo(function FocusRing({
   // ---- Subtle in-face feedback messages --------------------------------
   const [feedback, setFeedback] = useState<{ text: string; key: number; duration: number } | null>(null);
   const feedbackTimerRef       = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** True once the first drag-start hint has been shown this session. */
-  const dragHintShownRef       = useRef(false);
+  /** Sequential hint timers after click-2 (drag hint + clear hint). */
+  const hintSeqTimersRef       = useRef<ReturnType<typeof setTimeout>[]>([]);
   /** True once the first drag-release message has been shown this session. */
   const dragUpdateShownRef     = useRef(false);
   /** Tracks tagPickerOpen previous value to detect close transition. */
@@ -240,14 +240,44 @@ export const FocusRing = memo(function FocusRing({
   /** Tracks state.kind previous value for transition detection. */
   const prevStateKindForMsgRef = useRef(state.kind);
 
+  /** Show a message and auto-unmount it after duration + 200ms fade buffer. */
   const showFeedback = useCallback((text: string, duration: number) => {
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
     setFeedback({ text, key: Date.now(), duration });
-    // Unmount after animation completes (duration + 200ms buffer for fade-out)
     feedbackTimerRef.current = setTimeout(() => setFeedback(null), duration + 200);
   }, []);
 
-  // Message: Tracking started / Goal set / Session cleared
+  /** Cancel any queued sequential hints (e.g. on session clear). */
+  const clearHintSeq = useCallback(() => {
+    hintSeqTimersRef.current.forEach(t => clearTimeout(t));
+    hintSeqTimersRef.current = [];
+  }, []);
+
+  /**
+   * After click-2 goal is set, run an instructional sequence:
+   *   t=0      "Goal set · X min"          3.5 s
+   *   t=4 s    "Drag to adjust end time"   3 s   (always — teaches affordance)
+   *   t=7.5 s  "Click once more to clear"  3 s   (always — teaches click-3)
+   *
+   * The user can drag at any point; the drag-release "End time updated"
+   * message fires independently via the first-drag guard.
+   */
+  const startGoalHintSeq = useCallback((goalMsg: string) => {
+    clearHintSeq();
+    showFeedback(goalMsg, 3500);
+
+    const t1 = setTimeout(() => {
+      showFeedback('Drag to adjust end time', 3000);
+
+      const t2 = setTimeout(() => {
+        showFeedback('Click once more to clear', 3000);
+      }, 3500); // 0.5 s gap after drag hint ends
+      hintSeqTimersRef.current.push(t2);
+    }, 4000); // 0.5 s gap after goal msg ends
+    hintSeqTimersRef.current.push(t1);
+  }, [clearHintSeq, showFeedback]);
+
+  // Message: Tracking started / Session cleared
   useEffect(() => {
     const prev = prevStateKindForMsgRef.current;
     prevStateKindForMsgRef.current = state.kind;
@@ -257,28 +287,29 @@ export const FocusRing = memo(function FocusRing({
       showFeedback('Tracking started', 3000);
     }
 
-    // Click 2: tracking → targeted (anonymous user: show goal immediately)
+    // Click 2: tracking → targeted (anonymous user — no tag picker)
     if (prev !== 'targeted' && state.kind === 'targeted' && !userIdRef.current) {
       const mins = Math.round((state.end - state.start) / 60000);
-      if (mins > 0) showFeedback(`Goal set · ${mins} min`, 3500);
+      if (mins > 0) startGoalHintSeq(`Goal set · ${mins} min`);
     }
 
     // Click 3: any → idle (session cleared)
     if (prev !== 'idle' && state.kind === 'idle') {
+      clearHintSeq();
       showFeedback('Session cleared', 2000);
     }
-  }, [state, showFeedback]);
+  }, [state, showFeedback, startGoalHintSeq, clearHintSeq]);
 
-  // Message: Goal set (logged-in user) — fires when tag picker closes
+  // Click 2 for logged-in users: goal hint sequence fires when tag picker closes
   useEffect(() => {
     const wasOpen = prevTagPickerOpenRef.current;
     prevTagPickerOpenRef.current = tagPickerOpen;
 
     if (wasOpen && !tagPickerOpen && state.kind === 'targeted' && userIdRef.current) {
       const mins = Math.round((state.end - state.start) / 60000);
-      if (mins > 0) showFeedback(`Goal set · ${mins} min`, 3500);
+      if (mins > 0) startGoalHintSeq(`Goal set · ${mins} min`);
     }
-  }, [tagPickerOpen, state, showFeedback]);
+  }, [tagPickerOpen, state, startGoalHintSeq]);
   // -----------------------------------------------------------------------
 
   const data = useMemo(() => {
@@ -443,11 +474,8 @@ export const FocusRing = memo(function FocusRing({
     lastDragMinuteRef.current = Math.floor(startAng / 6) % 60;
     setDragging(true);
 
-    // First drag start → hint message (only the very first time this session)
-    if (!dragHintShownRef.current) {
-      dragHintShownRef.current = true;
-      showFeedback('Drag to adjust end time', 3000);
-    }
+    // No message on drag-start — the automatic hint sequence already shows
+    // "Drag to adjust end time" as part of the post-click-2 instruction flow.
 
     const pointerId = e.pointerId;
     const target = e.target as Element;
