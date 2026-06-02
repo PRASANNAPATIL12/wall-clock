@@ -142,7 +142,28 @@ export function StatsPane({ user, refreshKey }: Props) {
   const useMonthLayout = DAYS >= 60;
 
   const ROWS = isWeek ? 1 : 7;
-  const COLS = isWeek ? 7 : Math.ceil(DAYS / 7);
+
+  /**
+   * COLS must account for the weekday offset of the oldest date.
+   *
+   * Bug with the old formula Math.ceil(DAYS/7):
+   *   Cell i gets column = floor((i + oldestWeekday) / 7).
+   *   For the LAST cell (i = DAYS-1), max column can be as large as
+   *   floor((DAYS-1 + 6) / 7) when oldestWeekday=6 (Saturday).
+   *   Example: DAYS=60, oldestWeekday=6 → last cell col = floor(65/7) = 9,
+   *   but Math.ceil(60/7) = 9 gives only columns 0–8. Today's data falls
+   *   outside the grid and is never rendered!
+   *
+   * Correct formula: Math.ceil((DAYS + oldestWeekday) / 7)
+   *
+   * We compute oldestWeekday eagerly here (not from cells, to avoid a
+   * circular dependency) — it's cheap and deterministic for the current day.
+   */
+  const oldestWeekday = isWeek
+    ? 0                                                        // 1-week: no column packing
+    : new Date(dateNDaysAgo(DAYS - 1) + 'T00:00:00').getDay();
+
+  const COLS = isWeek ? 7 : Math.ceil((DAYS + oldestWeekday) / 7);
 
   /* ResizeObserver — start at CELL_MIN to avoid initial overflow */
   useEffect(() => {
@@ -180,11 +201,6 @@ export function StatsPane({ user, refreshKey }: Props) {
       return { date, ms, bucket: intensityBucket(ms), isToday: date === today };
     });
   }, [totalsByDate, DAYS]);
-
-  const oldestWeekday = useMemo(
-    () => cells.length > 0 ? new Date(cells[0]!.date + 'T00:00:00').getDay() : 0,
-    [cells],
-  );
 
   /* Pre-index cells by absolute column for O(1) block lookup */
   const cellsByAbsCol = useMemo(() => {
@@ -284,20 +300,36 @@ export function StatsPane({ user, refreshKey }: Props) {
     if (isWeek) return cells.map(c => DOW_SHORT[new Date(c.date + 'T00:00:00').getDay()]!);
     const labels = Array<string>(COLS).fill('');
     if (!useMonthLayout) {
-      // 1-month: show short month name at the start of each new month.
-      // Old behaviour (date numbers like "3, 10, 17, 24") was confusing — users
-      // saw random numbers and didn't know which month they were looking at.
-      let lastMonth = -1;
-      for (let col = 0; col < COLS; col++) {
-        const idx = Math.max(0, col * 7 - oldestWeekday);
-        if (idx < cells.length) {
-          const d = new Date(cells[idx]!.date + 'T00:00:00');
-          const m = d.getMonth();
-          if (m !== lastMonth) {
-            labels[col] = d.toLocaleDateString(undefined, { month: 'short' });
-            lastMonth = m;
-          }
+      /**
+       * Center each month's label under its actual column range.
+       *
+       * Old approach (first-column-of-new-month) caused two problems:
+       *   1. "May" appeared at col 0 (far left) even when most May data
+       *      was spread across cols 0-3, making it look off-center.
+       *   2. "Jun" was never shown when June data shared a column with May
+       *      data (e.g., col 4 had both May 30 and June 1-3) — the column's
+       *      "representative" cell was May 30 so June had no label.
+       *
+       * Fix: scan every cell, record the min/max column each month occupies,
+       * then place the label at the CENTER column.
+       */
+      const monthRanges = new Map<number, { first: number; last: number; label: string }>();
+      cells.forEach((cell, i) => {
+        const col = Math.floor((i + oldestWeekday) / 7);
+        const d = new Date(cell.date + 'T00:00:00');
+        const m = d.getMonth();
+        const lbl = d.toLocaleDateString(undefined, { month: 'short' });
+        const existing = monthRanges.get(m);
+        if (!existing) {
+          monthRanges.set(m, { first: col, last: col, label: lbl });
+        } else {
+          existing.first = Math.min(existing.first, col);
+          existing.last  = Math.max(existing.last,  col);
         }
+      });
+      for (const { first, last, label } of monthRanges.values()) {
+        const midCol = Math.round((first + last) / 2);
+        if (midCol < COLS) labels[midCol] = label;
       }
     }
     return labels;

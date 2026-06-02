@@ -56,10 +56,18 @@ export function HeroMessage({ onStart }: Props) {
   useEffect(() => {
     if (!started.current) {
       started.current = true;
-      // Pass the extra delay needed so the hint appears exactly when the glow starts.
-      // Hint normally fires at HINT_FIRST_DELAY (800ms); we need it at HERO_GLOW_START_MS.
-      // Extra = HERO_GLOW_START_MS - HINT_FIRST_DELAY
-      onStart?.(Math.max(0, HERO_GLOW_START_MS - HINT_FIRST_DELAY));
+      // Delay the hint until AFTER the glow finishes (= when hero starts fading).
+      // This gives the user time to READ the message before the ring instruction appears.
+      //
+      // Timeline:
+      //   0ms         typing begins
+      //   TYPING_MS   glow begins (text brightens) ← HERO_GLOW_START_MS
+      //   + GLOW_MS   fading begins ← hint appears HERE
+      //   + FADE_MS   hero fully gone
+      //   + 5000ms    hint auto-dismisses
+      //
+      // Extra = (HERO_GLOW_START_MS + GLOW_MS) - HINT_FIRST_DELAY
+      onStart?.(Math.max(0, HERO_GLOW_START_MS + GLOW_MS - HINT_FIRST_DELAY));
     }
   }, [onStart]);
 
