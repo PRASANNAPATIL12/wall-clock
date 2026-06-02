@@ -195,9 +195,12 @@ function ArcSegment({ session, r, C, svgEl, onTooltip, tappedId, onTap, animDela
           transformBox:    'view-box',
           transformOrigin: `${C}px ${C}px`,
           transform:       isActive ? 'scale(1.04)' : 'scale(1)',
-          filter:          isActive
-            ? `brightness(1.55) saturate(1.3) drop-shadow(0 0 1.5px ${hexToRgba(color, 0.95)})`
-            : 'none',
+          /* Default: subtle permanent glow so every arc is always vivid (not flat).
+             Active:  stronger glow. drop-shadow blur is 5px (not 1.5px) so it
+             reads as a diffuse light halo, never as a second "double" stroke. */
+          filter: isActive
+            ? `brightness(1.5) saturate(1.25) drop-shadow(0 0 5px ${hexToRgba(color, 0.65)})`
+            : `drop-shadow(0 0 2.5px ${hexToRgba(color, 0.45)})`,
           transition:      isActive
             ? 'transform 220ms ease-out, filter 180ms ease-out'
             : 'transform 190ms ease-out, filter 150ms ease-out',
