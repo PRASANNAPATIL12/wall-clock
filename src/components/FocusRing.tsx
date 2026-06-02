@@ -10,8 +10,9 @@ import { useOnboardingHint } from '../hooks/useOnboardingHint';
 import { TagPicker } from './TagPicker';
 import { TagIcon } from './TagIcon';
 import { getTag } from '../lib/tags';
-import { PlannedArcs } from './PlannedArcs';
-import { useTodayPlanned } from '../hooks/usePlannedSessions';
+import { PlannedRingsLayer, RingsTooltipCard, type RingsTooltip } from './PlannedRingsLayer';
+import { useUpcomingPlanned } from '../hooks/usePlannedSessions';
+import './PlannedRings.css';
 import './FocusRing.css';
 
 interface Props {
@@ -25,8 +26,12 @@ interface Props {
   onManageTags?: () => void;
   /** Extra ms to extend the first onboarding hint while the hero message types. */
   hintBoostMs?: number;
-  /** Bump to refresh today's planned session arcs on the ring. */
+  /** Bump to refresh upcoming planned sessions. */
   planRefreshKey?: number;
+  /** When true, show the concentric day-ring visualization. */
+  schedulingViewOpen?: boolean;
+  /** Close the scheduling view (click-outside, etc.). */
+  onScheduleClose?: () => void;
 }
 
 /* viewBox geometry — all values in viewBox units (0..100). */
@@ -62,7 +67,16 @@ function fmt(ms: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
-export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSaved, onManageTags, hintBoostMs = 0, planRefreshKey = 0 }: Props) {
+export const FocusRing = memo(function FocusRing({
+  timezone,
+  userId,
+  onSessionSaved,
+  onManageTags,
+  hintBoostMs = 0,
+  planRefreshKey = 0,
+  schedulingViewOpen = false,
+  onScheduleClose,
+}: Props) {
   const now = useNow('second');
   const svgRef = useRef<SVGSVGElement>(null);
   const endDropRef = useRef<SVGCircleElement>(null);
@@ -115,8 +129,11 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
 
   const { state, handleClick, setDragEnd } = useFocusTrack(timezone, handleSessionEnd);
 
-  // Today's planned sessions — visualised as indigo arc segments on the ring
-  const plannedSessions = useTodayPlanned(userId, planRefreshKey);
+  // Upcoming planned sessions (next 4 days) for the concentric rings view
+  const { byDay: plannedByDay } = useUpcomingPlanned(userId, planRefreshKey);
+
+  // Tooltip state for the rings view
+  const [ringsTooltip, setRingsTooltip] = useState<RingsTooltip | null>(null);
 
   /* Onboarding hint — lifted here so FocusRing can add ring glow class.
    * Anonymous (userId=null): hints show on every visit (alwaysShow=true).
@@ -414,6 +431,17 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
 
   return (
     <>
+      {/* Backdrop — transparent click-to-close layer when rings are open */}
+      {schedulingViewOpen && (
+        <div
+          className="rings-backdrop"
+          onClick={() => {
+            setRingsTooltip(null);
+            onScheduleClose?.();
+          }}
+        />
+      )}
+
       <svg
         ref={svgRef}
         className={ringClass}
@@ -432,13 +460,15 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
           strokeDasharray="0.6 1.2"
         />
 
-        {/* Planned session arcs — indigo marks outside the ring, visible on hover */}
-        <PlannedArcs
-          sessions={plannedSessions}
-          ringR={RING_R}
-          C={C}
-          svgEl={svgRef.current}
-        />
+        {/* Concentric day rings — shown when scheduling view is open */}
+        {schedulingViewOpen && (
+          <PlannedRingsLayer
+            sessionsByDay={plannedByDay}
+            C={C}
+            svgEl={svgRef.current}
+            onTooltip={setRingsTooltip}
+          />
+        )}
 
         {/* To-do ghost arc — pre-target only */}
         {data.end !== null && data.head !== null && !data.complete && (
@@ -613,6 +643,9 @@ export const FocusRing = memo(function FocusRing({ timezone, userId, onSessionSa
 
       {/* Onboarding hint — anonymous users see it every visit; logged-in once */}
       <OnboardingHint visible={hintVisible} hintKind={hintKind} />
+
+      {/* Rings tooltip — glass pill above hovered segment */}
+      {ringsTooltip && <RingsTooltipCard tooltip={ringsTooltip} />}
 
       {/* End-drop tag tooltip — shows selected session tag on hover */}
       {endDropHovered && userId && sessionTag && data.end !== null && svgRef.current && (() => {

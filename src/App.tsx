@@ -13,6 +13,8 @@ import { AuthModal } from './components/AuthModal';
 import { SettingsDialog, type PaneKey } from './components/SettingsDialog';
 import { TodaySummary } from './components/TodaySummary';
 import { HeroMessage } from './components/HeroMessage';
+import { ScheduleBadge } from './components/ScheduleBadge';
+import { useUpcomingPlanned } from './hooks/usePlannedSessions';
 import { useTodayStats } from './hooks/useTodayStats';
 import { useTheme } from './hooks/useTheme';
 import { useFullscreen } from './hooks/useFullscreen';
@@ -52,6 +54,15 @@ export default function App() {
   const [planRefreshKey, setPlanRefreshKey] = useState(0);
   const handleScheduleChanged = () => setPlanRefreshKey((n) => n + 1);
 
+  // Scheduling rings overlay open/close state
+  const [schedulingViewOpen, setSchedulingViewOpen] = useState(false);
+
+  // Upcoming planned sessions — feeds ScheduleBadge count
+  const { total: upcomingTotal } = useUpcomingPlanned(
+    auth.user?.id ?? null,
+    planRefreshKey,
+  );
+
   const todayStats = useTodayStats(auth.user?.id ?? null, tz, sessionSavedTick);
 
   useIdle(5000);
@@ -82,6 +93,8 @@ export default function App() {
             onManageTags={() => openSettings('tags')}
             hintBoostMs={hintBoostMs}
             planRefreshKey={planRefreshKey}
+            schedulingViewOpen={schedulingViewOpen}
+            onScheduleClose={() => setSchedulingViewOpen(false)}
           />
         </div>
         <div className={`mode-layer ${!isAnalog ? 'is-in' : 'is-out-down'}`} aria-hidden={isAnalog}>
@@ -129,6 +142,14 @@ export default function App() {
       {/* Today summary — only renders when signed-in user has sessions today */}
       {auth.user && (
         <TodaySummary stats={todayStats} onClick={() => openSettings('history')} />
+      )}
+
+      {/* Schedule badge — shows above TodaySummary when upcoming sessions exist */}
+      {auth.user && upcomingTotal > 0 && (
+        <ScheduleBadge
+          count={upcomingTotal}
+          onClick={() => setSchedulingViewOpen(v => !v)}
+        />
       )}
 
       {/* Modals */}
