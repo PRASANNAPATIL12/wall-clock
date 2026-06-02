@@ -234,108 +234,120 @@ export function PlanPane({ user, onScheduleChanged }: Props) {
 
   return (
     <div className="plan-pane">
-      <h3>Plan</h3>
+      {/* ============================================================
+          Two-column layout on desktop:
+            Left  — "Add focus block" form
+            Right — Scheduled sessions history
+          Single column on mobile (stacked).
+          ============================================================ */}
+      <div className="plan-columns">
 
-      {/* ---- Add Focus Block form ---- */}
-      <div className="plan-form">
-        <h4 className="plan-form__title">
-          <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
-            <path d="M12 5v14M5 12h14"/>
-          </svg>
-          Add focus block
-        </h4>
-
-        {/* Three scroll pickers: Date · Time · Duration */}
-        <div className="plan-pickers">
-          <ScrollPicker
-            label="Date"
-            items={dateItems}
-            selected={date}
-            onChange={setDate}
-          />
-          <div className="plan-pickers__sep" aria-hidden />
-          <ScrollPicker
-            label="Time"
-            items={timeItems}
-            selected={time}
-            onChange={setTime}
-            loop
-          />
-          <div className="plan-pickers__sep" aria-hidden />
-          <ScrollPicker
-            label="Duration"
-            items={durationItems}
-            selected={duration}
-            onChange={setDuration}
-          />
-        </div>
-
-        {/* Activity vertical selector */}
-        <div className="plan-activities">
-          <div className="plan-activities__label">Activity</div>
-          <div className="plan-activities__list">
-            {tags.map(t => (
-              <button
-                key={t.id}
-                type="button"
-                className={`plan-activity-row${tag === t.id ? ' is-selected' : ''}`}
-                onClick={() => setTag(prev => prev === t.id ? null : t.id)}
-              >
-                <span className="plan-activity-row__icon">
-                  <TagIcon def={t} size={14} />
-                </span>
-                <span className="plan-activity-row__label">{t.label}</span>
-                {tag === t.id && (
-                  <svg viewBox="0 0 24 24" width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" aria-hidden className="plan-activity-row__check">
-                    <path d="M20 6L9 17l-5-5"/>
-                  </svg>
-                )}
-              </button>
-            ))}
+        {/* ── LEFT: Add Focus Block form ─────────────────────────── */}
+        <div className="plan-col plan-col--form">
+          <div className="plan-col__header">
+            <h3>Add focus block</h3>
+            <p className="plan-col__subtitle">Schedule a focus session on your calendar.</p>
           </div>
-        </div>
 
-        {/* Google Calendar toggle */}
-        <div className="plan-toggle-row">
-          <div className="plan-toggle-row__text">
-            <svg viewBox="0 0 24 24" width={13} height={13} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" aria-hidden>
-              <rect x="3" y="4" width="18" height="18" rx="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/>
-              <line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
-            Add to Google Calendar
-          </div>
-          <GlassToggle on={calSync} onToggle={() => setCalSync(v => !v)} />
-        </div>
-
-        <button
-          type="button"
-          className="plan-save"
-          onClick={handleSave}
-          disabled={saving}
-        >
-          {saving ? 'Saving…' : 'Save focus block'}
-        </button>
-      </div>
-
-      {/* ---- Scheduled sessions list ---- */}
-      {grouped.size > 0 && (
-        <div className="plan-list">
-          {Array.from(grouped.entries()).map(([d, arr]) => (
-            <div key={d} className="plan-list__group">
-              <div className="plan-list__date">{dateLabel(d)}</div>
-              {arr.map(s => (
-                <SessionCard key={s.id} session={s} onDelete={handleDelete} />
-              ))}
+          <div className="plan-form">
+            {/* Three scroll pickers: Date · Time · Duration */}
+            <div className="plan-pickers">
+              <ScrollPicker label="Date"     items={dateItems}     selected={date}     onChange={setDate} />
+              <div className="plan-pickers__sep" aria-hidden />
+              <ScrollPicker label="Time"     items={timeItems}     selected={time}     onChange={setTime} loop />
+              <div className="plan-pickers__sep" aria-hidden />
+              <ScrollPicker label="Duration" items={durationItems} selected={duration} onChange={setDuration} />
             </div>
-          ))}
-        </div>
-      )}
 
-      {grouped.size === 0 && (
-        <p className="plan-empty">No sessions planned yet. Add one above.</p>
-      )}
+            {/* Activity selector */}
+            <div className="plan-activities">
+              <div className="plan-activities__label">Activity</div>
+              <div className="plan-activities__list">
+                {tags.map(t => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className={`plan-activity-row${tag === t.id ? ' is-selected' : ''}`}
+                    onClick={() => setTag(prev => prev === t.id ? null : t.id)}
+                  >
+                    <span className="plan-activity-row__icon">
+                      <TagIcon def={t} size={14} />
+                    </span>
+                    <span className="plan-activity-row__label">{t.label}</span>
+                    {tag === t.id && (
+                      <svg viewBox="0 0 24 24" width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" aria-hidden className="plan-activity-row__check">
+                        <path d="M20 6L9 17l-5-5"/>
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Google Calendar toggle */}
+            <div className="plan-toggle-row">
+              <div className="plan-toggle-row__text">
+                <svg viewBox="0 0 24 24" width={13} height={13} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" aria-hidden>
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8"  y1="2" x2="8"  y2="6"/>
+                  <line x1="3"  y1="10" x2="21" y2="10"/>
+                </svg>
+                Add to Google Calendar
+              </div>
+              <GlassToggle on={calSync} onToggle={() => setCalSync(v => !v)} />
+            </div>
+
+            <button
+              type="button"
+              className="plan-save"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? 'Saving…' : 'Save focus block'}
+            </button>
+          </div>
+        </div>
+
+        {/* ── DIVIDER (desktop only) ── */}
+        <div className="plan-col-divider" aria-hidden />
+
+        {/* ── RIGHT: Scheduled sessions history ──────────────────── */}
+        <div className="plan-col plan-col--history">
+          <div className="plan-col__header">
+            <h3>Scheduled</h3>
+            <p className="plan-col__subtitle">
+              {grouped.size > 0
+                ? `${sessions.length} session${sessions.length !== 1 ? 's' : ''} planned`
+                : 'No sessions scheduled yet'}
+            </p>
+          </div>
+
+          <div className="plan-history">
+            {grouped.size > 0 ? (
+              Array.from(grouped.entries()).map(([d, arr]) => (
+                <div key={d} className="plan-list__group">
+                  <div className="plan-list__date">{dateLabel(d)}</div>
+                  {arr.map(s => (
+                    <SessionCard key={s.id} session={s} onDelete={handleDelete} />
+                  ))}
+                </div>
+              ))
+            ) : (
+              <div className="plan-history__empty">
+                <svg viewBox="0 0 24 24" width={32} height={32} fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" aria-hidden>
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8"  y1="2" x2="8"  y2="6"/>
+                  <line x1="3"  y1="10" x2="21" y2="10"/>
+                </svg>
+                <p>Sessions you add will appear here.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
