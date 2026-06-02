@@ -182,25 +182,49 @@
     </style>
   </head>
   <body>
-    <!-- Semantic, screen-reader / crawler-only content. Inline styles guarantee it never paints. -->
-    <header class="sr-only" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">
-      <h1>Wall Clock — Online Analog and Digital Clock with World Timezones</h1>
+    <!--
+      Static landing content — visible to search engines and Google's OAuth verification
+      bot (which checks the homepage for app name + purpose). The React app renders on top
+      of this inside #root, so users never see this section.
+      H1 must match the OAuth consent screen app name exactly: "Wall Clock".
+    -->
+    <div id="app-description" style="position:absolute;left:0;top:0;width:100%;z-index:0;opacity:0;pointer-events:none;font-family:system-ui,sans-serif;padding:40px 24px;">
+      <h1>Wall Clock</h1>
+      <h2>Focus Timer &amp; Productivity Tracker</h2>
       <p>
-        Wall Clock is a beautiful, minimalist online clock for your browser, desktop or second
-        monitor. It features a smooth sweep-seconds analog face with JetBrains Mono numerals,
-        a large digital readout, light and dark themes, fullscreen mode, and a curated set of
-        world timezones including UTC, Los Angeles, Denver, Chicago, New York, São Paulo,
-        London, Paris, Berlin, Athens, Cairo, Johannesburg, Dubai, India (IST), Bangkok,
-        Singapore, Hong Kong, Shanghai, Tokyo, Seoul, Sydney and Auckland. Free, instant,
-        no signup, no tracking.
+        Wall Clock is a free, browser-based focus timer and productivity tracking web application.
+        It helps users manage their time by setting timed focus sessions directly on a beautiful
+        analog clock interface. Users can start a session with a single click, set a goal end-time,
+        and track their progress in real time.
       </p>
-    </header>
-
-    <div id="root"></div>
+      <p>
+        Registered users can log in with Google or email to save their focus sessions,
+        view their complete session history, monitor daily and weekly streaks, and analyse
+        their focus patterns through an interactive heatmap spanning up to one year of data.
+        Sessions can be tagged by activity type (Code, Study, Design, Exercise, etc.) and
+        exported at any time as JSON.
+      </p>
+      <p>
+        Wall Clock is free to use. No advertising, no data selling, no tracking.
+        All session data belongs to the user. Built with React, TypeScript, and Supabase.
+      </p>
+      <nav>
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/terms">Terms of Service</a>
+      </nav>
+    </div>
+    <!-- React SPA root — renders on top (z-index:1), covers the static description above -->
+    <div id="root" style="position:relative;z-index:1;"></div>
     <noscript>
-      <div style="font-family: system-ui, sans-serif; padding: 2rem; text-align: center;">
-        <h1>Wall Clock</h1>
-        <p>Please enable JavaScript to view the clock.</p>
+      <div style="font-family:system-ui,sans-serif;padding:2rem;max-width:600px;margin:0 auto;">
+        <h1>Wall Clock — Focus Timer &amp; Productivity Tracker</h1>
+        <p>
+          Wall Clock is a free focus timer and session tracking web app.
+          Set timed focus sessions on a beautiful analog clock, log your work,
+          and track your productivity over time.
+        </p>
+        <p>Please enable JavaScript to use Wall Clock.</p>
+        <p><a href="/privacy">Privacy Policy</a> &nbsp;·&nbsp; <a href="/terms">Terms of Service</a></p>
       </div>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>
