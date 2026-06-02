@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { PointerEvent } from 'react';
 import { useNow } from '../hooks/useNow';
 import { useFocusTrack, type FocusSessionEnd } from '../hooks/useFocusTrack';
@@ -677,8 +678,12 @@ export const FocusRing = memo(function FocusRing({
         );
       })()}
 
-      {/* Tag picker — appears once after click-2 lands, only for signed-in users */}
-      {tagPickerOpen && (
+      {/* Tag picker — rendered via portal to document.body so it escapes
+          any ancestor stacking context (mode-layer opacity transition
+          creates one, trapping z-index comparisons inside it). The portal
+          guarantees z-index 50 is evaluated in the root stacking context,
+          above ScheduleBadge (8) and TodaySummary (8) on all devices. */}
+      {tagPickerOpen && createPortal(
         <TagPicker
           endAngleDeg={data.end ?? undefined}
           onPick={(tag) => {
@@ -686,7 +691,8 @@ export const FocusRing = memo(function FocusRing({
             setTagPickerOpen(false);
           }}
           onManageTags={onManageTags}
-        />
+        />,
+        document.body,
       )}
     </>
   );
