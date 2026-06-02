@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Terms of Service — Wall Clock</title>
+  <meta name="description" content="Terms of Service for Wall Clock — a minimalist focus timer and session tracking tool." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://mywallclock.onrender.com/terms" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" />
+  <style>
+    :root {
+      --bg: #f4f1ec;
+      --fg: #1a1a1a;
+      --fg-muted: #6b6b6b;
+      --fg-faint: rgba(26,26,26,0.08);
+      --accent: #c8312b;
+      --border: rgba(26,26,26,0.12);
+      --card: #fafaf7;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0e0e10;
+        --fg: #ece9e2;
+        --fg-muted: #8a8784;
+        --fg-faint: rgba(236,233,226,0.08);
+        --accent: #e0463f;
+        --border: rgba(236,233,226,0.14);
+        --card: #131315;
+      }
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { background: var(--bg); color: var(--fg); font-family: 'Inter', system-ui, sans-serif; }
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--fg);
+      -webkit-font-smoothing: antialiased;
+      padding: 0 20px 80px;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .page-header {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 40px 0 32px;
+      border-bottom: 1px solid var(--border);
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--fg-muted);
+      margin-bottom: 24px;
+      transition: color 200ms ease;
+    }
+    .back-link:hover { color: var(--fg); text-decoration: none; }
+    .back-link svg { flex-shrink: 0; }
+
+    .page-header h1 {
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+    .page-header .meta {
+      font-size: 13px;
+      color: var(--fg-muted);
+    }
+
+    .content {
+      max-width: 720px;
+      margin: 0 auto;
+      padding-top: 40px;
+    }
+
+    h2 {
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin: 40px 0 12px;
+      padding-top: 4px;
+    }
+    h2:first-of-type { margin-top: 0; }
+
+    p {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--fg-muted);
+      margin-bottom: 12px;
+    }
+    p strong { color: var(--fg); font-weight: 500; }
+
+    ul {
+      margin: 8px 0 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    li {
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--fg-muted);
+    }
+    li strong { color: var(--fg); font-weight: 500; }
+
+    .callout {
+      background: var(--fg-faint);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 20px 0;
+    }
+    .callout p { margin-bottom: 0; }
+
+    .contact-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-top: 16px;
+    }
+    .contact-card p { margin-bottom: 4px; }
+
+    @media (max-width: 640px) {
+      .page-header h1 { font-size: 22px; }
+      h2 { font-size: 15px; }
+      p, li { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <a href="/" class="back-link">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Back to Wall Clock
+    </a>
+    <h1>Terms of Service</h1>
+    <p class="meta">Last updated: June 2026 &nbsp;·&nbsp; Effective immediately</p>
+  </div>
+
+  <div class="content">
+
+    <div class="callout">
+      <p><strong>Short version:</strong> Wall Clock is a free focus timer. Use it to track your work. Your data belongs to you. Don't misuse the service. We provide it as-is without guarantees.</p>
+    </div>
+
+    <h2>1. Acceptance of Terms</h2>
+    <p>By accessing or using Wall Clock at <a href="https://mywallclock.onrender.com">mywallclock.onrender.com</a> (the "Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, please do not use the Service.</p>
+
+    <h2>2. Description of Service</h2>
+    <p>Wall Clock is a minimalist, browser-based focus timer and productivity tracking tool that allows users to:</p>
+    <ul>
+      <li>Set and track timed focus sessions using an interactive analog clock interface</li>
+      <li>Log completed focus sessions associated with optional activity tags</li>
+      <li>View focus history, statistics, and streaks over customisable time periods</li>
+      <li>Customise settings including sound preferences, timezone, and activity tags</li>
+    </ul>
+    <p>The Service is provided free of charge. We reserve the right to modify, suspend, or discontinue any aspect of the Service at any time.</p>
+
+    <h2>3. User Accounts</h2>
+    <p>Certain features of the Service require you to create an account. You may register using a Google account or an email address and password.</p>
+    <p>You are responsible for:</p>
+    <ul>
+      <li>Maintaining the confidentiality of your account credentials</li>
+      <li>All activity that occurs under your account</li>
+      <li>Providing accurate information when creating your account</li>
+      <li>Notifying us immediately of any unauthorised use of your account</li>
+    </ul>
+    <p>You must be at least <strong>13 years old</strong> to create an account. By creating an account, you represent that you meet this age requirement.</p>
+
+    <h2>4. Acceptable Use</h2>
+    <p>You agree to use the Service only for lawful purposes and in accordance with these Terms. You agree <strong>not</strong> to:</p>
+    <ul>
+      <li>Attempt to gain unauthorised access to any part of the Service or its infrastructure</li>
+      <li>Interfere with or disrupt the Service or its servers</li>
+      <li>Use automated scripts to access the Service in a manner that exceeds normal usage</li>
+      <li>Impersonate any person or entity or misrepresent your affiliation with any person or entity</li>
+      <li>Use the Service in any manner that could damage, disable, overburden, or impair it</li>
+      <li>Reverse engineer, decompile, or disassemble any portion of the Service</li>
+    </ul>
+
+    <h2>5. Your Data</h2>
+    <p>You retain full ownership of all focus session data and personal information you provide to the Service. Our use of your data is governed by our <a href="/privacy">Privacy Policy</a>, which is incorporated into these Terms by reference.</p>
+    <p>You may export all your session data at any time from your Account settings. You may request deletion of your data at any time.</p>
+
+    <h2>6. Intellectual Property</h2>
+    <p>The Service, including its design, code, graphics, and content (excluding user-provided data), is owned by Wall Clock and protected by applicable intellectual property laws.</p>
+    <p>We grant you a limited, non-exclusive, non-transferable, revocable licence to access and use the Service for personal, non-commercial purposes in accordance with these Terms.</p>
+
+    <h2>7. Third-Party Services</h2>
+    <p>The Service integrates with third-party services including Google OAuth for authentication and Supabase for data storage. Your use of these integrations is subject to the respective third parties' terms of service and privacy policies. We are not responsible for the practices of these third parties.</p>
+
+    <h2>8. Disclaimers</h2>
+    <p>THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.</p>
+    <p>We do not warrant that:</p>
+    <ul>
+      <li>The Service will be uninterrupted, timely, secure, or error-free</li>
+      <li>Any errors in the Service will be corrected</li>
+      <li>The Service will meet your specific requirements</li>
+      <li>Your data will be preserved without loss (we strongly recommend using the Export feature regularly)</li>
+    </ul>
+
+    <h2>9. Limitation of Liability</h2>
+    <p>TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, WALL CLOCK SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING WITHOUT LIMITATION LOSS OF DATA, LOSS OF PROFITS, OR LOSS OF GOODWILL, ARISING OUT OF OR IN CONNECTION WITH YOUR USE OF THE SERVICE, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</p>
+    <p>Our total liability to you for any claim arising out of or relating to these Terms or the Service shall not exceed the amount you paid us in the twelve months prior to the claim (which, given the Service is free, will typically be zero).</p>
+
+    <h2>10. Termination</h2>
+    <p>You may stop using the Service and delete your account at any time. To delete your account and all associated data, contact us at the address below.</p>
+    <p>We may suspend or terminate your access to the Service immediately, without prior notice or liability, if you breach these Terms or if we determine that your use is harmful to the Service, other users, or third parties.</p>
+
+    <h2>11. Changes to These Terms</h2>
+    <p>We reserve the right to modify these Terms at any time. We will indicate the date of the most recent revision at the top of this page. Continued use of the Service after changes are posted constitutes your acceptance of the revised Terms.</p>
+
+    <h2>12. Governing Law</h2>
+    <p>These Terms shall be governed by and construed in accordance with the laws of India, without regard to its conflict of law provisions. Any disputes arising under these Terms shall be subject to the exclusive jurisdiction of the courts located in India.</p>
+
+    <h2>13. Entire Agreement</h2>
+    <p>These Terms, together with our <a href="/privacy">Privacy Policy</a>, constitute the entire agreement between you and Wall Clock regarding your use of the Service, and supersede any prior agreements.</p>
+
+    <h2>14. Contact Us</h2>
+
+    <div class="contact-card">
+      <p><strong>Wall Clock</strong></p>
+      <p>Email: <a href="mailto:prasannagoudap@verifone.com">prasannagoudap@verifone.com</a></p>
+      <p>Website: <a href="https://mywallclock.onrender.com">mywallclock.onrender.com</a></p>
+    </div>
+
+  </div>
+</body>
+</html>

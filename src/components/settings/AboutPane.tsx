@@ -41,7 +41,17 @@ export function AboutPane() {
       <div className="about-pane__meta">
         <span>Wall Clock</span>
         <span className="about-pane__sep">·</span>
-        <span>Built with care</span>
+        <a href="/privacy" target="_blank" rel="noopener" style={{ color: 'var(--fg-muted)', textDecoration: 'none' }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--fg)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--fg-muted)')}>
+          Privacy Policy
+        </a>
+        <span className="about-pane__sep">·</span>
+        <a href="/terms" target="_blank" rel="noopener" style={{ color: 'var(--fg-muted)', textDecoration: 'none' }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--fg)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--fg-muted)')}>
+          Terms of Service
+        </a>
       </div>
     </div>
   );
