@@ -5,15 +5,19 @@ import { DEFAULT_TAGS } from '../lib/tags';
 import { TagIcon } from './TagIcon';
 
 /* ============================================================
-   Concentric day-ring visualization.
+   Concentric day-ring visualization — thin arc segments.
 
-   Each session = ONE clean arc stroke. No extra layers.
-   Hover / tap: radial "rise" (scale from clock center) + brightness.
+   Why pointer-events needed:
+   The parent FocusRing SVG has CSS `pointer-events: none`.
+   This prevents the browser from dispatching ANY mouse events to
+   children. We override it explicitly with pointerEvents="all" on
+   the layer <g> and each arc <g>, which restores hover/click on
+   the ring segments without affecting the focus ring's own logic.
    ============================================================ */
 
 export const RING_BASE_R = 49.5;
 export const RING_GAP    = 4.2;
-const RING_STROKE        = 3.2;
+const RING_STROKE        = 1.8;    // thin elegant pipe
 const ARC_GAP_DEG        = 1.8;
 const MIN_ARC_DEG        = 11;
 const MAX_ARC_DEG        = 62;
@@ -75,7 +79,7 @@ export interface RingsTooltip {
   vpY: number;
 }
 
-function tooltipPos(
+function getTooltipPos(
   s: PlannedSession, r: number, C: number, svgEl: SVGSVGElement | null,
 ): { vpX: number; vpY: number } | null {
   if (!svgEl) return null;
@@ -93,7 +97,7 @@ function tooltipPos(
 
 const isTouchDevice = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;
 
-/* ---- Single arc element ---- */
+/* ---- Single arc ---- */
 interface ArcProps {
   session: PlannedSession;
   r: number;
@@ -116,24 +120,22 @@ function ArcSegment({ session, r, C, svgEl, onTooltip, tappedId, onTap, animDela
   const color    = tagColor(session.tag);
   const isActive = isTouchDevice ? tappedId === session.id : hovered;
 
-  /**
-   * Active state visual: the arc rises radially outward from the clock
-   * center. CSS transform-origin at (C,C) means scale(1.06) pushes the
-   * arc 6% outward in every direction from center — it literally "rises"
-   * away from the face toward the viewer.
+  /*
+   * transform-origin at clock center (C,C): scale(1.06) pushes the arc
+   * radially outward — the "rise" effect. The arc moves 6% away from center.
    *
-   * filter: brightness brightens the arc from within (no outer blur/haze).
-   * drop-shadow adds a tight edge glow in the arc's own color.
+   * brightness(1.5): arc brightens from within (no spreading outer glow).
+   * drop-shadow: tight colored edge, gives the arc dimensional presence.
    */
   const groupStyle: React.CSSProperties = {
-    transformBox: 'view-box',
+    transformBox:  'view-box',
     transformOrigin: `${C}px ${C}px`,
-    transform: isActive ? 'scale(1.06)' : 'scale(1)',
-    filter: isActive
-      ? `brightness(1.5) saturate(1.2) drop-shadow(0 0 2px ${hexToRgba(color, 0.9)})`
+    transform:     isActive ? 'scale(1.065)' : 'scale(1)',
+    filter:        isActive
+      ? `brightness(1.55) saturate(1.3) drop-shadow(0 0 1.5px ${hexToRgba(color, 0.95)})`
       : 'none',
     transition: isActive
-      ? 'transform 220ms cubic-bezier(0.34,1.56,0.64,1), filter 180ms ease-out'
+      ? 'transform 230ms cubic-bezier(0.34,1.56,0.64,1), filter 190ms ease-out'
       : 'transform 200ms ease-out, filter 160ms ease-out',
     cursor: 'pointer',
   };
@@ -141,7 +143,7 @@ function ArcSegment({ session, r, C, svgEl, onTooltip, tappedId, onTap, animDela
   const onEnter = () => {
     if (isTouchDevice) return;
     setHovered(true);
-    const pos = tooltipPos(session, r, C, svgEl);
+    const pos = getTooltipPos(session, r, C, svgEl);
     if (pos) onTooltip({ session, ...pos });
   };
   const onLeave = () => {
@@ -155,7 +157,7 @@ function ArcSegment({ session, r, C, svgEl, onTooltip, tappedId, onTap, animDela
     const next = tappedId === session.id ? null : session.id;
     onTap(next);
     if (next) {
-      const pos = tooltipPos(session, r, C, svgEl);
+      const pos = getTooltipPos(session, r, C, svgEl);
       if (pos) onTooltip({ session, ...pos });
     } else {
       onTooltip(null);
@@ -163,7 +165,9 @@ function ArcSegment({ session, r, C, svgEl, onTooltip, tappedId, onTap, animDela
   };
 
   return (
+    /* pointerEvents="all" overrides the parent SVG's pointer-events:none CSS */
     <g
+      pointerEvents="all"
       style={groupStyle}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
@@ -173,14 +177,14 @@ function ArcSegment({ session, r, C, svgEl, onTooltip, tappedId, onTap, animDela
         d={d}
         fill="none"
         stroke={color}
-        strokeWidth={isActive ? RING_STROKE + 0.8 : RING_STROKE}
-        strokeOpacity={isActive ? 1 : 0.82}
+        strokeWidth={isActive ? RING_STROKE + 1.0 : RING_STROKE}
+        strokeOpacity={isActive ? 1 : 0.80}
         strokeLinecap="round"
         style={{
           strokeDasharray: 1000,
           strokeDashoffset: 1000,
           animation: `ring-arc-draw 580ms cubic-bezier(0.22,0.61,0.36,1) ${animDelay}ms both`,
-          transition: 'stroke-width 220ms ease, stroke-opacity 220ms ease',
+          transition: 'stroke-width 230ms ease, stroke-opacity 200ms ease',
         }}
       />
     </g>
@@ -201,7 +205,12 @@ export function PlannedRingsLayer({ sessionsByDay, C, svgEl, onTooltip }: LayerP
   if (days.length === 0) return null;
 
   return (
+    /* pointerEvents="all" — critical override:
+       parent .focus-ring SVG has pointer-events:none in CSS, which
+       prevents the browser from dispatching mouse events to children.
+       Setting this on the layer <g> restores hover/click for rings. */
     <g
+      pointerEvents="all"
       className="planned-rings-layer"
       style={{ transformBox: 'view-box', transformOrigin: `${C}px ${C}px` }}
     >
@@ -214,14 +223,14 @@ export function PlannedRingsLayer({ sessionsByDay, C, svgEl, onTooltip }: LayerP
             className="planned-ring-day"
             style={{ animationDelay: `${dayIdx * 65}ms` }}
           >
-            {/* Ghost track — faint dotted day-boundary circle */}
+            {/* Ghost track — visible dotted boundary ring for each day */}
             <circle
               cx={C} cy={C} r={r}
               fill="none"
               stroke="currentColor"
-              strokeWidth={0.22}
-              strokeOpacity={0.07}
-              strokeDasharray="0.4 1.5"
+              strokeWidth={0.55}
+              strokeOpacity={0.18}
+              strokeDasharray="0.6 1.4"
             />
             {sessions.map((s, sIdx) => (
               <ArcSegment
@@ -243,7 +252,7 @@ export function PlannedRingsLayer({ sessionsByDay, C, svgEl, onTooltip }: LayerP
   );
 }
 
-/* ---- Tooltip card ---- */
+/* ---- Tooltip ---- */
 export function RingsTooltipCard({ tooltip }: { tooltip: RingsTooltip }) {
   const { session, vpX, vpY } = tooltip;
   const tag   = session.tag ? DEFAULT_TAGS.find(t => t.id === session.tag) : null;
