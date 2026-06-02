@@ -195,9 +195,12 @@ function ArcSegment({ session, r, C, svgEl, onTooltip, tappedId, onTap, animDela
           transformBox:    'view-box',
           transformOrigin: `${C}px ${C}px`,
           transform:       isActive ? 'scale(1.04)' : 'scale(1)',
-          filter:          isActive
-            ? `brightness(1.55) saturate(1.3) drop-shadow(0 0 1.5px ${hexToRgba(color, 0.95)})`
-            : 'none',
+          /* Default: subtle permanent glow so every arc is always vivid (not flat).
+             Active:  stronger glow. drop-shadow blur is 5px (not 1.5px) so it
+             reads as a diffuse light halo, never as a second "double" stroke. */
+          filter: isActive
+            ? `brightness(1.5) saturate(1.25) drop-shadow(0 0 5px ${hexToRgba(color, 0.65)})`
+            : `drop-shadow(0 0 2.5px ${hexToRgba(color, 0.45)})`,
           transition:      isActive
             ? 'transform 220ms ease-out, filter 180ms ease-out'
             : 'transform 190ms ease-out, filter 150ms ease-out',
@@ -207,11 +210,18 @@ function ArcSegment({ session, r, C, svgEl, onTooltip, tappedId, onTap, animDela
         <path
           d={d}
           fill="none"
-          stroke={color}
-          strokeWidth={isActive ? RING_STROKE + 0.9 : RING_STROKE}
-          strokeOpacity={isActive ? 1 : 0.80}
           strokeLinecap="round"
+          pathLength={1000}
           style={{
+            /* stroke, strokeWidth, strokeOpacity are set here as CSS properties
+               (not SVG attributes) so CSS transitions fire reliably on ALL rings,
+               including outer rings that extend beyond the SVG viewport.
+               CSS transitions only animate CSS properties, NOT SVG presentation
+               attributes — mixing the two causes outer rings to snap instead
+               of transition. */
+            stroke:        color,
+            strokeWidth:   isActive ? RING_STROKE + 0.9 : RING_STROKE,
+            strokeOpacity: isActive ? 1 : 0.80,
             strokeDasharray:  1000,
             strokeDashoffset: 1000,
             animation: `ring-arc-draw 580ms cubic-bezier(0.22,0.61,0.36,1) ${animDelay}ms both`,
@@ -257,7 +267,9 @@ export function PlannedRingsLayer({ sessionsByDay, C, svgEl, onTooltip }: LayerP
           <g
             key={date}
             className="planned-ring-day"
-            style={{ animationDelay: `${dayIdx * 65}ms`, pointerEvents: 'all' }}
+            /* 40ms stagger (was 65ms) — rings enter closer together
+               so outer rings don't lag noticeably behind inner ones */
+            style={{ animationDelay: `${dayIdx * 40}ms`, pointerEvents: 'all' }}
           >
             {/* Ghost track — dotted circle marking the day ring boundary */}
             <circle
@@ -280,7 +292,7 @@ export function PlannedRingsLayer({ sessionsByDay, C, svgEl, onTooltip }: LayerP
                 onTooltip={onTooltip}
                 tappedId={tappedId}
                 onTap={setTappedId}
-                animDelay={dayIdx * 65 + sIdx * 40 + 80}
+                animDelay={dayIdx * 40 + sIdx * 35 + 60}
               />
             ))}
           </g>

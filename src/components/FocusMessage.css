@@ -1,0 +1,43 @@
+/* =========================================================================
+   FocusMessage — subtle auto-fading label shown at the same position
+   as the hero message ("Not here for your attention. Here for your focus.").
+
+   Positioned: fixed, top of viewport above the clock face, centered.
+   Same visual region the user already learned to glance at for the
+   typewriter welcome sentence — so these micro-messages feel at home there.
+   ========================================================================= */
+
+.focus-msg {
+  /* Fixed at the hero-message position — above the clock face */
+  position: fixed;
+  top: max(52px, 10vh);
+  left: 0;
+  right: 0;
+  text-align: center;
+  pointer-events: none;
+  z-index: 7;         /* same level as HeroMessage */
+  white-space: nowrap;
+
+  /* ---- Typography ---- */
+  font-family: var(--font-display);
+  font-size: 11.5px;
+  font-weight: 300;           /* deliberately light — not assertive */
+  letter-spacing: 0.03em;
+  color: var(--fg-muted);
+
+  /* ---- Lifecycle animation ----
+     8 % = fade-in, 72 % = hold at peak opacity (0.52), 100 % = fade-out.
+     Peak is 0.52 — readable but quiet, never competing with the clock. */
+  animation: focus-msg-lifecycle linear both;
+}
+
+@keyframes focus-msg-lifecycle {
+  0%   { opacity: 0;    transform: translateY(4px);  }
+  8%   { opacity: 0.52; transform: translateY(0);    }
+  72%  { opacity: 0.52; transform: translateY(0);    }
+  100% { opacity: 0;    transform: translateY(-3px); }
+}
+
+@media (max-width: 640px) {
+  .focus-msg { top: max(58px, 11vh); }
+}

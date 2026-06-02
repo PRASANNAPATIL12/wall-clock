@@ -13,6 +13,7 @@ import { TagIcon } from './TagIcon';
 import { getTag } from '../lib/tags';
 import { PlannedRingsLayer, RingsTooltipCard, type RingsTooltip } from './PlannedRingsLayer';
 import { useUpcomingPlanned } from '../hooks/usePlannedSessions';
+import { FocusMessage } from './FocusMessage';
 import './PlannedRings.css';
 import './FocusRing.css';
 
@@ -227,6 +228,95 @@ export const FocusRing = memo(function FocusRing({
   // Hover state for the end-drop tooltip (logged-in, tag selected)
   const [endDropHovered, setEndDropHovered] = useState(false);
 
+  // ---- Subtle in-face feedback messages --------------------------------
+  const [feedback, setFeedback] = useState<{ text: string; key: number; duration: number } | null>(null);
+  const feedbackTimerRef       = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Sequential hint timers after click-2 (drag hint + clear hint). */
+  const hintSeqTimersRef       = useRef<ReturnType<typeof setTimeout>[]>([]);
+  /** True once the first drag-release message has been shown this session. */
+  const dragUpdateShownRef     = useRef(false);
+  /** Tracks tagPickerOpen previous value to detect close transition. */
+  const prevTagPickerOpenRef   = useRef(false);
+  /** Tracks state.kind previous value for transition detection. */
+  const prevStateKindForMsgRef = useRef(state.kind);
+
+  /** Show a message and auto-unmount it after duration + 200ms fade buffer. */
+  const showFeedback = useCallback((text: string, duration: number) => {
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    setFeedback({ text, key: Date.now(), duration });
+    feedbackTimerRef.current = setTimeout(() => setFeedback(null), duration + 200);
+  }, []);
+
+  /** Cancel any queued sequential hints (e.g. on session clear). */
+  const clearHintSeq = useCallback(() => {
+    hintSeqTimersRef.current.forEach(t => clearTimeout(t));
+    hintSeqTimersRef.current = [];
+  }, []);
+
+  /**
+   * After click-2 goal is set, run an instructional sequence:
+   *   t=0      "Goal set · X min"          3.5 s
+   *   t=4 s    "Drag to adjust end time"   3 s   (always — teaches affordance)
+   *   t=7.5 s  "Click once more to clear"  3 s   (always — teaches click-3)
+   *
+   * The user can drag at any point; the drag-release "End time updated"
+   * message fires independently via the first-drag guard.
+   */
+  const startGoalHintSeq = useCallback((goalMsg: string) => {
+    clearHintSeq();
+    showFeedback(goalMsg, 3500);
+
+    const t1 = setTimeout(() => {
+      // Only show drag hint if the user hasn't already dragged.
+      // If they dragged within the first 4s, they already know how — don't
+      // tell them to do something they just finished doing.
+      if (!dragUpdateShownRef.current) {
+        showFeedback('Drag to adjust end time', 3000);
+      }
+
+      const t2 = setTimeout(() => {
+        showFeedback('Click once more to clear', 3000);
+      }, dragUpdateShownRef.current ? 500 : 3500); // shorter gap if drag hint was skipped
+      hintSeqTimersRef.current.push(t2);
+    }, 4000); // 0.5 s gap after goal msg ends
+    hintSeqTimersRef.current.push(t1);
+  }, [clearHintSeq, showFeedback]);
+
+  // Message: Tracking started / Session cleared
+  useEffect(() => {
+    const prev = prevStateKindForMsgRef.current;
+    prevStateKindForMsgRef.current = state.kind;
+
+    // Click 1: idle → tracking
+    if (prev === 'idle' && state.kind === 'tracking') {
+      showFeedback('Tracking started', 3000);
+    }
+
+    // Click 2: tracking → targeted (anonymous user — no tag picker)
+    if (prev !== 'targeted' && state.kind === 'targeted' && !userIdRef.current) {
+      const mins = Math.round((state.end - state.start) / 60000);
+      if (mins > 0) startGoalHintSeq(`Goal set · ${mins} min`);
+    }
+
+    // Click 3: any → idle (session cleared)
+    if (prev !== 'idle' && state.kind === 'idle') {
+      clearHintSeq();
+      showFeedback('Session cleared', 2000);
+    }
+  }, [state, showFeedback, startGoalHintSeq, clearHintSeq]);
+
+  // Click 2 for logged-in users: goal hint sequence fires when tag picker closes
+  useEffect(() => {
+    const wasOpen = prevTagPickerOpenRef.current;
+    prevTagPickerOpenRef.current = tagPickerOpen;
+
+    if (wasOpen && !tagPickerOpen && state.kind === 'targeted' && userIdRef.current) {
+      const mins = Math.round((state.end - state.start) / 60000);
+      if (mins > 0) startGoalHintSeq(`Goal set · ${mins} min`);
+    }
+  }, [tagPickerOpen, state, startGoalHintSeq]);
+  // -----------------------------------------------------------------------
+
   const data = useMemo(() => {
     if (state.kind === 'idle') {
       return {
@@ -389,6 +479,9 @@ export const FocusRing = memo(function FocusRing({
     lastDragMinuteRef.current = Math.floor(startAng / 6) % 60;
     setDragging(true);
 
+    // No message on drag-start — the automatic hint sequence already shows
+    // "Drag to adjust end time" as part of the post-click-2 instruction flow.
+
     const pointerId = e.pointerId;
     const target = e.target as Element;
     try {
@@ -420,6 +513,11 @@ export const FocusRing = memo(function FocusRing({
         target.releasePointerCapture?.(pointerId);
       } catch {
         /* ignore */
+      }
+      // First drag release → "End time updated" (only once per session)
+      if (!dragUpdateShownRef.current) {
+        dragUpdateShownRef.current = true;
+        setTimeout(() => showFeedback('End time updated', 2500), 150);
       }
     };
 
@@ -658,6 +756,15 @@ export const FocusRing = memo(function FocusRing({
 
       {/* Onboarding hint — anonymous users see it every visit; logged-in once */}
       <OnboardingHint visible={hintVisible} hintKind={hintKind} />
+
+      {/* Subtle in-face feedback message — centered inside the clock face */}
+      {feedback && (
+        <FocusMessage
+          text={feedback.text}
+          duration={feedback.duration}
+          msgKey={feedback.key}
+        />
+      )}
 
       {/* Rings tooltip — glass pill above hovered segment */}
       {ringsTooltip && <RingsTooltipCard tooltip={ringsTooltip} />}
