@@ -52,7 +52,7 @@ export function TodaySummary({ stats, onClick }: Props) {
           <span className="today-summary__dot" aria-hidden />
           <span>
             {stats.streak}-day streak
-            {stats.streak >= 3 && <FlameIcon />}
+            <FlameIcon />
           </span>
         </>
       )}
