@@ -35,6 +35,27 @@
   object-fit: cover;
   border-radius: 50%;
   display: block;
+  /* Slightly desaturate and dim to match the muted glass UI palette.
+     Snaps back to full colour on hover — feels alive, not flat. */
+  filter: saturate(0.82) brightness(0.96);
+  transition: filter 250ms var(--ease-apple);
+}
+
+.account-icon.has-photo:hover .account-icon__photo {
+  filter: saturate(1) brightness(1);
+}
+
+/* Glass inner ring overlay — the same "enclosed in glass" feel
+   used by every pill and button in the UI. Sits above the photo
+   so the circular border reads as part of the glass system. */
+.account-icon.has-photo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.17);
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* Initials fallback */

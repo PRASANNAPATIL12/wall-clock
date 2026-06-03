@@ -23,7 +23,7 @@ export function AccountIcon({ user, onClick }: Props) {
 
   return (
     <button
-      className="account-icon"
+      className={`account-icon${showPhoto ? ' has-photo' : ''}`}
       type="button"
       onClick={onClick}
       aria-label="Open settings"
