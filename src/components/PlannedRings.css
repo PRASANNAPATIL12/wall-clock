@@ -53,10 +53,17 @@
   to { stroke-dashoffset: 0; }
 }
 
+/* ---- Arc vanish: reverse-draw + fade — plays when a planned session completes ---- */
+@keyframes ring-arc-vanish {
+  from { stroke-dashoffset: 0;    opacity: 1; }
+  to   { stroke-dashoffset: 1000; opacity: 0; }
+}
+
 /* ---- Tooltip ---- */
 .rings-tooltip {
   position: fixed;
   transform: translate(-50%, calc(-100% - 12px));
+  /* pointer-events: none by default — overridden below for interactive variant */
   pointer-events: none;
   z-index: 16;         /* above TagPicker (15) and controls (10) */
   white-space: nowrap;
@@ -117,3 +124,50 @@
 }
 
 .rings-tooltip__sep { font-family: var(--font-display); opacity: 0.4; font-size: 10px; }
+
+/* ---- Interactive tooltip variant (contains "Start now" button) ---- */
+.rings-tooltip--interactive {
+  pointer-events: all;   /* override the default none so the button is clickable */
+}
+
+/* ---- "Start now" button ---- */
+.rings-tooltip__start {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  height: 30px;
+  margin-top: 7px;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, var(--arc-color, var(--plan-arc)) 35%, transparent);
+  background: color-mix(in srgb, var(--arc-color, var(--plan-arc)) 12%, transparent);
+  color: var(--arc-color, var(--plan-arc));
+  font-family: var(--font-display);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  white-space: nowrap;
+  pointer-events: all;
+  transition:
+    background-color 140ms var(--ease-apple),
+    transform 120ms var(--ease-apple);
+}
+
+.rings-tooltip__start:hover {
+  background: color-mix(in srgb, var(--arc-color, var(--plan-arc)) 22%, transparent);
+}
+
+.rings-tooltip__start:active {
+  transform: scale(0.97);
+  transition-duration: 80ms;
+}
+
+/* Mobile: taller touch target */
+@media (max-width: 640px) {
+  .rings-tooltip__start {
+    height: 36px;
+    font-size: 12px;
+  }
+}

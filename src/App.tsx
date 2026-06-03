@@ -134,6 +134,7 @@ export default function App() {
             schedulingViewOpen={schedulingViewOpen}
             todayOnly={scheduleMode === 'today'}
             onScheduleClose={() => setScheduleMode('closed')}
+            onPlanSessionCompleted={handleScheduleChanged}
           />
         </div>
         <div className={`mode-layer ${!isAnalog ? 'is-in' : 'is-out-down'}`} aria-hidden={isAnalog}>

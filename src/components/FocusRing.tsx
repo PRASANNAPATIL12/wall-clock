@@ -6,6 +6,8 @@ import { useFocusTrack, type FocusSessionEnd } from '../hooks/useFocusTrack';
 import { getZonedTime } from '../lib/timezones';
 import { tick as hapticTick, prepareHaptic, celebrate } from '../lib/haptic';
 import { saveSession } from '../lib/sessionStore';
+import { markPlannedComplete } from '../lib/planStore';
+import type { PlannedSession } from '../lib/planStore';
 import { OnboardingHint } from './OnboardingHint';
 import { useOnboardingHint } from '../hooks/useOnboardingHint';
 import { TagPicker } from './TagPicker';
@@ -30,15 +32,11 @@ interface Props {
   hintBoostMs?: number;
   /** Bump to refresh upcoming planned sessions. */
   planRefreshKey?: number;
-  /** When true, show the concentric day-ring visualization. */
   schedulingViewOpen?: boolean;
-  /**
-   * When true, PlannedRingsLayer shows only today's sessions as a single
-   * innermost ring instead of all future days as concentric rings.
-   */
   todayOnly?: boolean;
-  /** Close the scheduling view (click-outside, etc.). */
   onScheduleClose?: () => void;
+  /** Called when a planned session is marked complete so the ring refresh fires. */
+  onPlanSessionCompleted?: () => void;
 }
 
 /* viewBox geometry — all values in viewBox units (0..100). */
@@ -84,6 +82,7 @@ export const FocusRing = memo(function FocusRing({
   schedulingViewOpen = false,
   todayOnly = false,
   onScheduleClose,
+  onPlanSessionCompleted,
 }: Props) {
   const now = useNow('second');
   const svgRef = useRef<SVGSVGElement>(null);
@@ -111,11 +110,18 @@ export const FocusRing = memo(function FocusRing({
 
   const handleSessionEnd = useCallback(
     (s: FocusSessionEnd) => {
-      const uid = userIdRef.current;
-      const tag = sessionTagRef.current;
-      // Reset session-scoped state for the next session regardless of save.
+      const uid        = userIdRef.current;
+      const tag        = sessionTagRef.current;
+      const activePlan = activePlanSessionRef.current;
+
+      // Reset all session-scoped state regardless of save outcome
       setSessionTag(null);
       setTagPickerOpen(false);
+      setActivePlanSession(null);
+      activePlanSessionRef.current = null;
+      setPlanCompleting(false);
+      planCompletionFiredRef.current = false;
+
       if (!uid) return; // anonymous — nothing to persist
       saveSession({
         userId: uid,
@@ -127,39 +133,62 @@ export const FocusRing = memo(function FocusRing({
         tag,
         timezone,
       })
-        .then(() => onSessionSaved?.())
-        .catch(() => {
-          /* sessionStore already logs */
-        });
+        .then(() => {
+          onSessionSaved?.();
+          // If this was a planned session, mark it complete in Supabase
+          if (activePlan) {
+            markPlannedComplete(activePlan.id).then(() => {
+              onPlanSessionCompleted?.();
+            });
+          }
+        })
+        .catch(() => { /* sessionStore already logs */ });
     },
-    [timezone, onSessionSaved],
+    [timezone, onSessionSaved, onPlanSessionCompleted],
   );
 
-  const { state, handleClick, setDragEnd } = useFocusTrack(timezone, handleSessionEnd);
+  const { state, handleClick, setDragEnd, startWithGoal } = useFocusTrack(timezone, handleSessionEnd);
+
+  /* ---- Planned session "Start now" state ---- */
+  /** The planned session currently running as a countdown arc. null = free session. */
+  const [activePlanSession,  setActivePlanSession]  = useState<PlannedSession | null>(null);
+  const activePlanSessionRef = useRef<PlannedSession | null>(null);
+  useEffect(() => { activePlanSessionRef.current = activePlanSession; }, [activePlanSession]);
+
+  /** True while the vanish animation is playing after goal reached. */
+  const [planCompleting, setPlanCompleting] = useState(false);
+  /** Guards so the auto-end fires only once per planned session. */
+  const planCompletionFiredRef = useRef(false);
 
   // Upcoming planned sessions for the concentric rings view.
   // When todayOnly=true we filter the map to just today's entry so a single
   // ring renders (instead of all future days as concentric rings).
   const { byDay: _plannedByDay } = useUpcomingPlanned(userId, planRefreshKey);
   const plannedByDay = useMemo(() => {
+    // When a planned session is active, show ONLY that arc (today key, single entry)
+    if (activePlanSession) {
+      const d   = new Date();
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      return new Map([[key, [activePlanSession]]]);
+    }
     if (!todayOnly) return _plannedByDay;
-    const d = new Date();
+    const d      = new Date();
     const todayKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     const m = new Map(_plannedByDay);
-    for (const k of m.keys()) {
-      if (k !== todayKey) m.delete(k);
-    }
+    for (const k of m.keys()) { if (k !== todayKey) m.delete(k); }
     return m;
-  }, [_plannedByDay, todayOnly]);
+  }, [_plannedByDay, todayOnly, activePlanSession]);
 
   // Tooltip state for the rings view
   const [ringsTooltip, setRingsTooltip] = useState<RingsTooltip | null>(null);
 
   // Close scheduling view when user clicks anywhere outside the .analog container.
   // The backdrop is pointer-events:none so it won't block ring hover events.
+  // When a planned session countdown is active, do NOT close on outside click.
   useEffect(() => {
-    if (!schedulingViewOpen) return;
+    if (!schedulingViewOpen && !activePlanSession) return;
     const handle = (e: MouseEvent) => {
+      if (activePlanSession) return; // countdown is running — don't close
       const analog = svgRef.current?.closest('.analog');
       if (analog && analog.contains(e.target as Node)) return;
       setRingsTooltip(null);
@@ -335,6 +364,48 @@ export const FocusRing = memo(function FocusRing({
   }, [tagPickerOpen, state, startGoalHintSeq]);
   // -----------------------------------------------------------------------
 
+  /* ---- Current hour-hand angle — same coordinate system as planned arc paths ---- */
+  const currentHourAngle = useMemo(() => {
+    const { hours, minutes, seconds } = getZonedTime(now, timezone);
+    return ((hours % 12) + minutes / 60 + seconds / 3600) * 30;
+  }, [now, timezone]);
+
+  /* ---- "Start now" from a planned session ---- */
+  const startFromPlan = useCallback((session: PlannedSession) => {
+    if (state.kind !== 'idle') return; // block if already tracking
+
+    const nowMs = Date.now();
+
+    // Compute planned end as absolute timestamp (today's date + planned end time)
+    const [hhStr, mmStr] = session.start_time_local.split(':');
+    const startH  = parseInt(hhStr ?? '0', 10);
+    const startM  = parseInt(mmStr ?? '0', 10);
+    const today   = new Date();
+    const planned = new Date(
+      today.getFullYear(), today.getMonth(), today.getDate(),
+      startH, startM + session.duration_minutes,
+    );
+    // If planned end is already past, give full duration from now (late start)
+    const endMs = planned.getTime() > nowMs
+      ? planned.getTime()
+      : nowMs + session.duration_minutes * 60_000;
+
+    // Transition directly to 'targeted' (skip the click-1/click-2 dance)
+    startWithGoal(nowMs, endMs);
+
+    // Set session metadata
+    setActivePlanSession(session);
+    activePlanSessionRef.current = session;
+    setSessionTag(session.tag ?? null);
+    planCompletionFiredRef.current = false;
+    setTagPickerOpen(false);
+    setRingsTooltip(null);
+
+    // Pre-warm audio context
+    prepareHaptic();
+    showFeedback('Session started', 2000);
+  }, [state.kind, startWithGoal, showFeedback]);
+
   const data = useMemo(() => {
     if (state.kind === 'idle') {
       return {
@@ -447,6 +518,22 @@ export const FocusRing = memo(function FocusRing({
     }
     prevCompleteRef.current = data.complete;
   }, [data.complete]);
+
+  /* ---- Auto-complete when goal reached during a planned session ----
+   * data is now declared — safe to reference data.complete here.        */
+  useEffect(() => {
+    if (!activePlanSession || planCompletionFiredRef.current) return;
+    if (!data.complete) return;
+
+    planCompletionFiredRef.current = true;
+    setPlanCompleting(true);
+
+    // Auto-trigger click-3 (end session) after celebration has started
+    const endT   = window.setTimeout(() => handleClick(0), 1_800);
+    // Clear completing state after vanish animation finishes
+    const clearT = window.setTimeout(() => setPlanCompleting(false), 2_200);
+    return () => { window.clearTimeout(endT); window.clearTimeout(clearT); };
+  }, [data.complete, activePlanSession, handleClick]);
 
   const onPointerDown = (e: PointerEvent<SVGElement>) => {
     const ang = computeAngle(e.clientX, e.clientY);
@@ -564,12 +651,14 @@ export const FocusRing = memo(function FocusRing({
     .filter(Boolean)
     .join(' ');
 
+  /* Keep rings overlay visible even when schedulingViewOpen is false
+     if a planned session countdown is running. */
+  const showRingsOverlay = schedulingViewOpen || activePlanSession !== null;
+  const isInPlanSession  = activePlanSession !== null;
+
   return (
     <>
-      {/* Backdrop — purely visual dim; pointer-events:none so it never
-          blocks hover/click on the ring arcs. Close-on-click-outside is
-          handled by the document listener above. */}
-      {schedulingViewOpen && (
+      {showRingsOverlay && (
         <div className="rings-backdrop" style={{ pointerEvents: 'none' }} />
       )}
 
@@ -591,18 +680,21 @@ export const FocusRing = memo(function FocusRing({
           strokeDasharray="0.6 1.2"
         />
 
-        {/* Concentric day rings — shown when scheduling view is open */}
-        {schedulingViewOpen && (
+        {/* Concentric day rings — visible during schedule view OR active plan countdown */}
+        {showRingsOverlay && (
           <PlannedRingsLayer
             sessionsByDay={plannedByDay}
             C={C}
             svgEl={svgRef.current}
             onTooltip={setRingsTooltip}
+            activePlanId={activePlanSession?.id ?? null}
+            currentHourAngle={currentHourAngle}
+            completingPlanId={planCompleting ? (activePlanSession?.id ?? null) : null}
           />
         )}
 
-        {/* To-do ghost arc — pre-target only */}
-        {data.end !== null && data.head !== null && !data.complete && (
+        {/* To-do ghost arc — hidden during plan countdown (countdown arc takes over) */}
+        {data.end !== null && data.head !== null && !data.complete && !isInPlanSession && (
           <path
             d={arcPath(data.head, data.end, RING_R)}
             className="todo"
@@ -612,8 +704,8 @@ export const FocusRing = memo(function FocusRing({
           />
         )}
 
-        {/* Goal arc — start to current (pre-target) or start to end (post-target) */}
-        {data.start !== null && data.goalEnd !== null && (
+        {/* Goal arc — hidden during plan countdown (countdown arc is the visual) */}
+        {data.start !== null && data.goalEnd !== null && !isInPlanSession && (
           <path
             d={arcPath(data.start, data.goalEnd, RING_R)}
             className="progress goal"
@@ -784,8 +876,19 @@ export const FocusRing = memo(function FocusRing({
         />
       )}
 
-      {/* Rings tooltip — glass pill above hovered segment */}
-      {ringsTooltip && <RingsTooltipCard tooltip={ringsTooltip} />}
+      {/* Rings tooltip — glass pill above hovered/tapped segment.
+          onStartPlan is omitted when a session is already running so the
+          button disappears once countdown begins.
+          onMouseEnter/Leave bridge the hover gap between arc and tooltip
+          so the user can move the mouse from arc to "Start now" button. */}
+      {ringsTooltip && (
+        <RingsTooltipCard
+          tooltip={ringsTooltip}
+          onStartPlan={state.kind === 'idle' ? startFromPlan : undefined}
+          onMouseEnter={() => { /* cancel any pending hide from arc onLeave */ }}
+          onMouseLeave={() => setRingsTooltip(null)}
+        />
+      )}
 
       {/* End-drop tag tooltip — shows selected session tag on hover */}
       {endDropHovered && userId && sessionTag && data.end !== null && svgRef.current && (() => {
