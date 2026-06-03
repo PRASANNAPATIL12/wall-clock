@@ -72,10 +72,12 @@ export default function App() {
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('closed');
   const schedulingViewOpen = scheduleMode !== 'closed';
 
-  const cycleScheduleMode = () =>
-    setScheduleMode(prev =>
-      prev === 'closed' ? 'all' : prev === 'all' ? 'today' : 'closed',
-    );
+  // Tap "All sessions" → toggle all-days view; tap again → close
+  const handleSelectAll   = () =>
+    setScheduleMode(m => m === 'all'   ? 'closed' : 'all');
+  // Tap "Today" → toggle today-only view; tap again → close
+  const handleSelectToday = () =>
+    setScheduleMode(m => m === 'today' ? 'closed' : 'today');
 
   // Upcoming planned sessions — feeds ScheduleBadge count
   const { byDay: plannedByDay, total: upcomingTotal } = useUpcomingPlanned(
@@ -204,13 +206,14 @@ export default function App() {
         </div>
       )}
 
-      {/* Schedule badge — shows when upcoming sessions exist, or when rings are active */}
-      {auth.user && (upcomingTotal > 0 || schedulingViewOpen) && (
+      {/* Schedule badge — shows only when sessions are planned */}
+      {auth.user && upcomingTotal > 0 && (
         <ScheduleBadge
           count={upcomingTotal}
           todayCount={todayPlannedCount}
           viewMode={scheduleMode}
-          onClick={cycleScheduleMode}
+          onSelectAll={handleSelectAll}
+          onSelectToday={handleSelectToday}
         />
       )}
 
