@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { getAllTags } from '../lib/tags';
+import { getAllTags, TAGS_CHANGED_EVENT } from '../lib/tags';
 import { TagIcon } from './TagIcon';
 import './TagPicker.css';
 
@@ -81,16 +81,39 @@ export function TagPicker({ endAngleDeg, onPick, onManageTags }: Props) {
   const [picked, setPicked]   = useState<string | null>(null);
   const [tooltipId, setTooltipId] = useState<string | null>(null);
   const [tooltipX, setTooltipX]   = useState(0);
+  /**
+   * Reactive tag list — refreshed whenever saveCustomTag / deleteCustomTag
+   * dispatches the TAGS_CHANGED_EVENT. This means a new custom tag added
+   * in Settings → Tags appears in the picker immediately without needing
+   * to close and reopen the picker.
+   */
+  const [tags, setTags] = useState(() => getAllTags());
+  /**
+   * When the user taps "+" (manage/add tags), we keep the picker alive
+   * instead of auto-dismissing after 4 s — they need to return here
+   * after adding their tag so they can pick it.
+   * extended=true → use a long 60 s fallback timeout instead of 4 s.
+   */
+  const [extended, setExtended] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const tags = getAllTags();
 
-  // Auto-dismiss after 4 s if nothing picked.
+  // Refresh tag list when custom tags change (via Settings → Tags add/delete).
+  useEffect(() => {
+    const refresh = () => setTags(getAllTags());
+    window.addEventListener(TAGS_CHANGED_EVENT, refresh);
+    return () => window.removeEventListener(TAGS_CHANGED_EVENT, refresh);
+  }, []);
+
+  // Auto-dismiss:
+  //   · Normal: 4 s after mount (gives time to browse + pick)
+  //   · Extended: 60 s (user went to Settings to add a tag; will return)
   useEffect(() => {
     if (picked !== null) return;
-    const t = window.setTimeout(() => onPick(null), 4000);
+    const timeout = extended ? 60_000 : 4_000;
+    const t = window.setTimeout(() => onPick(null), timeout);
     return () => window.clearTimeout(t);
-  }, [picked, onPick]);
+  }, [picked, onPick, extended]);
 
   /**
    * Scroll-hint sequence:
@@ -130,10 +153,18 @@ export function TagPicker({ endAngleDeg, onPick, onManageTags }: Props) {
     window.setTimeout(() => onPick(id), 220);
   };
 
+  /**
+   * "+" button — open Settings → Tags with the add form pre-focused.
+   *
+   * Deliberately does NOT call onPick(null) here — the picker stays
+   * visible so the user can return and pick their newly created tag.
+   * The auto-dismiss timer is extended to 60 s so it won't fire while
+   * they're in Settings.
+   */
   const handleManage = () => {
     setTooltipId(null);
-    onPick(null);
-    window.setTimeout(() => onManageTags?.(), 40);
+    setExtended(true);           // pause the 4 s auto-dismiss
+    onManageTags?.();            // open Settings → Tags (no picker close)
   };
 
   /**
@@ -154,7 +185,7 @@ export function TagPicker({ endAngleDeg, onPick, onManageTags }: Props) {
 
   const pickerStyle = computePickerStyle(endAngleDeg);
   const hoveredTag = tooltipId
-    ? (tags.find(t => t.id === tooltipId) ?? { id: '__manage', label: 'Manage tags', path: '' })
+    ? (tags.find(t => t.id === tooltipId) ?? { id: '__manage', label: 'Add custom tag', path: '' })
     : null;
 
   return (
@@ -186,7 +217,7 @@ export function TagPicker({ endAngleDeg, onPick, onManageTags }: Props) {
           type="button"
           className="tag-picker__manage"
           onClick={handleManage}
-          aria-label="Manage tags"
+          aria-label="Add custom tag"
           onMouseEnter={(e) => handleEnter('__manage', e)}
           onMouseLeave={handleLeave}
         >

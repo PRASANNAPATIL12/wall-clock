@@ -375,6 +375,16 @@
   color: var(--fg);
 }
 
+/* =========================================================
+   History section divider — separates heatmap from session list
+   ========================================================= */
+.stats-history-divider {
+  height: 1px;
+  background: var(--fg-faint);
+  margin: 8px 0 0;
+  flex-shrink: 0;
+}
+
 /* ---- Mobile ---- */
 @media (max-width: 640px) {
   .stats-row { flex-direction: column; gap: 8px; }

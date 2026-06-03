@@ -9,15 +9,24 @@ import {
 import { TagIcon } from '../TagIcon';
 import './TagsPane.css';
 
+interface TagsPaneProps {
+  /**
+   * When true the "Add custom tag" form opens immediately (auto-focused).
+   * Used when the user tapped "+" in the TagPicker — they want to create
+   * a tag right now, not browse the list first.
+   */
+  autoOpenAdd?: boolean;
+}
+
 /**
  * Tags pane — shows default tags (read-only) and custom tags (add/delete).
  * Custom tags are persisted in localStorage (wall.tags.custom).
- * Changes here are reflected live in the TagPicker.
+ * Changes here are reflected live in the TagPicker via TAGS_CHANGED_EVENT.
  */
-export function TagsPane() {
+export function TagsPane({ autoOpenAdd = false }: TagsPaneProps) {
   const [custom, setCustom] = useState<TagDef[]>(() => getCustomTags());
   const [input, setInput] = useState('');
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState(autoOpenAdd);
 
   const handleAdd = () => {
     const label = input.trim();

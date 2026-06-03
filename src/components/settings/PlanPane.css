@@ -315,4 +315,8 @@
   .plan-history { padding: 0 16px 16px; }
   .plan-field-row { flex-direction: column; }
   .plan-field-btn { flex: none; width: 100%; }
+
+  /* Touch devices: delete icon always visible — no hover state available */
+  .plan-card__delete { opacity: 0.55; }
+  .plan-card__delete:active { background: var(--fg-faint); color: var(--hand-second); opacity: 1; }
 }

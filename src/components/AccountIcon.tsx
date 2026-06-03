@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import './AccountIcon.css';
 
@@ -7,11 +8,19 @@ interface Props {
 }
 
 /**
- * Upper-left circular pill showing the user's initials. Replaces JoinPill
- * once signed in; clicking opens the SettingsDialog.
+ * Upper-left circular pill showing the user's profile photo (Google users)
+ * or initials (email/password users). Replaces JoinPill once signed in;
+ * clicking opens the SettingsDialog → Account pane.
+ *
+ * Photo priority: user_metadata.avatar_url → user_metadata.picture → initials fallback.
+ * If the image fails to load (network error, revoked token), falls back to initials.
  */
 export function AccountIcon({ user, onClick }: Props) {
+  const photoUrl = getPhotoUrl(user);
   const initials = computeInitials(user);
+  const [imgError, setImgError] = useState(false);
+  const showPhoto = !!photoUrl && !imgError;
+
   return (
     <button
       className="account-icon"
@@ -20,9 +29,27 @@ export function AccountIcon({ user, onClick }: Props) {
       aria-label="Open settings"
       title={user.email ?? 'Account'}
     >
-      {initials}
+      {showPhoto ? (
+        <img
+          className="account-icon__photo"
+          src={photoUrl!}
+          alt={initials}
+          referrerPolicy="no-referrer"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <span className="account-icon__initials">{initials}</span>
+      )}
     </button>
   );
+}
+
+function getPhotoUrl(user: User): string | null {
+  const meta = user.user_metadata as Record<string, unknown> | undefined;
+  if (!meta) return null;
+  // Google OAuth: Supabase surfaces the photo as avatar_url or picture
+  const url = (meta.avatar_url ?? meta.picture) as string | undefined;
+  return url || null;
 }
 
 function computeInitials(user: User): string {
