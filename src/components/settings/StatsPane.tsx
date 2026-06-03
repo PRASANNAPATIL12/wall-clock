@@ -5,7 +5,13 @@ import type { SessionRow } from '../../lib/supabase';
 import { HistoryPane } from './HistoryPane';
 import './StatsPane.css';
 
-interface Props { user: User; refreshKey?: number }
+interface Props {
+  user: User;
+  refreshKey?: number;
+  /** Current daily goal in minutes (0 = not set). */
+  dailyGoalMin?: number;
+  onDailyGoalChange?: (minutes: number) => void;
+}
 
 interface Period { label: string; days: number }
 
@@ -124,7 +130,9 @@ function PeriodDropdown({ options, value, onChange }: {
 
 const isTouch = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;
 
-export function StatsPane({ user, refreshKey }: Props) {
+const GOAL_PRESETS = [60, 120, 180, 240, 300, 360]; // minutes
+
+export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChange }: Props) {
   const [rows,      setRows]      = useState<SessionRow[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [periodIdx, setPeriodIdx] = useState(1);
@@ -374,6 +382,48 @@ export function StatsPane({ user, refreshKey }: Props) {
         <h3>Stats</h3>
         <PeriodDropdown options={PERIODS} value={periodIdx}
           onChange={(i) => { setPeriodIdx(i); setTooltip(null); }} />
+      </div>
+
+      {/* Daily goal chip selector */}
+      <div className="stats-goal">
+        <span className="stats-goal__label">Daily goal</span>
+        <div className="stats-goal__chips">
+          {GOAL_PRESETS.map(min => {
+            const h = min / 60;
+            const active = dailyGoalMin === min;
+            return (
+              <button
+                key={min}
+                type="button"
+                className={`stats-goal__chip${active ? ' is-active' : ''}`}
+                onClick={() => onDailyGoalChange?.(active ? 0 : min)}
+                aria-pressed={active}
+              >
+                {h}h
+              </button>
+            );
+          })}
+          {/* Clear button — only visible when a goal is set */}
+          {dailyGoalMin > 0 && !GOAL_PRESETS.includes(dailyGoalMin) && (
+            <button
+              type="button"
+              className="stats-goal__chip is-active"
+              onClick={() => onDailyGoalChange?.(0)}
+            >
+              {dailyGoalMin < 60 ? `${dailyGoalMin}m` : `${(dailyGoalMin/60).toFixed(1)}h`}
+            </button>
+          )}
+        </div>
+        {dailyGoalMin > 0 && (
+          <button
+            type="button"
+            className="stats-goal__clear"
+            onClick={() => onDailyGoalChange?.(0)}
+            aria-label="Remove daily goal"
+          >
+            Clear
+          </button>
+        )}
       </div>
 
       {/* Stat cards — NEVER scroll */}
