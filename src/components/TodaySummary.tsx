@@ -5,6 +5,10 @@ import './TodaySummary.css';
 interface Props {
   stats: TodayStats;
   onClick: () => void;
+  /** Daily goal in ms. 0 = no goal set. */
+  dailyGoalMs?: number;
+  /** 0–1 progress toward daily goal. null when no goal set. */
+  goalProgress?: number | null;
 }
 
 function fmtDuration(ms: number): string {
@@ -27,26 +31,41 @@ function FlameIcon() {
 
 /**
  * Bottom-center pill — total focus today, session count, streak.
- * Hover shows a glass tooltip (same design as TagPicker tooltips).
- * Hover animation matches the .pill class from Controls.css.
+ *
+ * When a daily goal is set:
+ *   · Shows "1h 45m / 4h" instead of just "1h 45m"
+ *   · On mobile this fraction IS the progress indicator (no separate bar)
+ *   · On desktop the separate DailyGoalBar at the viewport bottom handles the bar
  */
-export function TodaySummary({ stats, onClick }: Props) {
+export function TodaySummary({ stats, onClick, dailyGoalMs = 0, goalProgress = null }: Props) {
   const [hovered, setHovered] = useState(false);
   if (stats.count === 0) return null;
 
+  const goalReached = goalProgress !== null && goalProgress >= 1;
+  const showGoal    = dailyGoalMs > 0;
+
   return (
     <button
-      className="today-summary"
+      className={`today-summary${goalReached ? ' goal-reached' : ''}`}
       type="button"
       onClick={onClick}
-      aria-label="Open history"
+      aria-label="Open stats"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Stats content */}
-      <span>{fmtDuration(stats.totalMs)}</span>
+      {/* Time: "1h 45m" or "1h 45m / 4h" when goal set */}
+      <span>
+        {fmtDuration(stats.totalMs)}
+        {showGoal && (
+          <span className="today-summary__goal-frac">
+            {' / '}{fmtDuration(dailyGoalMs)}
+          </span>
+        )}
+      </span>
+
       <span className="today-summary__dot" aria-hidden />
       <span>{stats.count} session{stats.count > 1 ? 's' : ''}</span>
+
       {stats.streak > 0 && (
         <>
           <span className="today-summary__dot" aria-hidden />
@@ -57,10 +76,10 @@ export function TodaySummary({ stats, onClick }: Props) {
         </>
       )}
 
-      {/* Glass tooltip — appears above the button on hover */}
+      {/* Glass tooltip above the button */}
       {hovered && (
         <span className="today-summary__tooltip" aria-hidden>
-          Open history
+          {goalReached ? 'Daily goal reached! 🎉' : 'Open stats'}
         </span>
       )}
     </button>

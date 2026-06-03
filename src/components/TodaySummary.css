@@ -89,6 +89,18 @@
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
+/* Goal fraction — muted slash + target duration */
+.today-summary__goal-frac {
+  opacity: 0.55;
+  font-size: 0.9em;
+}
+
+/* When goal is reached — subtle green tint on the pill */
+.today-summary.goal-reached {
+  color: #2da44e;
+  border-color: color-mix(in srgb, #2da44e 30%, transparent);
+}
+
 /* Idle fade — translateY only, no X */
 body.idle .today-summary {
   opacity: 0;

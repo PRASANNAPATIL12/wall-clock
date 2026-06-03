@@ -12,6 +12,8 @@ interface Props {
   hintBoostMs?: number;
   planRefreshKey?: number;
   schedulingViewOpen?: boolean;
+  /** When true, PlannedRingsLayer shows only today's sessions (single ring). */
+  todayOnly?: boolean;
   onScheduleClose?: () => void;
 }
 
@@ -69,7 +71,7 @@ const Numerals = memo(function Numerals({ currentHour }: { currentHour: number }
   return <g>{nums}</g>;
 });
 
-export const AnalogClock = memo(function AnalogClock({ timezone, userId, onSessionSaved, onManageTags, hintBoostMs, planRefreshKey, schedulingViewOpen, onScheduleClose }: Props) {
+export const AnalogClock = memo(function AnalogClock({ timezone, userId, onSessionSaved, onManageTags, hintBoostMs, planRefreshKey, schedulingViewOpen, todayOnly, onScheduleClose }: Props) {
   const now = useNow('frame');
   const { hours, minutes, seconds, ms } = useMemo(
     () => getZonedTime(now, timezone),
@@ -94,6 +96,7 @@ export const AnalogClock = memo(function AnalogClock({ timezone, userId, onSessi
         hintBoostMs={hintBoostMs}
         planRefreshKey={planRefreshKey}
         schedulingViewOpen={schedulingViewOpen}
+        todayOnly={todayOnly}
         onScheduleClose={onScheduleClose}
       />
       <div className="analog__face" aria-hidden>

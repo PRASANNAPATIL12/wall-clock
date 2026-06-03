@@ -13,7 +13,7 @@ import { AuthModal } from './components/AuthModal';
 import { SettingsDialog, type PaneKey } from './components/SettingsDialog';
 import { TodaySummary } from './components/TodaySummary';
 import { HeroMessage } from './components/HeroMessage';
-import { ScheduleBadge } from './components/ScheduleBadge';
+import { ScheduleBadge, type ScheduleMode } from './components/ScheduleBadge';
 import { useUpcomingPlanned } from './hooks/usePlannedSessions';
 import { useTodayStats } from './hooks/useTodayStats';
 import { useTheme } from './hooks/useTheme';
@@ -68,16 +68,39 @@ export default function App() {
   const [planRefreshKey, setPlanRefreshKey] = useState(0);
   const handleScheduleChanged = () => setPlanRefreshKey((n) => n + 1);
 
-  // Scheduling rings overlay open/close state
-  const [schedulingViewOpen, setSchedulingViewOpen] = useState(false);
+  // Schedule rings view — three states: closed / all days / today only
+  const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('closed');
+  const schedulingViewOpen = scheduleMode !== 'closed';
+
+  const cycleScheduleMode = () =>
+    setScheduleMode(prev =>
+      prev === 'closed' ? 'all' : prev === 'all' ? 'today' : 'closed',
+    );
 
   // Upcoming planned sessions — feeds ScheduleBadge count
-  const { total: upcomingTotal } = useUpcomingPlanned(
+  const { byDay: plannedByDay, total: upcomingTotal } = useUpcomingPlanned(
     auth.user?.id ?? null,
     planRefreshKey,
   );
 
+  // Today's planned session count for the badge "today" label
+  const todayPlannedCount = (() => {
+    const today = new Date();
+    const key = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    return plannedByDay.get(key)?.length ?? 0;
+  })();
+
   const todayStats = useTodayStats(auth.user?.id ?? null, tz, sessionSavedTick);
+
+  // Daily focus goal — stored as a string (usePersistedState is string-only)
+  const [dailyGoalStr, setDailyGoalStr] = usePersistedState<string>('wall.daily.goal', '0');
+  const dailyGoalMin = parseInt(dailyGoalStr, 10) || 0;
+  const setDailyGoalMin = (min: number) => setDailyGoalStr(String(min));
+  const dailyGoalMs  = dailyGoalMin * 60_000;
+  // null when no goal set; capped at 1.0 so bar never overflows
+  const goalProgress = dailyGoalMs > 0
+    ? Math.min(todayStats.totalMs / dailyGoalMs, 1)
+    : null;
 
   useIdle(5000);
 
@@ -108,7 +131,8 @@ export default function App() {
             hintBoostMs={hintBoostMs}
             planRefreshKey={planRefreshKey}
             schedulingViewOpen={schedulingViewOpen}
-            onScheduleClose={() => setSchedulingViewOpen(false)}
+            todayOnly={scheduleMode === 'today'}
+            onScheduleClose={() => setScheduleMode('closed')}
           />
         </div>
         <div className={`mode-layer ${!isAnalog ? 'is-in' : 'is-out-down'}`} aria-hidden={isAnalog}>
@@ -155,14 +179,38 @@ export default function App() {
 
       {/* Today summary — opens Stats pane (History is now embedded inside Stats) */}
       {auth.user && (
-        <TodaySummary stats={todayStats} onClick={() => openSettings('stats')} />
+        <TodaySummary
+          stats={todayStats}
+          dailyGoalMs={dailyGoalMs}
+          goalProgress={goalProgress}
+          onClick={() => openSettings('stats')}
+        />
       )}
 
-      {/* Schedule badge — shows above TodaySummary when upcoming sessions exist */}
-      {auth.user && upcomingTotal > 0 && (
+      {/* Daily goal progress bar — 2px at absolute bottom edge, desktop only */}
+      {auth.user && goalProgress !== null && (
+        <div
+          className="daily-goal-bar"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(goalProgress * 100)}
+          aria-label={`Daily focus goal: ${Math.round(goalProgress * 100)}%`}
+        >
+          <div
+            className="daily-goal-bar__fill"
+            style={{ width: `${goalProgress * 100}%` }}
+          />
+        </div>
+      )}
+
+      {/* Schedule badge — shows when upcoming sessions exist, or when rings are active */}
+      {auth.user && (upcomingTotal > 0 || schedulingViewOpen) && (
         <ScheduleBadge
           count={upcomingTotal}
-          onClick={() => setSchedulingViewOpen(v => !v)}
+          todayCount={todayPlannedCount}
+          viewMode={scheduleMode}
+          onClick={cycleScheduleMode}
         />
       )}
 
@@ -178,6 +226,8 @@ export default function App() {
           refreshKey={sessionSavedTick}
           onScheduleChanged={handleScheduleChanged}
           autoOpenTagAdd={openTagAdd}
+          dailyGoalMin={dailyGoalMin}
+          onDailyGoalChange={setDailyGoalMin}
           onClose={closeSettings}
           onSignOut={async () => {
             await auth.signOut();

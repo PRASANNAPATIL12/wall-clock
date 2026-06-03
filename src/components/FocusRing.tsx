@@ -32,6 +32,11 @@ interface Props {
   planRefreshKey?: number;
   /** When true, show the concentric day-ring visualization. */
   schedulingViewOpen?: boolean;
+  /**
+   * When true, PlannedRingsLayer shows only today's sessions as a single
+   * innermost ring instead of all future days as concentric rings.
+   */
+  todayOnly?: boolean;
   /** Close the scheduling view (click-outside, etc.). */
   onScheduleClose?: () => void;
 }
@@ -77,6 +82,7 @@ export const FocusRing = memo(function FocusRing({
   hintBoostMs = 0,
   planRefreshKey = 0,
   schedulingViewOpen = false,
+  todayOnly = false,
   onScheduleClose,
 }: Props) {
   const now = useNow('second');
@@ -131,8 +137,20 @@ export const FocusRing = memo(function FocusRing({
 
   const { state, handleClick, setDragEnd } = useFocusTrack(timezone, handleSessionEnd);
 
-  // Upcoming planned sessions (next 4 days) for the concentric rings view
-  const { byDay: plannedByDay } = useUpcomingPlanned(userId, planRefreshKey);
+  // Upcoming planned sessions for the concentric rings view.
+  // When todayOnly=true we filter the map to just today's entry so a single
+  // ring renders (instead of all future days as concentric rings).
+  const { byDay: _plannedByDay } = useUpcomingPlanned(userId, planRefreshKey);
+  const plannedByDay = useMemo(() => {
+    if (!todayOnly) return _plannedByDay;
+    const d = new Date();
+    const todayKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const m = new Map(_plannedByDay);
+    for (const k of m.keys()) {
+      if (k !== todayKey) m.delete(k);
+    }
+    return m;
+  }, [_plannedByDay, todayOnly]);
 
   // Tooltip state for the rings view
   const [ringsTooltip, setRingsTooltip] = useState<RingsTooltip | null>(null);
