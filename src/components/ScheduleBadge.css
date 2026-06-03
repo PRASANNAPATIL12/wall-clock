@@ -1,15 +1,8 @@
 /* =========================================================================
-   ScheduleBadge — two visual states
-
-   CLOSED  Single glass pill button. Sits above TodaySummary.
-   OPEN    Two-segment pill (div + two buttons). Same size/position,
-           but wider to fit both labels. Morphs in with a scale animation.
-
-   Both states share .schedule-badge for position + glass styling so
-   the idle-fade body.idle rule applies to both.
+   ScheduleBadge — single pill (closed) / two-segment pill (open)
    ========================================================================= */
 
-/* ---- Shared base: position + glass ---- */
+/* ---- Shared base ---- */
 .schedule-badge {
   position: fixed;
   bottom: 70px;
@@ -43,7 +36,7 @@
     opacity          600ms var(--ease-apple);
 }
 
-/* ---- Closed: single button ---- */
+/* ---- Closed: single clickable button ---- */
 .schedule-badge:not(.schedule-badge--open) {
   cursor: pointer;
   gap: 5px;
@@ -63,19 +56,36 @@
   cursor: default;
   padding: 0;
   gap: 0;
-  /* Highlight the pill border more when active */
+  position: fixed;           /* keep fixed for correct getBoundingClientRect */
   border-color: color-mix(in srgb, var(--plan-arc) 30%, var(--glass-border));
-  /* Morph-in animation from the same position as the closed pill */
-  animation: sb-open 220ms var(--ease-apple) both;
+  animation: sb-open 200ms var(--ease-apple) both;
 }
 
 @keyframes sb-open {
-  from { opacity: 0.5; transform: scale(0.94); }
+  from { opacity: 0.4; transform: scale(0.93); }
   to   { opacity: 1;   transform: scale(1); }
 }
 
-/* ---- Segments (buttons inside the open pill) ---- */
+/* ---- Sliding indicator ---- */
+/* Absolute inside fixed — the indicator slides between segment positions. */
+.sb-indicator {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--plan-arc) 18%, transparent);
+  pointer-events: none;
+  z-index: 0;
+  /* Smooth slide when switching segments */
+  transition:
+    left  220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    width 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ---- Segment buttons ---- */
 .sb-seg {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -90,33 +100,28 @@
   font-weight: 500;
   letter-spacing: -0.005em;
   cursor: pointer;
-  opacity: 0.55;
-  transition:
-    opacity    180ms var(--ease-apple),
-    background 180ms var(--ease-apple);
   white-space: nowrap;
+  /* Opacity transition for active/inactive crossfade */
+  transition: opacity 200ms var(--ease-apple);
 }
 
-.sb-seg:hover { opacity: 0.82; }
+.sb-seg:not(.is-active) { opacity: 0.48; }
+.sb-seg.is-active       { opacity: 1; font-weight: 600; }
 
-/* Active segment — filled background + full opacity */
-.sb-seg.is-active {
-  opacity: 1;
-  font-weight: 600;
-  background: color-mix(in srgb, var(--plan-arc) 16%, transparent);
-}
-
+.sb-seg:hover:not(.is-active) { opacity: 0.72; }
 .sb-seg:active { transform: scale(0.97); transition-duration: 80ms; }
 
-/* ---- Divider line between segments ---- */
+/* ---- Divider between segments ---- */
 .sb-divider {
   width: 1px;
   height: 14px;
-  background: color-mix(in srgb, var(--plan-arc) 25%, transparent);
+  background: color-mix(in srgb, var(--plan-arc) 22%, transparent);
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
 }
 
-/* ---- Label helpers — show full on desktop, short on mobile ---- */
+/* ---- Label helpers ---- */
 .sb-short { display: none; }
 
 /* ---- Idle fade ---- */
@@ -126,23 +131,17 @@ body.idle .schedule-badge {
   pointer-events: none;
 }
 
-/* ================================================================
+/* ===========================================================
    Mobile
-   ================================================================ */
+   =========================================================== */
 @media (max-width: 640px) {
   .schedule-badge {
     bottom: 168px;
     font-size: 11px;
     height: 26px;
   }
-
-  .schedule-badge:not(.schedule-badge--open) {
-    padding: 0 10px;
-  }
-
-  /* On narrow screens, swap to short labels inside segments */
+  .schedule-badge:not(.schedule-badge--open) { padding: 0 10px; }
   .sb-full  { display: none; }
   .sb-short { display: inline; }
-
-  .sb-seg { padding: 0 10px; gap: 4px; }
+  .sb-seg   { padding: 0 10px; gap: 4px; }
 }

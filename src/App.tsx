@@ -95,9 +95,8 @@ export default function App() {
   const todayStats = useTodayStats(auth.user?.id ?? null, tz, sessionSavedTick);
 
   // Daily focus goal — stored as a string (usePersistedState is string-only)
-  const [dailyGoalStr, setDailyGoalStr] = usePersistedState<string>('wall.daily.goal', '0');
+  const [dailyGoalStr] = usePersistedState<string>('wall.daily.goal', '0');
   const dailyGoalMin = parseInt(dailyGoalStr, 10) || 0;
-  const setDailyGoalMin = (min: number) => setDailyGoalStr(String(min));
   const dailyGoalMs  = dailyGoalMin * 60_000;
   // null when no goal set; capped at 1.0 so bar never overflows
   const goalProgress = dailyGoalMs > 0
@@ -229,8 +228,6 @@ export default function App() {
           refreshKey={sessionSavedTick}
           onScheduleChanged={handleScheduleChanged}
           autoOpenTagAdd={openTagAdd}
-          dailyGoalMin={dailyGoalMin}
-          onDailyGoalChange={setDailyGoalMin}
           onClose={closeSettings}
           onSignOut={async () => {
             await auth.signOut();

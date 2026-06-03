@@ -19,9 +19,6 @@ interface Props {
   onScheduleChanged?: () => void;
   autoOpenTagAdd?: boolean;
   onManageTags?: () => void;
-  /** Current daily goal in minutes (0 = not set). */
-  dailyGoalMin?: number;
-  onDailyGoalChange?: (minutes: number) => void;
 }
 
 export type PaneKey =
@@ -102,8 +99,6 @@ export function SettingsDialog({
   onScheduleChanged,
   autoOpenTagAdd = false,
   onManageTags,
-  dailyGoalMin = 0,
-  onDailyGoalChange,
 }: Props) {
   const [pane, setPane] = useState<PaneKey>(initialPane);
 
@@ -192,14 +187,7 @@ export function SettingsDialog({
                 onManageTags={onManageTags ?? (() => setPane('tags'))}
               />
             )}
-            {pane === 'stats'   && (
-              <StatsPane
-                user={user}
-                refreshKey={refreshKey}
-                dailyGoalMin={dailyGoalMin}
-                onDailyGoalChange={onDailyGoalChange}
-              />
-            )}
+            {pane === 'stats'   && <StatsPane user={user} refreshKey={refreshKey} />}
             {pane === 'tags'    && <TagsPane autoOpenAdd={autoOpenTagAdd} />}
             {pane === 'sounds'  && <SoundsPane />}
             {pane === 'guide'   && <GuidePane onClose={onClose} />}

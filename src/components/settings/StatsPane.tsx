@@ -5,39 +5,67 @@ import type { SessionRow } from '../../lib/supabase';
 import { HistoryPane } from './HistoryPane';
 import './StatsPane.css';
 
-interface Props {
-  user: User;
-  refreshKey?: number;
-  /** Current daily goal in minutes (0 = not set). */
-  dailyGoalMin?: number;
-  onDailyGoalChange?: (minutes: number) => void;
-}
+interface Props { user: User; refreshKey?: number }
 
-interface Period { label: string; days: number }
+/* ============================================================
+   Period definition — calendar-month-aligned.
+   months = 0  → "1 week" (last 7 days, single row)
+   months = N  → N full calendar months ending at end-of-this-month
+   ============================================================ */
+interface Period { label: string; months: number }
 
 const PERIODS: Period[] = [
-  { label: '1 week',   days: 7   },
-  { label: '1 month',  days: 30  },
-  { label: '2 months', days: 60  },
-  { label: '3 months', days: 90  },
-  { label: '4 months', days: 120 },
-  { label: '6 months', days: 180 },
-  { label: '1 year',   days: 365 },
+  { label: '1 week',   months: 0  },
+  { label: '1 month',  months: 1  },
+  { label: '2 months', months: 2  },
+  { label: '3 months', months: 3  },
+  { label: '4 months', months: 4  },
+  { label: '6 months', months: 6  },
+  { label: '1 year',   months: 12 },
 ];
 
 const DOW_SHORT  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const DOW_SINGLE = ['S','M','T','W','T','F','S'];
-const GAP        = 2;   // px between cells within a block
-const MONTH_GAP  = 10;  // px between month blocks
-const CELL_MIN   = 7;   // minimum cell px before horizontal scroll
-const CELL_MAX   = 18;  // maximum cell px (never over-inflate)
+const GAP        = 2;
+const MONTH_GAP  = 10;
+const CELL_MIN   = 7;
+const CELL_MAX   = 18;
 
-/* ---- Helpers ---- */
+/* ---- Date helpers ---- */
 
+/** YYYY-MM-DD of today − N days (in local time). */
 function dateNDaysAgo(n: number): string {
   const d = new Date();
   d.setDate(d.getDate() - n);
+  return ymd(d);
+}
+
+function ymd(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+/** Add `n` calendar days to a date. */
+function addDays(dateStr: string, n: number): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return ymd(d);
+}
+
+/**
+ * First day of the calendar month that is `monthsBack` months before the
+ * current month.  monthsBack=0 → first day of THIS month.
+ */
+function firstOfMonthsAgo(monthsBack: number): string {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() - monthsBack);
+  return ymd(d);
+}
+
+/** Last day of the current calendar month. */
+function lastOfThisMonth(): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() + 1, 0);   // day 0 of next month = last day of this month
+  return ymd(d);
 }
 
 function fmtDuration(ms: number): string {
@@ -57,7 +85,7 @@ function intensityBucket(ms: number): 0|1|2|3|4 {
   return 4;
 }
 
-interface HeatCell { date: string; ms: number; bucket: 0|1|2|3|4; isToday: boolean }
+interface HeatCell { date: string; ms: number; bucket: 0|1|2|3|4; isToday: boolean; isFuture: boolean }
 interface TooltipState { date: string; ms: number; x: number; y: number; below: boolean }
 
 function animateScroll(
@@ -124,18 +152,16 @@ function PeriodDropdown({ options, value, onChange }: {
   );
 }
 
+const isTouch = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;
+
 /* =========================================================================
    Main component
    ========================================================================= */
-
-const isTouch = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;
-
-const GOAL_PRESETS = [60, 120, 180, 240, 300, 360]; // minutes
-
-export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChange }: Props) {
+export function StatsPane({ user, refreshKey }: Props) {
   const [rows,      setRows]      = useState<SessionRow[]>([]);
   const [loading,   setLoading]   = useState(true);
-  const [periodIdx, setPeriodIdx] = useState(1);
+  // Default: 3 months (index 3 in PERIODS)
+  const [periodIdx, setPeriodIdx] = useState(3);
   const [cWidth,    setCWidth]    = useState(0);
   const [tooltip,   setTooltip]   = useState<TooltipState | null>(null);
 
@@ -144,37 +170,48 @@ export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChang
   const scrollRef  = useRef<HTMLDivElement>(null);
 
   const period = PERIODS[periodIdx]!;
-  const DAYS   = period.days;
-  const isWeek = DAYS === 7;
+  const isWeek = period.months === 0;
 
-  /* Use month-block layout for 2M+ views */
-  const useMonthLayout = DAYS >= 60;
+  /* ---- Calendar-aligned date range ----
+   *
+   * Week view : startStr = 6 days ago,  endStr = today,          DAYS = 7
+   * Month view: startStr = 1st of (N-1) months ago,
+   *             endStr   = last day of current month,
+   *             DAYS     = calendar span (includes future cells for rest of month)
+   *
+   * WHY include future cells:
+   *   Shows a complete month-grid shape (e.g. all 30 June cells)
+   *   even when today is June 4. Future cells just render with bucket=0.
+   *   This is the same behaviour as GitHub's contribution calendar.
+   */
+  const { startStr, DAYS } = useMemo(() => {
+    if (isWeek) {
+      const s = dateNDaysAgo(6);
+      const e = dateNDaysAgo(0);
+      return { startStr: s, endStr: e, DAYS: 7 };
+    }
+    const s = firstOfMonthsAgo(period.months - 1);
+    const e = lastOfThisMonth();
+    const days = Math.round(
+      (new Date(e + 'T00:00:00').getTime() - new Date(s + 'T00:00:00').getTime()) / 86400000
+    ) + 1;
+    return { startStr: s, DAYS: days };
+  }, [isWeek, period.months]);
 
+  /* Always use month-block layout for month views.
+     Simple single-row grid only for the 1-week view. */
+  const useMonthLayout = !isWeek;
   const ROWS = isWeek ? 1 : 7;
 
-  /**
-   * COLS must account for the weekday offset of the oldest date.
-   *
-   * Bug with the old formula Math.ceil(DAYS/7):
-   *   Cell i gets column = floor((i + oldestWeekday) / 7).
-   *   For the LAST cell (i = DAYS-1), max column can be as large as
-   *   floor((DAYS-1 + 6) / 7) when oldestWeekday=6 (Saturday).
-   *   Example: DAYS=60, oldestWeekday=6 → last cell col = floor(65/7) = 9,
-   *   but Math.ceil(60/7) = 9 gives only columns 0–8. Today's data falls
-   *   outside the grid and is never rendered!
-   *
-   * Correct formula: Math.ceil((DAYS + oldestWeekday) / 7)
-   *
-   * We compute oldestWeekday eagerly here (not from cells, to avoid a
-   * circular dependency) — it's cheap and deterministic for the current day.
-   */
+  /* oldest weekday — needed to compute which column each date falls in. */
   const oldestWeekday = isWeek
-    ? 0                                                        // 1-week: no column packing
-    : new Date(dateNDaysAgo(DAYS - 1) + 'T00:00:00').getDay();
+    ? 0
+    : new Date(startStr + 'T00:00:00').getDay();
 
+  /* COLS — same formula as before; accounts for weekday offset. */
   const COLS = isWeek ? 7 : Math.ceil((DAYS + oldestWeekday) / 7);
 
-  /* ResizeObserver — start at CELL_MIN to avoid initial overflow */
+  /* ResizeObserver */
   useEffect(() => {
     const el = measureRef.current;
     if (!el) return;
@@ -184,14 +221,23 @@ export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChang
     return () => ro.disconnect();
   }, []);
 
-  /* Fetch */
+  /* Fetch
+   * We always fetch from max(startStr, 364 days ago) so that the streak
+   * counter has at least a year's worth of data regardless of which period
+   * is displayed in the heatmap.
+   */
+  const fetchStart = useMemo(() => {
+    const yearAgo = dateNDaysAgo(364);
+    return startStr < yearAgo ? startStr : yearAgo;
+  }, [startStr]);
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    listSessionsByDateRange(user.id, dateNDaysAgo(DAYS-1), dateNDaysAgo(0))
+    listSessionsByDateRange(user.id, fetchStart, dateNDaysAgo(0))
       .then(r => { if (!cancelled) { setRows(r); setLoading(false); } });
     return () => { cancelled = true; };
-  }, [user.id, refreshKey, DAYS]);
+  }, [user.id, refreshKey, fetchStart]);
 
   const totalsByDate = useMemo(() => {
     const m = new Map<string, number>();
@@ -202,16 +248,19 @@ export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChang
     return m;
   }, [rows]);
 
+  /* Build cell array — iterate forward from startStr to endStr.
+   * Future cells (date > today) render with bucket=0 and no data. */
   const cells = useMemo<HeatCell[]>(() => {
     const today = dateNDaysAgo(0);
     return Array.from({ length: DAYS }, (_, i) => {
-      const date = dateNDaysAgo(DAYS - 1 - i);
-      const ms   = totalsByDate.get(date) ?? 0;
-      return { date, ms, bucket: intensityBucket(ms), isToday: date === today };
+      const date = addDays(startStr, i);
+      const isFuture = date > today;
+      const ms = isFuture ? 0 : (totalsByDate.get(date) ?? 0);
+      return { date, ms, bucket: isFuture ? 0 : intensityBucket(ms), isToday: date === today, isFuture };
     });
-  }, [totalsByDate, DAYS]);
+  }, [totalsByDate, DAYS, startStr]);
 
-  /* Pre-index cells by absolute column for O(1) block lookup */
+  /* Pre-index cells by absolute column for month-block layout */
   const cellsByAbsCol = useMemo(() => {
     const map = new Map<number, Array<{ cell: HeatCell; row: number }>>();
     cells.forEach((cell, i) => {
@@ -223,7 +272,7 @@ export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChang
     return map;
   }, [cells, oldestWeekday]);
 
-  /* Month blocks — one entry per calendar month that appears in the window */
+  /* Month blocks */
   const monthBlocks = useMemo(() => {
     if (!useMonthLayout || cells.length === 0) return [];
     const blocks: Array<{ key: string; label: string; firstAbsCol: number; numCols: number }> = [];
@@ -236,8 +285,6 @@ export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChang
       if (key !== lastKey) {
         blocks.push({
           key,
-          // Always 'short' (e.g. "Jun") — 'narrow' gives ambiguous single
-          // letters ("J" for Jan, Jun, and Jul) that confuse the user.
           label: d.toLocaleDateString(undefined, { month: 'short' }),
           firstAbsCol: col,
           numCols: 1,
@@ -248,16 +295,12 @@ export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChang
       }
     }
     return blocks;
-  }, [cells, COLS, oldestWeekday, DAYS, useMonthLayout]);
+  }, [cells, COLS, oldestWeekday, useMonthLayout]);
 
   const numMonths = monthBlocks.length;
 
-  /* Cell size — always CELL_MAX (18px). Horizontal scroll handles overflow.
-   * Use CELL_MIN only on initial render before ResizeObserver fires (avoids
-   * the 52×18=936px burst that caused the whole settings pane to scroll). */
   const cellSize = cWidth > 0 ? CELL_MAX : CELL_MIN;
 
-  /* Need scroll when the heatmap at CELL_MAX would exceed the container */
   const needsScroll = useMemo(() => {
     if (cWidth <= 0) return false;
     const total = useMonthLayout && numMonths > 1
@@ -266,18 +309,13 @@ export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChang
     return total > cWidth;
   }, [cWidth, COLS, useMonthLayout, numMonths]);
 
-  /* Auto-scroll to right (newest data) on render, then hint left to show history exists.
-   * This is critical: the heatmap shows oldest→newest left→right. A new user has
-   * sessions only in the last few days, which live at the FAR RIGHT. Without this,
-   * they'd see only empty old months and think their data is missing. */
+  /* Auto-scroll to right (newest data) then hint left */
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || !needsScroll) return;
-    // After layout settles, jump to the right end to show most recent data
     const raf = requestAnimationFrame(() => {
       el.scrollLeft = el.scrollWidth - el.clientWidth;
     });
-    // Then after a beat, nudge left slightly to hint "history exists to the left"
     let cancelNudge: (() => void) | null = null; let t2 = 0;
     const t1 = window.setTimeout(() => {
       const startPos = el.scrollLeft || el.scrollWidth - el.clientWidth;
@@ -295,61 +333,30 @@ export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChang
     };
   }, [needsScroll, periodIdx]);
 
-  /* Streak + total */
+  /* Streak + window total (always uses full totalsByDate, so streak is accurate
+   * even when the heatmap shows fewer months than a year). */
   const streak = useMemo(() => {
     let s = 0;
     for (let i = 0; i < 365; i++) { if ((totalsByDate.get(dateNDaysAgo(i)) ?? 0) > 0) s++; else break; }
     return s;
   }, [totalsByDate]);
 
-  const windowTotalMs = useMemo(() => { let t = 0; for (const v of totalsByDate.values()) t += v; return t; }, [totalsByDate]);
-
-  /* Col labels for simple grid (1W and 1M only — multi-month uses month blocks) */
-  const colLabels = useMemo<string[]>(() => {
-    if (isWeek) return cells.map(c => DOW_SHORT[new Date(c.date + 'T00:00:00').getDay()]!);
-    const labels = Array<string>(COLS).fill('');
-    if (!useMonthLayout) {
-      /**
-       * Center each month's label under its actual column range.
-       *
-       * Old approach (first-column-of-new-month) caused two problems:
-       *   1. "May" appeared at col 0 (far left) even when most May data
-       *      was spread across cols 0-3, making it look off-center.
-       *   2. "Jun" was never shown when June data shared a column with May
-       *      data (e.g., col 4 had both May 30 and June 1-3) — the column's
-       *      "representative" cell was May 30 so June had no label.
-       *
-       * Fix: scan every cell, record the min/max column each month occupies,
-       * then place the label at the CENTER column.
-       */
-      const monthRanges = new Map<number, { first: number; last: number; label: string }>();
-      cells.forEach((cell, i) => {
-        const col = Math.floor((i + oldestWeekday) / 7);
-        const d = new Date(cell.date + 'T00:00:00');
-        const m = d.getMonth();
-        const lbl = d.toLocaleDateString(undefined, { month: 'short' });
-        const existing = monthRanges.get(m);
-        if (!existing) {
-          monthRanges.set(m, { first: col, last: col, label: lbl });
-        } else {
-          existing.first = Math.min(existing.first, col);
-          existing.last  = Math.max(existing.last,  col);
-        }
-      });
-      for (const { first, last, label } of monthRanges.values()) {
-        const midCol = Math.round((first + last) / 2);
-        if (midCol < COLS) labels[midCol] = label;
-      }
+  const windowTotalMs = useMemo(() => {
+    // Only sum dates within the displayed period (not the extra 365-day fetch)
+    let t = 0;
+    for (const cell of cells) {
+      if (!cell.isFuture) t += cell.ms;
     }
-    return labels;
-  }, [cells, COLS, oldestWeekday, DAYS, isWeek, useMonthLayout]);
+    return t;
+  }, [cells]);
 
-  const showRowLabels = !isWeek && DAYS <= 60 && !useMonthLayout;
-  const colOffset = showRowLabels ? 1 : 0;
-  const gridCols = showRowLabels ? `14px repeat(${COLS}, ${cellSize}px)` : `repeat(${COLS}, ${cellSize}px)`;
-  const gridRows = `repeat(${ROWS}, ${cellSize}px)`;
+  /* Col labels for week view only */
+  const colLabels = useMemo<string[]>(() => {
+    if (!isWeek) return [];
+    return cells.map(c => DOW_SHORT[new Date(c.date + 'T00:00:00').getDay()]!);
+  }, [cells, isWeek]);
 
-  /* Tooltip flip */
+  /* Tooltip */
   const showTooltip = (cell: HeatCell, e: React.MouseEvent | React.TouchEvent) => {
     const pane = paneRef.current;
     if (!pane) return;
@@ -374,6 +381,9 @@ export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChang
   });
 
   const cs = cellSize;
+  // week-view grid strings
+  const gridCols = `repeat(${COLS}, ${cs}px)`;
+  const gridRows = `repeat(${ROWS}, ${cs}px)`;
 
   return (
     <div className="stats-pane" ref={paneRef}>
@@ -384,49 +394,7 @@ export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChang
           onChange={(i) => { setPeriodIdx(i); setTooltip(null); }} />
       </div>
 
-      {/* Daily goal chip selector */}
-      <div className="stats-goal">
-        <span className="stats-goal__label">Daily goal</span>
-        <div className="stats-goal__chips">
-          {GOAL_PRESETS.map(min => {
-            const h = min / 60;
-            const active = dailyGoalMin === min;
-            return (
-              <button
-                key={min}
-                type="button"
-                className={`stats-goal__chip${active ? ' is-active' : ''}`}
-                onClick={() => onDailyGoalChange?.(active ? 0 : min)}
-                aria-pressed={active}
-              >
-                {h}h
-              </button>
-            );
-          })}
-          {/* Clear button — only visible when a goal is set */}
-          {dailyGoalMin > 0 && !GOAL_PRESETS.includes(dailyGoalMin) && (
-            <button
-              type="button"
-              className="stats-goal__chip is-active"
-              onClick={() => onDailyGoalChange?.(0)}
-            >
-              {dailyGoalMin < 60 ? `${dailyGoalMin}m` : `${(dailyGoalMin/60).toFixed(1)}h`}
-            </button>
-          )}
-        </div>
-        {dailyGoalMin > 0 && (
-          <button
-            type="button"
-            className="stats-goal__clear"
-            onClick={() => onDailyGoalChange?.(0)}
-            aria-label="Remove daily goal"
-          >
-            Clear
-          </button>
-        )}
-      </div>
-
-      {/* Stat cards — NEVER scroll */}
+      {/* Stat cards */}
       <div className="stats-row">
         <div className="stats-card">
           <div className="stats-card__label">Current streak</div>
@@ -440,18 +408,17 @@ export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChang
         </div>
       </div>
 
-      {/* -------- Heatmap section (only this scrolls) -------- */}
+      {/* Heatmap */}
       <div className="stats-heatmap-section">
         <div ref={measureRef} className="stats-heatmap-measure">
           {loading && <p className="stats-loading">Loading…</p>}
 
           {!loading && (
-            /* Scroll container — ONLY the grid moves, never the cards above */
             <div
               ref={scrollRef}
               className={`stats-heatmap-scroll${needsScroll ? ' is-scrollable' : ''}`}
             >
-              {/* ---- Month-block layout (2M, 3M … 1Y) ---- */}
+              {/* Month-block layout — used for ALL month periods */}
               {useMonthLayout && (
                 <div className="stats-months-row">
                   {monthBlocks.map(block => {
@@ -467,7 +434,7 @@ export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChang
                           className="stats-month-grid"
                           style={{
                             gridTemplateColumns: `repeat(${block.numCols}, ${cs}px)`,
-                            gridTemplateRows: `repeat(7, ${cs}px)`,
+                            gridTemplateRows:    `repeat(7, ${cs}px)`,
                             gap: `${GAP}px`,
                           }}
                           aria-label={block.label}
@@ -475,7 +442,7 @@ export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChang
                           {blockCells.map(({ cell, col, row }) => (
                             <span
                               key={cell.date}
-                              className={`stats-heatmap__cell b${cell.bucket}${cell.isToday ? ' is-today' : ''}`}
+                              className={`stats-heatmap__cell b${cell.bucket}${cell.isToday ? ' is-today' : ''}${cell.isFuture ? ' is-future' : ''}`}
                               style={{ gridColumn: col+1, gridRow: row+1, width: cs, height: cs }}
                               {...cellHandlers(cell)}
                             />
@@ -488,40 +455,25 @@ export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChang
                 </div>
               )}
 
-              {/* ---- Simple grid layout (1W, 1M) ---- */}
+              {/* Simple single-row grid — week view only */}
               {!useMonthLayout && (
                 <>
                   <div
                     className="stats-heatmap"
                     style={{ gridTemplateColumns: gridCols, gridTemplateRows: gridRows }}
                     role="img"
-                    aria-label={`${DAYS}-day focus heatmap`}
+                    aria-label="7-day focus"
                   >
-                    {showRowLabels && DOW_SINGLE.map((d, i) => (
-                      <span key={`r${i}`} className="stats-yaxis-label"
-                        style={{ gridColumn: 1, gridRow: i+1, height: cs, lineHeight: `${cs}px` }}>
-                        {d}
-                      </span>
+                    {cells.map((cell, i) => (
+                      <span key={cell.date}
+                        className={`stats-heatmap__cell b${cell.bucket}${cell.isToday ? ' is-today' : ''}`}
+                        style={{ gridColumn: i+1, gridRow: 1, width: cs, height: cs }}
+                        {...cellHandlers(cell)}
+                      />
                     ))}
-
-                    {cells.map((cell, i) => {
-                      let col: number, row: number;
-                      if (isWeek) { col = i; row = 0; }
-                      else { col = Math.floor((i + oldestWeekday) / 7); row = (i + oldestWeekday) % 7; }
-                      return (
-                        <span key={cell.date}
-                          className={`stats-heatmap__cell b${cell.bucket}${cell.isToday ? ' is-today' : ''}`}
-                          style={{ gridColumn: col + colOffset + 1, gridRow: row+1, width: cs, height: cs }}
-                          {...cellHandlers(cell)}
-                        />
-                      );
-                    })}
                   </div>
-
-                  {(colLabels.some(Boolean)) && (
-                    <div className="stats-xlabel"
-                      style={{ paddingLeft: showRowLabels ? `${14 + GAP}px` : undefined }}>
-                      {showRowLabels && <span />}
+                  {colLabels.some(Boolean) && (
+                    <div className="stats-xlabel">
                       {colLabels.map((lbl, col) => (
                         <span key={col} className="stats-xlabel__cell" style={{ width: cs }}>{lbl}</span>
                       ))}
@@ -533,7 +485,7 @@ export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChang
           )}
         </div>
 
-        {/* Legend — NEVER scrolls */}
+        {/* Legend */}
         {!loading && (
           <div className="stats-legend" aria-hidden>
             <span>Less</span>
@@ -543,7 +495,7 @@ export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChang
         )}
       </div>
 
-      {/* Tooltip — absolute to .stats-pane */}
+      {/* Tooltip */}
       {tooltip && (
         <div className={`stats-tooltip${tooltip.below ? ' is-below' : ''}`}
           style={{ left: tooltip.x, top: tooltip.y }} aria-hidden>
@@ -552,9 +504,7 @@ export function StatsPane({ user, refreshKey, dailyGoalMin = 0, onDailyGoalChang
         </div>
       )}
 
-      {/* ---- Inline History section ----------------------------------------
-          History is no longer a separate nav entry. It lives below the heatmap
-          so the user sees stats and sessions in one scrollable pane. */}
+      {/* Inline history below the heatmap */}
       <div className="stats-history-divider" aria-hidden />
       <HistoryPane user={user} refreshKey={refreshKey} embedded />
     </div>
