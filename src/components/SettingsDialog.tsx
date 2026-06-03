@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { AccountPane } from './settings/AccountPane';
-import { HistoryPane } from './settings/HistoryPane';
 import { PlanPane } from './settings/PlanPane';
 import { StatsPane } from './settings/StatsPane';
 import { TagsPane } from './settings/TagsPane';
 import { SoundsPane } from './settings/SoundsPane';
 import { AboutPane } from './settings/AboutPane';
+import { GuidePane } from './settings/GuidePane';
 import './SettingsDialog.css';
 
 interface Props {
@@ -17,15 +17,22 @@ interface Props {
   refreshKey?: number;
   /** Increments after a planned session is saved — triggers clock ring refresh. */
   onScheduleChanged?: () => void;
+  /**
+   * When true, TagsPane opens with the "Add custom tag" form pre-focused.
+   * Set by App when the user tapped "+" in the TagPicker.
+   */
+  autoOpenTagAdd?: boolean;
+  /** Opens Settings → Tags with the add form focused (forwarded to PlanPane). */
+  onManageTags?: () => void;
 }
 
 export type PaneKey =
   | 'account'
-  | 'history'
   | 'plan'
   | 'stats'
   | 'tags'
   | 'sounds'
+  | 'guide'
   | 'about';
 
 /** Feather-style SVG icon (24×24, stroke, fill=none). */
@@ -55,11 +62,6 @@ const NAV: Array<{ key: PaneKey; label: string; iconPath: string }> = [
     iconPath: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
   },
   {
-    key: 'history',
-    label: 'History',
-    iconPath: 'M12 2a10 10 0 1 0 10 10M12 6v6l4 2',
-  },
-  {
     key: 'plan',
     label: 'Plan',
     // Calendar icon — schedule future sessions
@@ -81,6 +83,12 @@ const NAV: Array<{ key: PaneKey; label: string; iconPath: string }> = [
     iconPath: 'M11 5 6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07',
   },
   {
+    key: 'guide',
+    label: 'Guide',
+    // Book-open icon — walkthrough / help
+    iconPath: 'M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z',
+  },
+  {
     key: 'about',
     label: 'About',
     iconPath: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 16v-4M12 8h.01',
@@ -89,11 +97,13 @@ const NAV: Array<{ key: PaneKey; label: string; iconPath: string }> = [
 
 export function SettingsDialog({
   user,
-  initialPane = 'history',
+  initialPane = 'stats',
   onClose,
   onSignOut,
   refreshKey,
   onScheduleChanged,
+  autoOpenTagAdd = false,
+  onManageTags,
 }: Props) {
   const [pane, setPane] = useState<PaneKey>(initialPane);
 
@@ -175,11 +185,17 @@ export function SettingsDialog({
 
           <section className="settings-pane" data-pane={pane}>
             {pane === 'account' && <AccountPane user={user} onSignOut={onSignOut} />}
-            {pane === 'history' && <HistoryPane user={user} refreshKey={refreshKey} />}
-            {pane === 'plan'    && <PlanPane    user={user} onScheduleChanged={onScheduleChanged} onManageTags={() => setPane('tags')} />}
+            {pane === 'plan'    && (
+              <PlanPane
+                user={user}
+                onScheduleChanged={onScheduleChanged}
+                onManageTags={onManageTags ?? (() => setPane('tags'))}
+              />
+            )}
             {pane === 'stats'   && <StatsPane   user={user} refreshKey={refreshKey} />}
-            {pane === 'tags'    && <TagsPane />}
+            {pane === 'tags'    && <TagsPane autoOpenAdd={autoOpenTagAdd} />}
             {pane === 'sounds'  && <SoundsPane />}
+            {pane === 'guide'   && <GuidePane onClose={onClose} />}
             {pane === 'about'   && <AboutPane />}
           </section>
         </div>

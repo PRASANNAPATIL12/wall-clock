@@ -120,6 +120,10 @@ export function getCustomTags(): TagDef[] {
   }
 }
 
+/** Dispatched after saveCustomTag or deleteCustomTag so live listeners
+ *  (e.g. TagPicker) can refresh their tag list without prop drilling. */
+export const TAGS_CHANGED_EVENT = 'wall.tags.changed';
+
 export function saveCustomTag(label: string): TagDef {
   const id = `custom_${Date.now()}`;
   // Default icon: small circle
@@ -133,6 +137,7 @@ export function saveCustomTag(label: string): TagDef {
   const updated = [...existing, tag];
   try {
     window.localStorage.setItem(CUSTOM_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent(TAGS_CHANGED_EVENT));
   } catch { /* ignore */ }
   return tag;
 }
@@ -141,6 +146,7 @@ export function deleteCustomTag(id: string): void {
   const updated = getCustomTags().filter((t) => t.id !== id);
   try {
     window.localStorage.setItem(CUSTOM_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent(TAGS_CHANGED_EVENT));
   } catch { /* ignore */ }
 }
 

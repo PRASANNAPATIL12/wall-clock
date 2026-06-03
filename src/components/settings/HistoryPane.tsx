@@ -9,6 +9,8 @@ import './HistoryPane.css';
 interface Props {
   user: User;
   refreshKey?: number;
+  /** When true, renders without the "History" heading (used inside StatsPane). */
+  embedded?: boolean;
 }
 
 const PAGE_SIZE = 60;
@@ -65,7 +67,7 @@ function groupByDate(rows: SessionRow[]): DayGroup[] {
   return Array.from(map.values());
 }
 
-export function HistoryPane({ user, refreshKey }: Props) {
+export function HistoryPane({ user, refreshKey, embedded = false }: Props) {
   const [rows, setRows] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [offset, setOffset] = useState(0);
@@ -103,8 +105,8 @@ export function HistoryPane({ user, refreshKey }: Props) {
   };
 
   return (
-    <div className="history-pane">
-      <h3>History</h3>
+    <div className={`history-pane${embedded ? ' history-pane--embedded' : ''}`}>
+      {!embedded && <h3>History</h3>}
 
       {loading && (
         <p style={{ fontSize: 13, color: 'var(--fg-muted)' }}>Loading…</p>

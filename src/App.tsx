@@ -37,14 +37,28 @@ export default function App() {
   const auth = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settingsInitialPane, setSettingsInitialPane] = useState<PaneKey>('history');
+  const [settingsInitialPane, setSettingsInitialPane] = useState<PaneKey>('stats');
+  /** When true, SettingsDialog opens TagsPane with the add-form pre-focused.
+   *  Set when user taps "+" in the TagPicker; cleared when Settings closes. */
+  const [openTagAdd, setOpenTagAdd] = useState(false);
   /** Extra ms to extend the idle onboarding hint while the hero message plays.
    *  Set when HeroMessage mounts (anonymous only). */
   const [hintBoostMs, setHintBoostMs] = useState(0);
 
-  const openSettings = (pane: PaneKey = 'history') => {
+  const openSettings = (pane: PaneKey = 'stats') => {
     setSettingsInitialPane(pane);
     setSettingsOpen(true);
+  };
+
+  /** Open Settings → Tags with the add form auto-focused (called from TagPicker "+"). */
+  const openTagSettings = () => {
+    setOpenTagAdd(true);
+    openSettings('tags');
+  };
+
+  const closeSettings = () => {
+    setSettingsOpen(false);
+    setOpenTagAdd(false);
   };
   // Increments after every focus session save — triggers stats/history refetch.
   const [sessionSavedTick, setSessionSavedTick] = useState(0);
@@ -90,7 +104,7 @@ export default function App() {
             timezone={tz}
             userId={auth.user?.id ?? null}
             onSessionSaved={handleSessionSaved}
-            onManageTags={() => openSettings('tags')}
+            onManageTags={openTagSettings}
             hintBoostMs={hintBoostMs}
             planRefreshKey={planRefreshKey}
             schedulingViewOpen={schedulingViewOpen}
@@ -115,7 +129,7 @@ export default function App() {
       {/* Account entry point — JoinPill for anonymous, AccountIcon for signed-in */}
       {!auth.loading && (
         auth.user ? (
-          <AccountIcon user={auth.user} onClick={() => openSettings()} />
+          <AccountIcon user={auth.user} onClick={() => openSettings('account')} />
         ) : (
           <JoinPill onClick={() => setAuthModalOpen(true)} />
         )
@@ -139,9 +153,9 @@ export default function App() {
         <CoffeeLink />
       </div>
 
-      {/* Today summary — only renders when signed-in user has sessions today */}
+      {/* Today summary — opens Stats pane (History is now embedded inside Stats) */}
       {auth.user && (
-        <TodaySummary stats={todayStats} onClick={() => openSettings('history')} />
+        <TodaySummary stats={todayStats} onClick={() => openSettings('stats')} />
       )}
 
       {/* Schedule badge — shows above TodaySummary when upcoming sessions exist */}
@@ -163,11 +177,13 @@ export default function App() {
           initialPane={settingsInitialPane}
           refreshKey={sessionSavedTick}
           onScheduleChanged={handleScheduleChanged}
-          onClose={() => setSettingsOpen(false)}
+          autoOpenTagAdd={openTagAdd}
+          onClose={closeSettings}
           onSignOut={async () => {
             await auth.signOut();
-            setSettingsOpen(false);
+            closeSettings();
           }}
+          onManageTags={openTagSettings}
         />
       )}
     </main>

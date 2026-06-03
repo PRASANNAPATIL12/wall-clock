@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { listSessionsByDateRange } from '../../lib/sessionStore';
 import type { SessionRow } from '../../lib/supabase';
+import { HistoryPane } from './HistoryPane';
 import './StatsPane.css';
 
 interface Props { user: User; refreshKey?: number }
@@ -500,6 +501,12 @@ export function StatsPane({ user, refreshKey }: Props) {
           <span className="stats-tooltip__val">{fmtDuration(tooltip.ms)}</span>
         </div>
       )}
+
+      {/* ---- Inline History section ----------------------------------------
+          History is no longer a separate nav entry. It lives below the heatmap
+          so the user sees stats and sessions in one scrollable pane. */}
+      <div className="stats-history-divider" aria-hidden />
+      <HistoryPane user={user} refreshKey={refreshKey} embedded />
     </div>
   );
 }
