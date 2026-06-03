@@ -20,6 +20,14 @@ const VISIBLE_MS    = 5000;
 export const FIRST_DELAY   = 800;  // ms before the very first hint (exported for HeroMessage sync)
 const BETWEEN_DELAY = 450;  // ms gap between subsequent hints
 
+/**
+ * Dispatching this event (e.g. from the Guide pane replay button) causes the
+ * hook to re-run its show logic for the current state immediately, as if the
+ * user just loaded the page for the first time. localStorage must already be
+ * cleared before dispatching.
+ */
+export const HINTS_REPLAY_EVENT = 'wall.hints.replay';
+
 function loadSeen(): HintKind[] {
   if (typeof window === 'undefined') return [];
   try {
@@ -46,6 +54,22 @@ export function useOnboardingHint(
   const [visible,  setVisible]  = useState(false);
   const [hintKind, setHintKind] = useState<HintKind | null>(null);
   const isFirstRun = useRef(true);
+  /**
+   * Incremented each time the Guide pane fires HINTS_REPLAY_EVENT.
+   * Adding it as a dependency to the show-effect forces the effect to
+   * re-run for the current state even when state.kind hasn't changed.
+   */
+  const [replayKey, setReplayKey] = useState(0);
+
+  useEffect(() => {
+    const onReplay = () => {
+      isFirstRun.current = true;   // treat next show as "first run" timing
+      setVisible(false);
+      setReplayKey(k => k + 1);   // trigger the show-effect below
+    };
+    window.addEventListener(HINTS_REPLAY_EVENT, onReplay);
+    return () => window.removeEventListener(HINTS_REPLAY_EVENT, onReplay);
+  }, []);
 
   useEffect(() => {
     const kind = state.kind as HintKind;
@@ -76,7 +100,9 @@ export function useOnboardingHint(
       window.clearTimeout(showTimer);
       window.clearTimeout(hideTimer);
     };
-  }, [state.kind, alwaysShow, extraInitialDelayMs]);
+  // replayKey is intentionally included: forces re-run after Guide replay
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.kind, alwaysShow, extraInitialDelayMs, replayKey]);
 
   return { visible, hintKind };
 }

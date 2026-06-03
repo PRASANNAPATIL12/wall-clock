@@ -1,203 +1,121 @@
 /* =========================================================================
-   GuidePane — onboarding reference card + replay button
-
-   Design language mirrors the rest of SettingsDialog:
-     · Glass cards via --fg-faint background
-     · Inter font at 13–14 px for readability
-     · Accent bars in each feature's color
-     · Responsive 2-col grid on desktop → 1-col on mobile
+   GuidePane — plain documentation style.
+   No cards. Headings + paragraphs + bullets.
    ========================================================================= */
 
 .guide-pane {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 0;
 }
 
-/* ---- Header ---- */
-.guide-pane__header h3 {
-  margin: 0 0 5px;
+.guide-pane h3 {
+  margin: 0 0 16px;
 }
 
-.guide-pane__subtitle {
-  margin: 0;
-  font-size: 12.5px;
-  color: var(--fg-muted);
-  line-height: 1.4;
-}
-
-/* ========================================================
-   Replay button
-   ======================================================== */
+/* ---- Replay button ---- */
 .guide-replay-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   align-self: flex-start;
-  padding: 9px 16px;
-  border-radius: 10px;
+  padding: 8px 14px;
+  border-radius: 9px;
   background: var(--fg);
   color: var(--bg-elev);
   border: none;
   font-family: var(--font-display);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 500;
   cursor: pointer;
   letter-spacing: -0.005em;
+  margin-bottom: 28px;
   transition:
-    opacity 200ms var(--ease-apple),
-    transform 200ms var(--ease-apple);
+    opacity 180ms var(--ease-apple),
+    transform 180ms var(--ease-apple);
+}
+.guide-replay-btn:hover  { opacity: 0.82; transform: translateY(-1px); }
+.guide-replay-btn:active { opacity: 1;    transform: scale(0.985); }
+
+/* ---- Content sections ---- */
+.guide-section {
+  padding-bottom: 22px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--fg-faint);
+}
+.guide-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
-.guide-replay-btn:hover { opacity: 0.85; transform: translateY(-1px); }
-.guide-replay-btn:active { opacity: 1; transform: translateY(0) scale(0.985); }
-
-.guide-replay-btn__icon {
-  display: inline-grid;
-  place-items: center;
-  opacity: 0.8;
-}
-
-.guide-replay-btn__hint {
-  font-size: 10.5px;
-  font-weight: 400;
-  opacity: 0.55;
-  margin-left: 2px;
-}
-
-/* ========================================================
-   Feature cards grid
-   ======================================================== */
-.guide-cards {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.guide-card {
-  display: flex;
-  align-items: stretch;
-  border-radius: 12px;
-  background: var(--fg-faint);
-  overflow: hidden;
-  transition: background-color 160ms var(--ease-apple);
-}
-
-.guide-card:hover { background: var(--glass-bg-hover); }
-
-/* Accent stripe — left edge, color set inline */
-.guide-card__accent {
-  width: 3px;
-  flex-shrink: 0;
-  border-radius: 0;
-  opacity: 0.8;
-}
-
-.guide-card__body {
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.guide-card__title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.guide-card__icon {
-  display: inline-grid;
-  place-items: center;
-  flex-shrink: 0;
-  opacity: 0.85;
-}
-
-.guide-card__title {
+.guide-section h4 {
   font-size: 13px;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--fg);
-  margin: 0;
-  line-height: 1.2;
+  margin: 0 0 8px;
 }
 
-.guide-card__desc {
-  font-size: 12px;
-  line-height: 1.55;
+.guide-section p {
+  font-size: 13px;
+  line-height: 1.65;
   color: var(--fg-muted);
-  margin: 0;
+  margin: 0 0 8px;
 }
+.guide-section p:last-child { margin-bottom: 0; }
 
-/* ========================================================
-   Quick-reference table
-   ======================================================== */
-.guide-tips {
-  background: var(--fg-faint);
-  border-radius: 12px;
-  padding: 14px 16px;
-}
+.guide-section p strong { color: var(--fg); font-weight: 500; }
 
-.guide-tips__heading {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--fg-muted);
-  margin: 0 0 10px;
-}
-
-.guide-tips__list {
-  list-style: none;
-  margin: 0;
+.guide-section ul {
+  margin: 4px 0 0 18px;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 5px;
 }
 
-.guide-tips__list li {
+.guide-section li {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--fg-muted);
+}
+.guide-section li strong { color: var(--fg); font-weight: 500; }
+
+/* ---- Quick reference list ---- */
+.guide-ref {
+  list-style: none !important;
+  margin: 4px 0 0 !important;
+  padding: 0;
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 0 !important;
+}
+
+.guide-ref li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
   padding: 6px 0;
   border-bottom: 1px solid var(--fg-faint);
   font-size: 12.5px;
-}
-
-.guide-tips__list li:last-child { border-bottom: none; }
-
-.guide-tips__key {
-  flex-shrink: 0;
-  min-width: 108px;
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  color: var(--fg);
-  background: var(--bg-elev);
-  border: 1px solid var(--glass-border);
-  border-radius: 6px;
-  padding: 2px 7px;
-  text-align: center;
-}
-
-.guide-tips__val {
   color: var(--fg-muted);
-  line-height: 1.3;
+}
+.guide-ref li:last-child { border-bottom: none; }
+
+.guide-ref__key {
+  flex-shrink: 0;
+  min-width: 110px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg);
+  background: var(--fg-faint);
+  border: 1px solid var(--glass-border);
+  border-radius: 5px;
+  padding: 2px 7px;
 }
 
-/* ========================================================
-   Responsive — single column on small screens
-   ======================================================== */
-@media (max-width: 560px) {
-  .guide-cards {
-    grid-template-columns: 1fr;
-  }
-
-  .guide-tips__key {
-    min-width: 90px;
-  }
-}
-
-@media (max-width: 380px) {
-  .guide-replay-btn__hint { display: none; }
+@media (max-width: 480px) {
+  .guide-ref li    { flex-direction: column; gap: 3px; }
+  .guide-ref__key  { min-width: unset; align-self: flex-start; }
 }
