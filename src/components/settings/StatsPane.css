@@ -112,71 +112,6 @@
   font-weight: 500;
 }
 
-/* ---- Daily goal ---- */
-.stats-goal {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.stats-goal__label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--fg-muted);
-  flex-shrink: 0;
-}
-
-.stats-goal__chips {
-  display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
-}
-
-.stats-goal__chip {
-  height: 26px;
-  padding: 0 11px;
-  border-radius: 999px;
-  background: var(--fg-faint);
-  border: 1px solid transparent;
-  color: var(--fg-muted);
-  font-family: var(--font-display);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background-color 150ms var(--ease-apple),
-    color 150ms var(--ease-apple),
-    border-color 150ms var(--ease-apple);
-}
-.stats-goal__chip:hover {
-  background: var(--glass-bg-hover);
-  color: var(--fg);
-}
-.stats-goal__chip.is-active {
-  background: color-mix(in srgb, #2da44e 18%, transparent);
-  border-color: color-mix(in srgb, #2da44e 40%, transparent);
-  color: #2da44e;
-}
-
-.stats-goal__clear {
-  font-size: 11.5px;
-  color: var(--fg-muted);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 2px 4px;
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  transition: color 120ms var(--ease-apple), text-decoration-color 120ms var(--ease-apple);
-}
-.stats-goal__clear:hover {
-  color: var(--hand-second);
-  text-decoration-color: currentColor;
-}
-
 /* ---- Stat cards ---- */
 .stats-row {
   display: flex;
@@ -313,6 +248,13 @@
 [data-theme='dark'] .stats-heatmap__cell.b2 { background: #39d353; opacity: 0.48; }
 [data-theme='dark'] .stats-heatmap__cell.b3 { background: #39d353; opacity: 0.72; }
 [data-theme='dark'] .stats-heatmap__cell.b4 { background: #39d353; opacity: 1; }
+
+/* Future cells (rest of current month) — visually distinct from past empty cells */
+.stats-heatmap__cell.is-future {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
 
 /* Today ring */
 .stats-heatmap__cell.is-today {
