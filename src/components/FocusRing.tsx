@@ -902,13 +902,22 @@ export const FocusRing = memo(function FocusRing({
       )}
 
       {/* Plan action card — fixed bottom-centre pill.
-          Appears when user clicks (desktop) or taps (mobile) a planned arc.
-          canStart=true only when no session is running (idle state). */}
-      {selectedPlanArc && !activePlanSession && (
+          Shows when user clicks (desktop) or taps (mobile) ANY planned arc,
+          including the active countdown arc.
+          · Idle:   shows "Start now" button (canStart=true)
+          · Running: shows live elapsed + remaining (isRunning=true, no start btn) */}
+      {selectedPlanArc && (
         <PlanActionCard
           key={selectedPlanArc.id}
           session={selectedPlanArc}
-          canStart={state.kind === 'idle'}
+          canStart={state.kind === 'idle' && activePlanSession?.id !== selectedPlanArc.id}
+          isRunning={activePlanSession?.id === selectedPlanArc.id}
+          elapsedMs={activePlanSession?.id === selectedPlanArc.id ? data.elapsed : undefined}
+          remainingMs={
+            activePlanSession?.id === selectedPlanArc.id && data.target !== null
+              ? Math.max(0, data.target - data.elapsed)
+              : undefined
+          }
           onStart={() => { startFromPlan(selectedPlanArc); setSelectedPlanArc(null); }}
           onDismiss={() => setSelectedPlanArc(null)}
         />

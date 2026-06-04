@@ -130,11 +130,16 @@ function ArcSegment({
 
   const color    = tagColor(session.tag);
   /*
-   * isActive drives the visual raise + glow.
-   * Desktop: hover (mouse) OR countdown.
-   * Mobile:  tapped/selected OR countdown.
+   * isActive drives the scale-up + glow on hover/tap.
+   * Same rule for countdown and static arcs: hover/tap = active, rest = normal.
+   * (Countdown arc is visually distinct by its shape alone — a shrinking
+   * full-circle arc is obviously different from a static partial arc.)
+   *
+   * We intentionally exclude isCountdownActive from this check so that
+   * hover still FEELS responsive during a running session. Previously
+   * the countdown arc was always at scale(1.04), so hover had no effect.
    */
-  const isActive = isCountdownActive || (isTouchDevice ? isSelected : hovered);
+  const isActive = isTouchDevice ? isSelected : hovered;
 
   /* --- Desktop hover (purely visual — no card interaction) --- */
   const onEnter = () => { if (!isTouchDevice) setHovered(true); };
@@ -183,7 +188,11 @@ function ArcSegment({
           transform:       isActive ? 'scale(1.04)' : 'scale(1)',
           filter: isActive
             ? `brightness(1.5) saturate(1.25) drop-shadow(0 0 5px ${hexToRgba(color, 0.65)})`
-            : `drop-shadow(0 0 2.5px ${hexToRgba(color, 0.45)})`,
+            /* countdown arc at rest: slightly brighter glow than static arcs
+               so it reads as "active" without being locked at full scale */
+            : isCountdownActive
+              ? `brightness(1.18) drop-shadow(0 0 4px ${hexToRgba(color, 0.55)})`
+              : `drop-shadow(0 0 2.5px ${hexToRgba(color, 0.45)})`,
           transition: isActive
             ? 'transform 220ms ease-out, filter 180ms ease-out'
             : 'transform 190ms ease-out, filter 150ms ease-out',
@@ -197,8 +206,8 @@ function ArcSegment({
           pathLength={1000}
           style={{
             stroke:           color,
-            strokeWidth:      isActive ? RING_STROKE + 0.9 : RING_STROKE,
-            strokeOpacity:    isActive ? 1 : 0.80,
+            strokeWidth:      isActive ? RING_STROKE + 0.9 : isCountdownActive ? RING_STROKE + 0.35 : RING_STROKE,
+            strokeOpacity:    isActive ? 1 : isCountdownActive ? 0.92 : 0.80,
             strokeDasharray:  1000,
             strokeDashoffset: 1000,
             animation:        arcAnimation,

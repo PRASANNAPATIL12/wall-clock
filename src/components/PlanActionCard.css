@@ -94,6 +94,19 @@
   font-family: var(--font-display);
 }
 
+/* Small pulsing dot before "X done · Y left" */
+.plan-action-card__running-badge {
+  font-size: 7px;
+  color: #2da44e;
+  margin-right: 3px;
+  animation: running-dot-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes running-dot-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
 /* ---- "Start now" button ---- */
 .plan-action-card__start {
   display: inline-flex;

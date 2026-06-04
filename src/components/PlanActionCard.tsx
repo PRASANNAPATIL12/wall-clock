@@ -8,14 +8,33 @@ import { tagColor } from './PlannedRingsLayer';
 import './PlanActionCard.css';
 
 interface Props {
-  session:   PlannedSession;
+  session:    PlannedSession;
   /**
-   * True when no session is currently running — shows the "Start now" button.
-   * False (or omit) when a countdown is already active — shows info only.
+   * True when idle and this session hasn't started — shows "Start now" button.
    */
-  canStart?: boolean;
-  onStart:   () => void;
-  onDismiss: () => void;
+  canStart?:   boolean;
+  /**
+   * True when this session is currently counting down.
+   * Shows live elapsed + remaining instead of the time range + start button.
+   */
+  isRunning?:  boolean;
+  /** Milliseconds elapsed since the session started. Passed every second by FocusRing. */
+  elapsedMs?:  number;
+  /** Milliseconds remaining until the session goal. Passed every second by FocusRing. */
+  remainingMs?: number;
+  onStart:     () => void;
+  onDismiss:   () => void;
+}
+
+/** Format milliseconds as "1h 15m", "45m", "30s", etc. */
+function fmtMs(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  if (m > 0) return s > 0 && m < 2 ? `${m}m ${s}s` : `${m}m`;
+  return `${s}s`;
 }
 
 function endTimeStr(startTime: string, durationMin: number): string {
@@ -42,7 +61,10 @@ function endTimeStr(startTime: string, durationMin: number): string {
  *   · Click / tap anywhere outside
  *   · 6-second auto-dismiss
  */
-export function PlanActionCard({ session, canStart = false, onStart, onDismiss }: Props) {
+export function PlanActionCard({
+  session, canStart = false, isRunning = false,
+  elapsedMs, remainingMs, onStart, onDismiss,
+}: Props) {
   const cardRef     = useRef<HTMLDivElement>(null);
   const dismissRef  = useRef(onDismiss);
   useEffect(() => { dismissRef.current = onDismiss; }, [onDismiss]);
@@ -51,11 +73,15 @@ export function PlanActionCard({ session, canStart = false, onStart, onDismiss }
   const color = tagColor(session.tag);
   const endStr = endTimeStr(session.start_time_local, session.duration_minutes);
 
-  /* Auto-dismiss after 6 s. Reset timer whenever the displayed session changes. */
+  /* Auto-dismiss timer.
+   * · Idle card (not running): 6 s
+   * · Running card: 10 s (user may want to glance at progress a bit longer) */
   useEffect(() => {
-    const t = window.setTimeout(() => dismissRef.current(), 6_000);
+    const delay = isRunning ? 10_000 : 6_000;
+    const t = window.setTimeout(() => dismissRef.current(), delay);
     return () => window.clearTimeout(t);
-  }, [session.id]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.id, isRunning]);
 
   /* Click-outside dismiss. Delayed 50 ms so the arc click that opened the
      card doesn't immediately dismiss it via this same listener. */
@@ -90,13 +116,25 @@ export function PlanActionCard({ session, canStart = false, onStart, onDismiss }
       {/* Session info */}
       <div className="plan-action-card__info">
         <span className="plan-action-card__label">{tag.label}</span>
-        <span className="plan-action-card__time">
-          {fmtTime(session.start_time_local)}
-          <span className="plan-action-card__sep" aria-hidden> – </span>
-          {fmtTime(endStr)}
-          <span className="plan-action-card__sep" aria-hidden> · </span>
-          {fmtDuration(session.duration_minutes)}
-        </span>
+
+        {isRunning && elapsedMs !== undefined && remainingMs !== undefined ? (
+          /* Running view: show live elapsed + remaining */
+          <span className="plan-action-card__time">
+            <span className="plan-action-card__running-badge" aria-hidden>●</span>
+            {fmtMs(elapsedMs)} done
+            <span className="plan-action-card__sep" aria-hidden> · </span>
+            {fmtMs(remainingMs)} left
+          </span>
+        ) : (
+          /* Idle view: show scheduled time range */
+          <span className="plan-action-card__time">
+            {fmtTime(session.start_time_local)}
+            <span className="plan-action-card__sep" aria-hidden> – </span>
+            {fmtTime(endStr)}
+            <span className="plan-action-card__sep" aria-hidden> · </span>
+            {fmtDuration(session.duration_minutes)}
+          </span>
+        )}
       </div>
 
       {/* Start now — only when idle */}
