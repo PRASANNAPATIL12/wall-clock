@@ -122,6 +122,7 @@ export const FocusRing = memo(function FocusRing({
       activePlanSessionRef.current = null;
       setPlanCompleting(false);
       planCompletionFiredRef.current = false;
+      setArcStartMinAngle(null);
 
       if (!uid) return; // anonymous — nothing to persist
       saveSession({
@@ -156,10 +157,13 @@ export const FocusRing = memo(function FocusRing({
   const activePlanSessionRef = useRef<PlannedSession | null>(null);
   useEffect(() => { activePlanSessionRef.current = activePlanSession; }, [activePlanSession]);
 
-  /** True while the vanish animation is playing after goal reached. */
   const [planCompleting, setPlanCompleting] = useState(false);
-  /** Guards so the auto-end fires only once per planned session. */
   const planCompletionFiredRef = useRef(false);
+  /**
+   * Minute-hand angle (0–360) at the moment "Start now" was tapped.
+   * The countdown arc is anchored here and shrinks from its end as time passes.
+   */
+  const [arcStartMinAngle, setArcStartMinAngle] = useState<number | null>(null);
 
   // Upcoming planned sessions for the concentric rings view.
   // When todayOnly=true we filter the map to just today's entry so a single
@@ -365,11 +369,26 @@ export const FocusRing = memo(function FocusRing({
   }, [tagPickerOpen, state, startGoalHintSeq]);
   // -----------------------------------------------------------------------
 
-  /* ---- Current hour-hand angle — same coordinate system as planned arc paths ---- */
-  const currentHourAngle = useMemo(() => {
-    const { hours, minutes, seconds } = getZonedTime(now, timezone);
-    return ((hours % 12) + minutes / 60 + seconds / 3600) * 30;
-  }, [now, timezone]);
+  /* currentHourAngle removed — countdown now uses minute-based arcLength/arcStartMinAngle */
+
+  /**
+   * Countdown arc length in degrees (360 → 0).
+   *
+   * Formula: (remaining_ms / total_ms) × 360
+   *   · 360° = session just started (100% remaining)
+   *   · 180° = halfway through
+   *   · 0°   = session complete
+   *
+   * Works for any session duration (30 min, 2 h, etc.) because it's
+   * percentage-based, not absolute-time-based.
+   */
+  const arcLength = useMemo((): number | null => {
+    if (!activePlanSession || arcStartMinAngle === null) return null;
+    if (state.kind !== 'targeted') return null;
+    const totalMs  = state.end - state.start;
+    const remainMs = Math.max(0, state.end - now.getTime());
+    return (remainMs / totalMs) * 360;
+  }, [activePlanSession, arcStartMinAngle, state, now]);
 
   /* ---- "Start now" from a planned session ---- */
   const startFromPlan = useCallback((session: PlannedSession) => {
@@ -391,8 +410,11 @@ export const FocusRing = memo(function FocusRing({
       ? planned.getTime()
       : nowMs + session.duration_minutes * 60_000;
 
-    // Transition directly to 'targeted' (skip the click-1/click-2 dance)
     startWithGoal(nowMs, endMs);
+
+    // Capture minute-hand angle now — countdown arc is anchored here
+    const { minutes: nowMin, seconds: nowSec } = getZonedTime(new Date(nowMs), timezone);
+    setArcStartMinAngle(((nowMin + nowSec / 60) * 6) % 360);
 
     // Set session metadata
     setActivePlanSession(session);
@@ -690,7 +712,8 @@ export const FocusRing = memo(function FocusRing({
             onSelectArc={setSelectedPlanArc}
             selectedPlanId={selectedPlanArc?.id ?? null}
             activePlanId={activePlanSession?.id ?? null}
-            currentHourAngle={currentHourAngle}
+            arcStartMinAngle={arcStartMinAngle ?? undefined}
+            arcLength={arcLength ?? undefined}
             completingPlanId={planCompleting ? (activePlanSession?.id ?? null) : null}
           />
         )}

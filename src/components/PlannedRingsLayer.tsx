@@ -86,29 +86,42 @@ interface ArcProps {
   onSelectArc:       (s: PlannedSession | null) => void;
   /** True when this arc is "selected" (raised on mobile, card open) */
   isSelected:        boolean;
-  animDelay:         number;
+  animDelay:          number;
   isCountdownActive?: boolean;
-  currentHourAngle?:  number;
+  /** Fixed minute-hand angle (0–360) where the session started. */
+  arcStartMinAngle?:  number;
+  /** Remaining arc degrees (360 = full, 0 = done). Shrinks each second. */
+  arcLength?:         number;
   isCompleting?:      boolean;
 }
 
 function ArcSegment({
   session, r, C, onSelectArc, isSelected, animDelay,
-  isCountdownActive, currentHourAngle, isCompleting,
+  isCountdownActive, arcStartMinAngle, arcLength, isCompleting,
 }: ArcProps) {
   const [hovered, setHovered] = useState(false);
 
   const startDeg = timeToAngleDeg(session.start_time_local);
   const arcDeg   = durationToDeg(session.duration_minutes);
-  const endDeg   = startDeg + arcDeg;
 
   let d: string;
 
-  if (isCountdownActive && currentHourAngle !== undefined) {
-    const from    = Math.max(currentHourAngle, startDeg);
-    const remain  = endDeg - from;
-    if (remain < ARC_GAP_DEG * 2) return null;
-    d = arcPath(from + ARC_GAP_DEG, endDeg - ARC_GAP_DEG, r, C);
+  if (isCountdownActive && arcStartMinAngle !== undefined && arcLength !== undefined) {
+    /*
+     * Minute-based percentage countdown arc.
+     *
+     * arcStartMinAngle is the minute-hand position when the session started
+     * (FIXED — does not move). arcLength shrinks from 360 → 0 as time passes.
+     *
+     * The arc is anchored at arcStartMinAngle and extends clockwise for
+     * arcLength degrees. As arcLength decreases, the END of the arc moves
+     * counter-clockwise toward the start — the arc shrinks from its tip.
+     *
+     * Uses the same minute coordinate system as the focus ring (0° = 12 o'clock,
+     * clockwise), so the countdown arc aligns naturally with the clock face.
+     */
+    if (arcLength < 0.5) return null; // arc fully consumed
+    d = arcPath(arcStartMinAngle, arcStartMinAngle + arcLength, r, C);
   } else {
     d = arcPath(startDeg + ARC_GAP_DEG, startDeg + arcDeg - ARC_GAP_DEG, r, C);
   }
@@ -207,16 +220,16 @@ interface LayerProps {
   svgEl:             SVGSVGElement | null;  // kept for API compatibility
   /** Called when user clicks/taps an arc. null = deselect. */
   onSelectArc:       (s: PlannedSession | null) => void;
-  /** The currently selected plan session id (controls mobile raise + card). */
-  selectedPlanId?:   string | null;
-  activePlanId?:     string | null;
-  currentHourAngle?: number;
-  completingPlanId?: string | null;
+  selectedPlanId?:    string | null;
+  activePlanId?:      string | null;
+  arcStartMinAngle?:  number;
+  arcLength?:         number;
+  completingPlanId?:  string | null;
 }
 
 export function PlannedRingsLayer({
   sessionsByDay, C, onSelectArc,
-  selectedPlanId, activePlanId, currentHourAngle, completingPlanId,
+  selectedPlanId, activePlanId, arcStartMinAngle, arcLength, completingPlanId,
 }: LayerProps) {
   const days = Array.from(sessionsByDay.keys()).sort();
   if (days.length === 0) return null;
@@ -255,7 +268,8 @@ export function PlannedRingsLayer({
                 isSelected={selectedPlanId === s.id}
                 animDelay={dayIdx * 40 + sIdx * 35 + 60}
                 isCountdownActive={activePlanId === s.id}
-                currentHourAngle={currentHourAngle}
+                arcStartMinAngle={arcStartMinAngle}
+                arcLength={arcLength}
                 isCompleting={completingPlanId === s.id}
               />
             ))}

@@ -79,7 +79,7 @@ export function TodaySummary({ stats, onClick, dailyGoalMs = 0, goalProgress = n
       {/* Glass tooltip above the button */}
       {hovered && (
         <span className="today-summary__tooltip" aria-hidden>
-          {goalReached ? 'Daily goal reached! 🎉' : 'Open stats'}
+          Open stats
         </span>
       )}
     </button>

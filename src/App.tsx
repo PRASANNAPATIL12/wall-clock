@@ -7,6 +7,7 @@ import { TimezoneSelector } from './components/controls/TimezoneSelector';
 import { ModeToggle, type Mode } from './components/controls/ModeToggle';
 import { FormatToggle, type Format } from './components/controls/FormatToggle';
 import { CoffeeLink } from './components/controls/CoffeeLink';
+import { FocusMessage } from './components/FocusMessage';
 import { JoinPill } from './components/JoinPill';
 import { AccountIcon } from './components/AccountIcon';
 import { AuthModal } from './components/AuthModal';
@@ -103,6 +104,26 @@ export default function App() {
     ? Math.min(todayStats.totalMs / dailyGoalMs, 1)
     : null;
 
+  // Goal-reached notification — fires once per day via FocusMessage
+  const [goalMsg, setGoalMsg]         = useState<{ text: string; key: number } | null>(null);
+  const goalCelebDateRef              = useRef('');
+  const prevGoalProgressRef           = useRef<number | null>(null);
+  useEffect(() => {
+    if (goalProgress === null) { prevGoalProgressRef.current = null; return; }
+    const prev = prevGoalProgressRef.current;
+    prevGoalProgressRef.current = goalProgress;
+    // Only fire on the crossing from <1 to >=1 (not on every render)
+    if (goalProgress < 1 || (prev !== null && prev >= 1)) return;
+    const today = new Date().toDateString();
+    if (goalCelebDateRef.current === today) return;
+    goalCelebDateRef.current = today;
+    const h = Math.floor(dailyGoalMin / 60), m = dailyGoalMin % 60;
+    const label = h > 0 && m > 0 ? `${h}h ${m}m` : h > 0 ? `${h}h` : `${m}m`;
+    setGoalMsg({ text: `Daily goal reached · ${label} ✓`, key: Date.now() });
+    const t = window.setTimeout(() => setGoalMsg(null), 3700);
+    return () => window.clearTimeout(t);
+  }, [goalProgress, dailyGoalMin]);
+
   useIdle(5000);
 
   // Document title — only ticks once per minute, cheap
@@ -179,6 +200,12 @@ export default function App() {
         <CoffeeLink />
       </div>
 
+      {/* Daily goal reached — top-of-screen FocusMessage (avoids z-index clash
+          with ScheduleBadge that was hiding the old TodaySummary tooltip) */}
+      {auth.user && goalMsg && (
+        <FocusMessage text={goalMsg.text} duration={3500} msgKey={goalMsg.key} />
+      )}
+
       {/* Today summary — opens Stats pane (History is now embedded inside Stats) */}
       {auth.user && (
         <TodaySummary
@@ -229,6 +256,7 @@ export default function App() {
           refreshKey={sessionSavedTick}
           onScheduleChanged={handleScheduleChanged}
           autoOpenTagAdd={openTagAdd}
+          initialStreak={todayStats.streak}
           onClose={closeSettings}
           onSignOut={async () => {
             await auth.signOut();
