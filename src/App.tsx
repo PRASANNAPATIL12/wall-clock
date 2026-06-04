@@ -15,7 +15,7 @@ import { SettingsDialog, type PaneKey } from './components/SettingsDialog';
 import { TodaySummary } from './components/TodaySummary';
 import { HeroMessage } from './components/HeroMessage';
 import { ScheduleBadge, type ScheduleMode } from './components/ScheduleBadge';
-import { useUpcomingPlanned } from './hooks/usePlannedSessions';
+import { useUpcomingPlanned, useTodayPlanProgress } from './hooks/usePlannedSessions';
 import { useTodayStats } from './hooks/useTodayStats';
 import { useTheme } from './hooks/useTheme';
 import { useFullscreen } from './hooks/useFullscreen';
@@ -95,11 +95,39 @@ export default function App() {
 
   const todayStats = useTodayStats(auth.user?.id ?? null, tz, sessionSavedTick);
 
-  // Daily focus goal — stored as a string (usePersistedState is string-only)
+  // Daily focus goal (optional explicit target)
   const [dailyGoalStr] = usePersistedState<string>('wall.daily.goal', '0');
   const dailyGoalMin = parseInt(dailyGoalStr, 10) || 0;
   const dailyGoalMs  = dailyGoalMin * 60_000;
-  // null when no goal set; capped at 1.0 so bar never overflows
+
+  /**
+   * Today's planned sessions progress — how many of today's
+   * scheduled sessions are done. Refreshes on every plan change.
+   *
+   * fraction = 0.0 → 1.0, or null when nothing is planned today.
+   */
+  const todayPlanProgress = useTodayPlanProgress(
+    auth.user?.id ?? null,
+    planRefreshKey,
+  );
+
+  /**
+   * Bottom progress bar fraction (0–1):
+   *   1. If an explicit daily goal is set → focus time vs goal
+   *   2. Else if sessions are planned today → plan completion fraction
+   *   3. Else → null (bar hidden)
+   *
+   * This lets the bar be useful even for users who haven't set a daily
+   * goal — it just reflects "how much of today's plan is done."
+   */
+  const barProgress: number | null = (() => {
+    if (dailyGoalMs > 0) {
+      return Math.min(todayStats.totalMs / dailyGoalMs, 1);
+    }
+    return todayPlanProgress.fraction;   // null when nothing planned
+  })();
+
+  // Keep the old goalProgress alias for the TodaySummary pill fraction display
   const goalProgress = dailyGoalMs > 0
     ? Math.min(todayStats.totalMs / dailyGoalMs, 1)
     : null;
@@ -216,19 +244,25 @@ export default function App() {
         />
       )}
 
-      {/* Daily goal progress bar — 2px at absolute bottom edge, desktop only */}
-      {auth.user && goalProgress !== null && (
+      {/* Bottom progress bar — 2px thin line at viewport edge.
+          Shows today's plan completion % (or daily goal % if set).
+          Visible on both desktop and mobile. */}
+      {auth.user && barProgress !== null && (
         <div
           className="daily-goal-bar"
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-valuenow={Math.round(goalProgress * 100)}
-          aria-label={`Daily focus goal: ${Math.round(goalProgress * 100)}%`}
+          aria-valuenow={Math.round(barProgress * 100)}
+          aria-label={
+            dailyGoalMs > 0
+              ? `Daily focus goal: ${Math.round(barProgress * 100)}%`
+              : `Today's plan: ${todayPlanProgress.completed} of ${todayPlanProgress.total} done`
+          }
         >
           <div
             className="daily-goal-bar__fill"
-            style={{ width: `${goalProgress * 100}%` }}
+            style={{ width: `${barProgress * 100}%` }}
           />
         </div>
       )}

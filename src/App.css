@@ -46,31 +46,27 @@
   pointer-events: none;
 }
 
-/* ---- Daily goal progress bar ---- */
-/* 2px bar at the absolute bottom edge of the viewport.
-   Track = transparent; fill = green. Only visible on desktop.
-   On mobile, the fraction "1h 45m / 4h" inside the TodaySummary pill
-   serves as the progress indicator instead. */
+/* ---- Bottom progress bar ---- */
+/* 2px YouTube-style line at the absolute viewport bottom.
+   Shows today's planned session completion (or daily goal if set).
+   Visible on BOTH desktop and mobile. */
 .daily-goal-bar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   height: 2px;
-  background: transparent;
+  background: color-mix(in srgb, #2da44e 15%, transparent);
   z-index: 7;
   pointer-events: none;
 }
 .daily-goal-bar__fill {
   height: 100%;
   background: #2da44e;
-  opacity: 0.65;
-  transition: width 800ms var(--ease-soft-spring);
+  opacity: 0.72;
+  transition: width 600ms var(--ease-soft-spring);
   border-radius: 0 1px 1px 0;
-}
-/* Hide the bar on mobile — pill fraction is enough */
-@media (max-width: 640px) {
-  .daily-goal-bar { display: none; }
+  min-width: 4px;    /* always visible even at 1% */
 }
 
 /* The 12/24 control: liquid fade-up on mount */
