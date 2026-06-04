@@ -49,6 +49,42 @@ export function useUpcomingPlanned(
   return { byDay, total };
 }
 
+/**
+ * Returns today's plan progress: { total, completed, fraction }.
+ * Refreshes whenever planRefreshKey changes (session completed or added).
+ *
+ * Why a separate query? useUpcomingPlanned skips completed sessions.
+ * For the progress bar we need the FULL picture: how many were planned
+ * today AND how many have actually been completed.
+ *
+ * fraction = completed / total (0–1). null when nothing planned today.
+ */
+export function useTodayPlanProgress(
+  userId: string | null,
+  refreshKey = 0,
+): { total: number; completed: number; fraction: number | null } {
+  const [result, setResult] = useState({ total: 0, completed: 0 });
+
+  useEffect(() => {
+    if (!userId) { setResult({ total: 0, completed: 0 }); return; }
+    let cancelled = false;
+    const today = todayLocalDate();
+
+    listPlannedSessions(userId, today, today)        // just today's date range
+      .then(rows => {
+        if (cancelled) return;
+        const total     = rows.length;
+        const completed = rows.filter(r => r.completed).length;
+        setResult({ total, completed });
+      });
+
+    return () => { cancelled = true; };
+  }, [userId, refreshKey]);
+
+  const fraction = result.total > 0 ? result.completed / result.total : null;
+  return { ...result, fraction };
+}
+
 /** Legacy hook — fetches only today's sessions for the simple arc overlay. */
 export function useTodayPlanned(
   userId: string | null,

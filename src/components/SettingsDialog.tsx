@@ -19,6 +19,8 @@ interface Props {
   onScheduleChanged?: () => void;
   autoOpenTagAdd?: boolean;
   onManageTags?: () => void;
+  /** Pre-computed streak from App so Stats shows it instantly (no wait for DB). */
+  initialStreak?: number;
 }
 
 export type PaneKey =
@@ -99,6 +101,7 @@ export function SettingsDialog({
   onScheduleChanged,
   autoOpenTagAdd = false,
   onManageTags,
+  initialStreak = 0,
 }: Props) {
   const [pane, setPane] = useState<PaneKey>(initialPane);
 
@@ -187,7 +190,9 @@ export function SettingsDialog({
                 onManageTags={onManageTags ?? (() => setPane('tags'))}
               />
             )}
-            {pane === 'stats'   && <StatsPane user={user} refreshKey={refreshKey} />}
+            {pane === 'stats'   && (
+              <StatsPane user={user} refreshKey={refreshKey} initialStreak={initialStreak} />
+            )}
             {pane === 'tags'    && <TagsPane autoOpenAdd={autoOpenTagAdd} />}
             {pane === 'sounds'  && <SoundsPane />}
             {pane === 'guide'   && <GuidePane onClose={onClose} />}

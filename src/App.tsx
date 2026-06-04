@@ -7,6 +7,7 @@ import { TimezoneSelector } from './components/controls/TimezoneSelector';
 import { ModeToggle, type Mode } from './components/controls/ModeToggle';
 import { FormatToggle, type Format } from './components/controls/FormatToggle';
 import { CoffeeLink } from './components/controls/CoffeeLink';
+import { FocusMessage } from './components/FocusMessage';
 import { JoinPill } from './components/JoinPill';
 import { AccountIcon } from './components/AccountIcon';
 import { AuthModal } from './components/AuthModal';
@@ -14,7 +15,7 @@ import { SettingsDialog, type PaneKey } from './components/SettingsDialog';
 import { TodaySummary } from './components/TodaySummary';
 import { HeroMessage } from './components/HeroMessage';
 import { ScheduleBadge, type ScheduleMode } from './components/ScheduleBadge';
-import { useUpcomingPlanned } from './hooks/usePlannedSessions';
+import { useUpcomingPlanned, useTodayPlanProgress } from './hooks/usePlannedSessions';
 import { useTodayStats } from './hooks/useTodayStats';
 import { useTheme } from './hooks/useTheme';
 import { useFullscreen } from './hooks/useFullscreen';
@@ -94,14 +95,62 @@ export default function App() {
 
   const todayStats = useTodayStats(auth.user?.id ?? null, tz, sessionSavedTick);
 
-  // Daily focus goal — stored as a string (usePersistedState is string-only)
+  // Daily focus goal (optional explicit target)
   const [dailyGoalStr] = usePersistedState<string>('wall.daily.goal', '0');
   const dailyGoalMin = parseInt(dailyGoalStr, 10) || 0;
   const dailyGoalMs  = dailyGoalMin * 60_000;
-  // null when no goal set; capped at 1.0 so bar never overflows
+
+  /**
+   * Today's planned sessions progress — how many of today's
+   * scheduled sessions are done. Refreshes on every plan change.
+   *
+   * fraction = 0.0 → 1.0, or null when nothing is planned today.
+   */
+  const todayPlanProgress = useTodayPlanProgress(
+    auth.user?.id ?? null,
+    planRefreshKey,
+  );
+
+  /**
+   * Bottom progress bar fraction (0–1):
+   *   1. If an explicit daily goal is set → focus time vs goal
+   *   2. Else if sessions are planned today → plan completion fraction
+   *   3. Else → null (bar hidden)
+   *
+   * This lets the bar be useful even for users who haven't set a daily
+   * goal — it just reflects "how much of today's plan is done."
+   */
+  const barProgress: number | null = (() => {
+    if (dailyGoalMs > 0) {
+      return Math.min(todayStats.totalMs / dailyGoalMs, 1);
+    }
+    return todayPlanProgress.fraction;   // null when nothing planned
+  })();
+
+  // Keep the old goalProgress alias for the TodaySummary pill fraction display
   const goalProgress = dailyGoalMs > 0
     ? Math.min(todayStats.totalMs / dailyGoalMs, 1)
     : null;
+
+  // Goal-reached notification — fires once per day via FocusMessage
+  const [goalMsg, setGoalMsg]         = useState<{ text: string; key: number } | null>(null);
+  const goalCelebDateRef              = useRef('');
+  const prevGoalProgressRef           = useRef<number | null>(null);
+  useEffect(() => {
+    if (goalProgress === null) { prevGoalProgressRef.current = null; return; }
+    const prev = prevGoalProgressRef.current;
+    prevGoalProgressRef.current = goalProgress;
+    // Only fire on the crossing from <1 to >=1 (not on every render)
+    if (goalProgress < 1 || (prev !== null && prev >= 1)) return;
+    const today = new Date().toDateString();
+    if (goalCelebDateRef.current === today) return;
+    goalCelebDateRef.current = today;
+    const h = Math.floor(dailyGoalMin / 60), m = dailyGoalMin % 60;
+    const label = h > 0 && m > 0 ? `${h}h ${m}m` : h > 0 ? `${h}h` : `${m}m`;
+    setGoalMsg({ text: `Daily goal reached · ${label} ✓`, key: Date.now() });
+    const t = window.setTimeout(() => setGoalMsg(null), 3700);
+    return () => window.clearTimeout(t);
+  }, [goalProgress, dailyGoalMin]);
 
   useIdle(5000);
 
@@ -134,6 +183,7 @@ export default function App() {
             schedulingViewOpen={schedulingViewOpen}
             todayOnly={scheduleMode === 'today'}
             onScheduleClose={() => setScheduleMode('closed')}
+            onPlanSessionCompleted={handleScheduleChanged}
           />
         </div>
         <div className={`mode-layer ${!isAnalog ? 'is-in' : 'is-out-down'}`} aria-hidden={isAnalog}>
@@ -178,6 +228,12 @@ export default function App() {
         <CoffeeLink />
       </div>
 
+      {/* Daily goal reached — top-of-screen FocusMessage (avoids z-index clash
+          with ScheduleBadge that was hiding the old TodaySummary tooltip) */}
+      {auth.user && goalMsg && (
+        <FocusMessage text={goalMsg.text} duration={3500} msgKey={goalMsg.key} />
+      )}
+
       {/* Today summary — opens Stats pane (History is now embedded inside Stats) */}
       {auth.user && (
         <TodaySummary
@@ -188,19 +244,25 @@ export default function App() {
         />
       )}
 
-      {/* Daily goal progress bar — 2px at absolute bottom edge, desktop only */}
-      {auth.user && goalProgress !== null && (
+      {/* Bottom progress bar — 2px thin line at viewport edge.
+          Shows today's plan completion % (or daily goal % if set).
+          Visible on both desktop and mobile. */}
+      {auth.user && barProgress !== null && (
         <div
           className="daily-goal-bar"
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-valuenow={Math.round(goalProgress * 100)}
-          aria-label={`Daily focus goal: ${Math.round(goalProgress * 100)}%`}
+          aria-valuenow={Math.round(barProgress * 100)}
+          aria-label={
+            dailyGoalMs > 0
+              ? `Daily focus goal: ${Math.round(barProgress * 100)}%`
+              : `Today's plan: ${todayPlanProgress.completed} of ${todayPlanProgress.total} done`
+          }
         >
           <div
             className="daily-goal-bar__fill"
-            style={{ width: `${goalProgress * 100}%` }}
+            style={{ width: `${barProgress * 100}%` }}
           />
         </div>
       )}
@@ -228,6 +290,7 @@ export default function App() {
           refreshKey={sessionSavedTick}
           onScheduleChanged={handleScheduleChanged}
           autoOpenTagAdd={openTagAdd}
+          initialStreak={todayStats.streak}
           onClose={closeSettings}
           onSignOut={async () => {
             await auth.signOut();

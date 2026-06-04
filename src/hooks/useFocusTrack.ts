@@ -158,5 +158,14 @@ export function useFocusTrack(
     });
   }, [timezone]);
 
-  return { state, handleClick, setDragEnd };
+  /**
+   * Directly transition to 'targeted' with explicit timestamps.
+   * Used by "Start now" from a planned session so we can set the goal
+   * time to the exact planned end time without going through angle math.
+   */
+  const startWithGoal = useCallback((startMs: number, endMs: number) => {
+    setState({ kind: 'targeted', start: startMs, end: endMs });
+  }, []);
+
+  return { state, handleClick, setDragEnd, startWithGoal };
 }

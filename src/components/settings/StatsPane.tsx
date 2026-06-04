@@ -5,7 +5,16 @@ import type { SessionRow } from '../../lib/supabase';
 import { HistoryPane } from './HistoryPane';
 import './StatsPane.css';
 
-interface Props { user: User; refreshKey?: number }
+interface Props {
+  user: User;
+  refreshKey?: number;
+  /**
+   * Pre-computed streak passed from App (already fresh from the last
+   * session save). Shown immediately while the heatmap data loads so
+   * the user never sees a blank streak card.
+   */
+  initialStreak?: number;
+}
 
 /* ---- Period definition — calendar-month aligned ----
  * months=0 → "1 week" (last 7 days, single row)
@@ -150,7 +159,7 @@ const isTouch = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0
 /* =========================================================================
    Main component
    ========================================================================= */
-export function StatsPane({ user, refreshKey }: Props) {
+export function StatsPane({ user, refreshKey, initialStreak = 0 }: Props) {
   const [rows,      setRows]      = useState<SessionRow[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [periodIdx, setPeriodIdx] = useState(3);          // default: 3 months
@@ -164,13 +173,11 @@ export function StatsPane({ user, refreshKey }: Props) {
   const period  = PERIODS[periodIdx]!;
   const isWeek  = period.months === 0;
 
-  /* startStr — oldest date we show in the heatmap.
-   * fetchStart — might go further back for streak accuracy (always ≥1 year). */
+  /* fetchStart = exactly the displayed period's start date.
+   * No longer extending to 365 days — initialStreak (pre-computed in App)
+   * handles streak accuracy instantly without any extra DB fetch. */
   const startStr   = isWeek ? dateNDaysAgo(6) : firstOfMonthsAgo(period.months - 1);
-  const fetchStart = useMemo(() => {
-    const yearAgo = dateNDaysAgo(364);
-    return startStr < yearAgo ? startStr : yearAgo;
-  }, [startStr]);
+  const fetchStart = startStr;
 
   /* ResizeObserver */
   useEffect(() => {
@@ -189,7 +196,8 @@ export function StatsPane({ user, refreshKey }: Props) {
     listSessionsByDateRange(user.id, fetchStart, dateNDaysAgo(0))
       .then(r => { if (!cancelled) { setRows(r); setLoading(false); } });
     return () => { cancelled = true; };
-  }, [user.id, refreshKey, fetchStart]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.id, refreshKey, startStr]);
 
   const totalsByDate = useMemo(() => {
     const m = new Map<string, number>();
@@ -289,12 +297,17 @@ export function StatsPane({ user, refreshKey }: Props) {
     return () => { cancelAnimationFrame(raf); window.clearTimeout(t1); window.clearTimeout(t2); cancelNudge?.(); };
   }, [needsScroll, periodIdx]);
 
-  /* Streak — always accurate; totalsByDate covers 365 days */
-  const streak = useMemo(() => {
+  /* Streak:
+   * · While loading: use initialStreak (pre-computed in App, shows instantly)
+   * · After load:    recompute from fetched data (matches the displayed period)
+   * initialStreak is computed over 365 days in useTodayStats, so it's
+   * accurate even if the current period is shorter than the actual streak. */
+  const computedStreak = useMemo(() => {
     let s = 0;
     for (let i = 0; i < 365; i++) { if ((totalsByDate.get(dateNDaysAgo(i))??0) > 0) s++; else break; }
     return s;
   }, [totalsByDate]);
+  const streak = loading ? initialStreak : computedStreak;
 
   /* Window total — sum displayed period only */
   const windowTotalMs = useMemo(() => {
