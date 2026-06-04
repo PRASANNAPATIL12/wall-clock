@@ -1,0 +1,186 @@
+/* =========================================================================
+   PlanActionCard — bottom-centre glass pill.
+
+   Replaces the old floating tooltip-with-button approach.
+   Always anchored at bottom centre — no floating near the arc.
+
+   Desktop:  bottom: 72px  (12 px gap above TodaySummary at bottom:28px)
+   Mobile:   bottom: 170px (12 px gap above TodaySummary at bottom:130px)
+   ========================================================================= */
+
+.plan-action-card {
+  /* Same centering trick as TodaySummary / ScheduleBadge */
+  position: fixed;
+  bottom: 72px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: fit-content;
+  max-width: min(calc(100vw - 28px), 440px);
+  z-index: 50;
+
+  display: inline-flex;
+  align-items: center;
+  height: 56px;
+  border-radius: 999px;
+  overflow: hidden;   /* clips the accent stripe to the pill shape */
+
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+
+  /* Slide up + scale-in entrance — same spring used by TagPicker */
+  animation: plan-card-in 260ms var(--ease-spring) both;
+}
+
+@keyframes plan-card-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* ---- Left accent stripe (tag colour, set via inline style) ---- */
+.plan-action-card__accent {
+  width: 4px;
+  height: 100%;
+  flex-shrink: 0;
+}
+
+/* ---- Tag icon badge ---- */
+.plan-action-card__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--fg-faint);
+  flex-shrink: 0;
+  margin: 0 6px 0 10px;
+}
+
+/* ---- Session info ---- */
+.plan-action-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+  padding-right: 8px;
+}
+
+.plan-action-card__label {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plan-action-card__time {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+.plan-action-card__sep {
+  opacity: 0.45;
+  font-family: var(--font-display);
+}
+
+/* ---- "Start now" button ---- */
+.plan-action-card__start {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--card-color, var(--plan-arc)) 35%, transparent);
+  background: color-mix(in srgb, var(--card-color, var(--plan-arc)) 14%, transparent);
+  color: var(--card-color, var(--plan-arc));
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-right: 5px;
+  transition:
+    background-color 140ms var(--ease-apple),
+    transform       120ms var(--ease-apple);
+}
+
+.plan-action-card__start:hover {
+  background: color-mix(in srgb, var(--card-color, var(--plan-arc)) 26%, transparent);
+}
+
+.plan-action-card__start:active {
+  transform: scale(0.97);
+  transition-duration: 80ms;
+}
+
+/* ---- Dismiss (✕) button ---- */
+.plan-action-card__close {
+  display: inline-grid;
+  place-items: center;
+  /* 36px hit area for comfortable desktop click */
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-right: 6px;
+  transition:
+    background-color 140ms var(--ease-apple),
+    color           140ms var(--ease-apple);
+}
+
+.plan-action-card__close:hover {
+  background: var(--fg-faint);
+  color: var(--fg);
+}
+
+/* Idle fade — same as TodaySummary, ScheduleBadge */
+body.idle .plan-action-card {
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition:
+    opacity   600ms var(--ease-apple),
+    transform 600ms var(--ease-apple);
+}
+
+/* ================================================================
+   Mobile — taller touch targets
+   ================================================================ */
+@media (max-width: 640px) {
+  .plan-action-card {
+    bottom: 170px;
+    height: 60px;
+    max-width: calc(100vw - 24px);
+  }
+
+  .plan-action-card__start {
+    height: 40px;
+    padding: 0 16px;
+    font-size: 12.5px;
+  }
+
+  /* 44 px touch target for the ✕ */
+  .plan-action-card__close {
+    width: 44px;
+    height: 44px;
+    margin-right: 4px;
+  }
+}

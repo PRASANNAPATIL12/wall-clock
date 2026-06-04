@@ -13,7 +13,8 @@ import { useOnboardingHint } from '../hooks/useOnboardingHint';
 import { TagPicker } from './TagPicker';
 import { TagIcon } from './TagIcon';
 import { getTag } from '../lib/tags';
-import { PlannedRingsLayer, RingsTooltipCard, type RingsTooltip } from './PlannedRingsLayer';
+import { PlannedRingsLayer } from './PlannedRingsLayer';
+import { PlanActionCard } from './PlanActionCard';
 import { useUpcomingPlanned } from '../hooks/usePlannedSessions';
 import { FocusMessage } from './FocusMessage';
 import './PlannedRings.css';
@@ -179,8 +180,8 @@ export const FocusRing = memo(function FocusRing({
     return m;
   }, [_plannedByDay, todayOnly, activePlanSession]);
 
-  // Tooltip state for the rings view
-  const [ringsTooltip, setRingsTooltip] = useState<RingsTooltip | null>(null);
+  // Selected planned arc — drives the bottom PlanActionCard
+  const [selectedPlanArc, setSelectedPlanArc] = useState<PlannedSession | null>(null);
 
   // Close scheduling view when user clicks anywhere outside the .analog container.
   // The backdrop is pointer-events:none so it won't block ring hover events.
@@ -191,7 +192,7 @@ export const FocusRing = memo(function FocusRing({
       if (activePlanSession) return; // countdown is running — don't close
       const analog = svgRef.current?.closest('.analog');
       if (analog && analog.contains(e.target as Node)) return;
-      setRingsTooltip(null);
+      setSelectedPlanArc(null);
       onScheduleClose?.();
     };
     // Small delay so this listener doesn't fire on the same click that opened the view
@@ -399,7 +400,7 @@ export const FocusRing = memo(function FocusRing({
     setSessionTag(session.tag ?? null);
     planCompletionFiredRef.current = false;
     setTagPickerOpen(false);
-    setRingsTooltip(null);
+    setSelectedPlanArc(null);
 
     // Pre-warm audio context
     prepareHaptic();
@@ -686,7 +687,8 @@ export const FocusRing = memo(function FocusRing({
             sessionsByDay={plannedByDay}
             C={C}
             svgEl={svgRef.current}
-            onTooltip={setRingsTooltip}
+            onSelectArc={setSelectedPlanArc}
+            selectedPlanId={selectedPlanArc?.id ?? null}
             activePlanId={activePlanSession?.id ?? null}
             currentHourAngle={currentHourAngle}
             completingPlanId={planCompleting ? (activePlanSession?.id ?? null) : null}
@@ -876,17 +878,16 @@ export const FocusRing = memo(function FocusRing({
         />
       )}
 
-      {/* Rings tooltip — glass pill above hovered/tapped segment.
-          onStartPlan is omitted when a session is already running so the
-          button disappears once countdown begins.
-          onMouseEnter/Leave bridge the hover gap between arc and tooltip
-          so the user can move the mouse from arc to "Start now" button. */}
-      {ringsTooltip && (
-        <RingsTooltipCard
-          tooltip={ringsTooltip}
-          onStartPlan={state.kind === 'idle' ? startFromPlan : undefined}
-          onMouseEnter={() => { /* cancel any pending hide from arc onLeave */ }}
-          onMouseLeave={() => setRingsTooltip(null)}
+      {/* Plan action card — fixed bottom-centre pill.
+          Appears when user clicks (desktop) or taps (mobile) a planned arc.
+          canStart=true only when no session is running (idle state). */}
+      {selectedPlanArc && !activePlanSession && (
+        <PlanActionCard
+          key={selectedPlanArc.id}
+          session={selectedPlanArc}
+          canStart={state.kind === 'idle'}
+          onStart={() => { startFromPlan(selectedPlanArc); setSelectedPlanArc(null); }}
+          onDismiss={() => setSelectedPlanArc(null)}
         />
       )}
 

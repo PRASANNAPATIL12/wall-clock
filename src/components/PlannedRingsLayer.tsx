@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import type { PlannedSession } from '../lib/planStore';
-import { fmtDuration, fmtTime } from '../lib/planStore';
 import { DEFAULT_TAGS } from '../lib/tags';
 import { TagIcon } from './TagIcon';
 
 /* ============================================================
    Concentric day-ring visualization.
-   New in this version:
-   · activePlanId / currentHourAngle / completingPlanId props
-   · When activePlanId is set: that arc renders as a live countdown
-     (start edge = currentHourAngle, end edge = planned end)
-   · When completingPlanId matches: arc plays reverse-draw vanish
-   · RingsTooltipCard gains "Start now" button + hover bridge props
+
+   Interaction model (Option A — bottom action card):
+   · Desktop hover:  arc raises + glows   (purely visual, no card)
+   · Desktop click:  onSelectArc(session)  (shows PlanActionCard)
+   · Mobile tap:     arc raises + onSelectArc(session)
+   · Tap same arc:   onSelectArc(null)     (dismisses card + lowers arc)
+
+   The old RingsTooltipCard / tooltip hover bridge is removed entirely.
+   computeTooltipPos is also removed (card is always bottom-centre).
    ============================================================ */
 
 export const RING_BASE_R = 56;
@@ -64,7 +66,7 @@ function arcPath(fromDeg: number, toDeg: number, r: number, C: number): string {
   return `M ${f.x} ${f.y} A ${r} ${r} 0 ${delta > 180 ? 1 : 0} 1 ${t.x} ${t.y}`;
 }
 
-/** Convert a HH:MM[:SS] string to the hour-hand angle (0–360 over 12 h). */
+/** Convert HH:MM[:SS] → hour-hand angle (0–360 over 12 h). */
 export function timeToAngleDeg(s: string): number {
   const [hh, mm] = s.split(':').map(Number);
   return (((hh ?? 0) % 12) * 60 + (mm ?? 0)) / 720 * 360;
@@ -74,45 +76,24 @@ function durationToDeg(min: number): number {
   return Math.max(MIN_ARC_DEG, Math.min(MAX_ARC_DEG, min / 4));
 }
 
-export interface RingsTooltip { session: PlannedSession; vpX: number; vpY: number }
-
-function computeTooltipPos(
-  s: PlannedSession, r: number, C: number, svgEl: SVGSVGElement | null,
-): { vpX: number; vpY: number } | null {
-  if (!svgEl) return null;
-  const startDeg = timeToAngleDeg(s.start_time_local);
-  const midDeg   = startDeg + durationToDeg(s.duration_minutes) / 2;
-  const rad      = ((midDeg - 90) * Math.PI) / 180;
-  const rect     = svgEl.getBoundingClientRect();
-  const scale    = rect.width / 100;
-  return {
-    vpX: rect.left + (C + Math.cos(rad) * r) * scale,
-    vpY: rect.top  + (C + Math.sin(rad) * r) * scale,
-  };
-}
-
 const isTouchDevice = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;
 
-/* ---- Single arc with separated hit target ---- */
+/* ---- Single arc ---- */
 interface ArcProps {
   session:           PlannedSession;
   r:                 number;
   C:                 number;
-  svgEl:             SVGSVGElement | null;
-  onTooltip:         (t: RingsTooltip | null) => void;
-  tappedId:          string | null;
-  onTap:             (id: string | null) => void;
+  onSelectArc:       (s: PlannedSession | null) => void;
+  /** True when this arc is "selected" (raised on mobile, card open) */
+  isSelected:        boolean;
   animDelay:         number;
-  /** When true: render as countdown arc from currentHourAngle to planned end. */
   isCountdownActive?: boolean;
-  /** Current hour-hand angle (((h%12)+m/60+s/3600)*30). Required for countdown. */
-  currentHourAngle?: number;
-  /** When true: play reverse-draw vanish animation before removal. */
-  isCompleting?:     boolean;
+  currentHourAngle?:  number;
+  isCompleting?:      boolean;
 }
 
 function ArcSegment({
-  session, r, C, svgEl, onTooltip, tappedId, onTap, animDelay,
+  session, r, C, onSelectArc, isSelected, animDelay,
   isCountdownActive, currentHourAngle, isCompleting,
 }: ArcProps) {
   const [hovered, setHovered] = useState(false);
@@ -124,18 +105,10 @@ function ArcSegment({
   let d: string;
 
   if (isCountdownActive && currentHourAngle !== undefined) {
-    /*
-     * Countdown mode — arc from current clock position to planned end.
-     *
-     * Use max(currentHourAngle, startDeg) so the arc never extends before
-     * the planned start (e.g. user tapped "Start now" a few minutes early).
-     * As the hour hand advances past startDeg the arc naturally shrinks.
-     * When remaining < 2× gap the arc is consumed → return null.
-     */
-    const countdownFrom = Math.max(currentHourAngle, startDeg);
-    const remaining     = endDeg - countdownFrom;
-    if (remaining < ARC_GAP_DEG * 2) return null;
-    d = arcPath(countdownFrom + ARC_GAP_DEG, endDeg - ARC_GAP_DEG, r, C);
+    const from    = Math.max(currentHourAngle, startDeg);
+    const remain  = endDeg - from;
+    if (remain < ARC_GAP_DEG * 2) return null;
+    d = arcPath(from + ARC_GAP_DEG, endDeg - ARC_GAP_DEG, r, C);
   } else {
     d = arcPath(startDeg + ARC_GAP_DEG, startDeg + arcDeg - ARC_GAP_DEG, r, C);
   }
@@ -143,45 +116,40 @@ function ArcSegment({
   if (!d) return null;
 
   const color    = tagColor(session.tag);
-  const isActive = isCountdownActive || (isTouchDevice ? tappedId === session.id : hovered);
+  /*
+   * isActive drives the visual raise + glow.
+   * Desktop: hover (mouse) OR countdown.
+   * Mobile:  tapped/selected OR countdown.
+   */
+  const isActive = isCountdownActive || (isTouchDevice ? isSelected : hovered);
 
-  const onEnter = () => {
+  /* --- Desktop hover (purely visual — no card interaction) --- */
+  const onEnter = () => { if (!isTouchDevice) setHovered(true); };
+  const onLeave = () => { if (!isTouchDevice) setHovered(false); };
+
+  /* --- Desktop click → show card --- */
+  const onClickDesktop = (e: React.MouseEvent) => {
     if (isTouchDevice) return;
-    setHovered(true);
-    const pos = computeTooltipPos(session, r, C, svgEl);
-    if (pos) onTooltip({ session, ...pos });
+    e.stopPropagation();
+    onSelectArc(session);
   };
-  const onLeave = () => {
-    if (isTouchDevice) return;
-    setHovered(false);
-    // 200ms grace so the mouse can move from the arc to the tooltip's "Start now" button
-    window.setTimeout(() => onTooltip(null), 200);
-  };
-  const onTapHandler = (e: React.MouseEvent) => {
+
+  /* --- Mobile tap → toggle arc raise + card --- */
+  const onTap = (e: React.MouseEvent) => {
     if (!isTouchDevice) return;
     e.stopPropagation();
-    const next = tappedId === session.id ? null : session.id;
-    onTap(next);
-    if (next) {
-      const pos = computeTooltipPos(session, r, C, svgEl);
-      if (pos) onTooltip({ session, ...pos });
-    } else {
-      onTooltip(null);
-    }
+    // Toggle: if this arc is already selected → deselect, else select
+    onSelectArc(isSelected ? null : session);
   };
 
-  /*
-   * Animation:
-   * · Normal:     draw-in  — strokeDashoffset 1000 → 0
-   * · Completing: vanish   — strokeDashoffset 0 → 1000 + opacity 1 → 0
-   */
+  /* Animation */
   const arcAnimation = isCompleting
     ? 'ring-arc-vanish 440ms cubic-bezier(0.4,0,1,1) both'
     : `ring-arc-draw 580ms cubic-bezier(0.22,0.61,0.36,1) ${animDelay}ms both`;
 
   return (
     <g style={{ pointerEvents: 'all' }}>
-      {/* Static hit target — never transforms */}
+      {/* Static hit target — never transforms; prevents hover/scale vibration */}
       <path
         d={d}
         fill="none"
@@ -191,10 +159,10 @@ function ArcSegment({
         style={{ cursor: 'pointer', pointerEvents: 'stroke' }}
         onMouseEnter={onEnter}
         onMouseLeave={onLeave}
-        onClick={onTapHandler}
+        onClick={(e) => { onClickDesktop(e); onTap(e); }}
       />
 
-      {/* Visual arc — scales freely */}
+      {/* Visual arc — scales from clock centre on hover/tap */}
       <g
         style={{
           transformBox:    'view-box',
@@ -236,21 +204,20 @@ function ArcSegment({
 interface LayerProps {
   sessionsByDay:     Map<string, PlannedSession[]>;
   C:                 number;
-  svgEl:             SVGSVGElement | null;
-  onTooltip:         (t: RingsTooltip | null) => void;
-  /** ID of the session currently being run as a countdown arc. */
+  svgEl:             SVGSVGElement | null;  // kept for API compatibility
+  /** Called when user clicks/taps an arc. null = deselect. */
+  onSelectArc:       (s: PlannedSession | null) => void;
+  /** The currently selected plan session id (controls mobile raise + card). */
+  selectedPlanId?:   string | null;
   activePlanId?:     string | null;
-  /** Current hour-hand angle. Required when activePlanId is set. */
   currentHourAngle?: number;
-  /** ID of the session currently playing the vanish animation. */
   completingPlanId?: string | null;
 }
 
 export function PlannedRingsLayer({
-  sessionsByDay, C, svgEl, onTooltip,
-  activePlanId, currentHourAngle, completingPlanId,
+  sessionsByDay, C, onSelectArc,
+  selectedPlanId, activePlanId, currentHourAngle, completingPlanId,
 }: LayerProps) {
-  const [tappedId, setTappedId] = useState<string | null>(null);
   const days = Array.from(sessionsByDay.keys()).sort();
   if (days.length === 0) return null;
 
@@ -284,10 +251,8 @@ export function PlannedRingsLayer({
                 session={s}
                 r={r}
                 C={C}
-                svgEl={svgEl}
-                onTooltip={onTooltip}
-                tappedId={tappedId}
-                onTap={setTappedId}
+                onSelectArc={onSelectArc}
+                isSelected={selectedPlanId === s.id}
                 animDelay={dayIdx * 40 + sIdx * 35 + 60}
                 isCountdownActive={activePlanId === s.id}
                 currentHourAngle={currentHourAngle}
@@ -301,67 +266,20 @@ export function PlannedRingsLayer({
   );
 }
 
-/* ---- Tooltip card ---- */
-export function RingsTooltipCard({
-  tooltip,
-  onStartPlan,
-  onMouseEnter,
-  onMouseLeave,
-}: {
-  tooltip:       RingsTooltip;
-  /**
-   * When provided: a "Start now" button appears inside the tooltip.
-   * Pass undefined when a session is already running so the button hides.
-   */
-  onStartPlan?:  (session: PlannedSession) => void;
-  /** Hover enter on the tooltip card — used to keep the card open when mouse
-   *  moves from the arc to the "Start now" button. */
-  onMouseEnter?: () => void;
-  /** Hover leave on the tooltip card — hide after user moves away. */
-  onMouseLeave?: () => void;
-}) {
-  const { session, vpX, vpY } = tooltip;
-  const tag   = session.tag ? DEFAULT_TAGS.find(t => t.id === session.tag) : null;
+/* ---- Kept for backwards compat (unused, will be removed next clean-up) ---- */
+export interface RingsTooltip { session: PlannedSession; vpX: number; vpY: number }
+export function RingsTooltipCard({ tooltip }: { tooltip: RingsTooltip }) {
+  const { session } = tooltip;
+  const tag   = DEFAULT_TAGS.find(t => t.id === session.tag);
   const color = tagColor(session.tag);
-
   return (
-    <div
-      className={`rings-tooltip${onStartPlan ? ' rings-tooltip--interactive' : ''}`}
-      style={{ left: vpX, top: vpY }}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      aria-hidden
-    >
+    <div className="rings-tooltip" style={{ left: tooltip.vpX, top: tooltip.vpY }} aria-hidden>
       <div className="rings-tooltip__accent" style={{ background: color }} />
       <div className="rings-tooltip__body">
         <div className="rings-tooltip__row">
-          {tag && (
-            <span className="rings-tooltip__icon" style={{ color }}>
-              <TagIcon def={tag} size={12} />
-            </span>
-          )}
-          <span className="rings-tooltip__label">{tag?.label ?? session.tag ?? 'Focus'}</span>
+          {tag && <span className="rings-tooltip__icon" style={{ color }}><TagIcon def={tag} size={12} /></span>}
+          <span className="rings-tooltip__label">{tag?.label ?? 'Focus'}</span>
         </div>
-        <div className="rings-tooltip__time">
-          {fmtTime(session.start_time_local)}
-          <span className="rings-tooltip__sep">·</span>
-          {fmtDuration(session.duration_minutes)}
-        </div>
-
-        {onStartPlan && (
-          <button
-            className="rings-tooltip__start"
-            type="button"
-            style={{ '--arc-color': color } as React.CSSProperties}
-            onClick={(e) => { e.stopPropagation(); onStartPlan(session); }}
-          >
-            <svg viewBox="0 0 24 24" width={9} height={9}
-              fill="currentColor" stroke="none" aria-hidden>
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-            Start now
-          </button>
-        )}
       </div>
     </div>
   );
