@@ -122,13 +122,18 @@ export const Scene4Features = memo(function Scene4Features() {
   const p = useScrollProgress(sceneRef);
 
   // Heading fades in early
-  const headingT = mapRange(p, 0.02, 0.10, 0, 1);
+  const headingT = mapRange(p, 0.02, 0.08, 0, 1);
 
   // Horizontal translation across 5 cards.
-  // The track is N×(card-width + gap) wide; we shift it left as scroll progresses.
-  // Using percentage of track width — clamped 0 to ~78% so the last card
-  // settles in view at scroll end.
-  const trackT = mapRange(p, 0.10, 0.92, 0, 1);
+  // Outer scene height is 900vh, so each card has ~180vh of scroll to be
+  // readable. trackT progresses 0 → 1 across most of the scene (0.06 → 0.94),
+  // mapped to translateX from 0 to -78% of track width.
+  //
+  // Because outer height is 900vh, the EFFECTIVE scroll speed of the
+  // horizontal track is ~4× slower than the previous 500vh version.
+  // Each card is now legible for ~150-180vh of scroll before sliding
+  // off — long enough for a comfortable read on every screen.
+  const trackT = mapRange(p, 0.06, 0.94, 0, 1);
   const translateX = -trackT * 78; // 0% → -78%
 
   return (

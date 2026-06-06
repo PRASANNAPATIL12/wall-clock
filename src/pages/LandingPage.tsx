@@ -23,30 +23,38 @@ import './LandingPage.css';
 /* OAuth callback handling                                            */
 /* ------------------------------------------------------------------ */
 /**
- * If the URL contains an OAuth callback hash (`#access_token=…`),
- * Supabase has just bounced the user back from Google. The auth handler
- * lives in the /app React tree, so forward there with the hash intact.
+ * The cinematic landing is for ANONYMOUS visitors only.
  *
- * NOTE — Returning-user auto-redirect is DISABLED while testing. Once
- * the landing is in production, we can re-enable it so signed-in users
- * skip the cinematic experience and land on /app directly. To re-enable,
- * uncomment the second block.
+ * Two redirect conditions, both → /app:
+ *
+ *   1. OAuth callback hash present (`#access_token=…`)
+ *      Supabase just bounced the user back from Google. The auth
+ *      handler lives in /app's React tree, so forward there with
+ *      the hash intact so Supabase can complete sign-in.
+ *
+ *   2. User is already signed in (Supabase token in localStorage)
+ *      They've used Focus Clock before. The cinematic story is for
+ *      first-timers. Send them straight to their tool.
+ *
+ * Result: the landing only shows for first-time anonymous visitors.
+ * Logged-in users NEVER see the cinematic page — they always land
+ * on /app, exactly as they did before the landing existed.
  */
-function useOAuthCallbackRedirect() {
+function useAnonymousLandingGuard() {
   useEffect(() => {
     try {
+      // 1. OAuth callback in progress — forward with hash preserved
       if (window.location.hash.includes('access_token')) {
         window.location.replace('/app' + window.location.hash);
         return;
       }
-      // --- Disabled for testing ----------------------------------------
-      // const hasSession = Object.keys(localStorage).some(
-      //   (k) => k.startsWith('sb-') && k.includes('-auth-token'),
-      // );
-      // if (hasSession) {
-      //   window.location.replace('/app');
-      // }
-      // -----------------------------------------------------------------
+      // 2. Existing session in localStorage — returning user
+      const hasSession = Object.keys(localStorage).some(
+        (k) => k.startsWith('sb-') && k.includes('-auth-token'),
+      );
+      if (hasSession) {
+        window.location.replace('/app');
+      }
     } catch {
       /* localStorage blocked — show landing anyway */
     }
@@ -54,7 +62,7 @@ function useOAuthCallbackRedirect() {
 }
 
 export default function LandingPage() {
-  useOAuthCallbackRedirect();
+  useAnonymousLandingGuard();
   useLenis();   // ← silky smooth scroll across the entire page
 
   return (

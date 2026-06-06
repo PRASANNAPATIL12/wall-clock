@@ -37,8 +37,8 @@
 .scene--hero          { min-height: 100vh; }
 .scene--zoom          { min-height: 250vh; }   /* sticky zoom over 2.5vh */
 .scene--three-clicks  { min-height: 300vh; }   /* sticky 3-card reveal */
-.scene--features      { min-height: 500vh; }   /* horizontal scroll inside */
-.scene--roadmap       { min-height: 120vh; }
+.scene--features      { min-height: 900vh; }   /* horizontal scroll inside — 180vh per card */
+.scene--roadmap       { min-height: 250vh; }   /* sticky reveal of 3 cards */
 .scene--trust         { min-height: 120vh; }
 .scene--invite        { min-height: 120vh; }
 .scene--faq           { min-height: 100vh; }
@@ -165,6 +165,31 @@
   pointer-events: none;
 }
 
+/* The clock + focus ring are NEVER interactive on the landing.
+   Reason: clicking the ring would start a session, which is meaningful
+   only in /app. On the landing, the clock is purely cinematic — the
+   user goes to /app (via JoinPill → sign in, or directly) to interact.
+
+   This also prevents the Pause/Stop control from appearing on the
+   landing, which would otherwise show as soon as the user clicked
+   the ring. The ring renders + animates normally, just can't be
+   clicked while on /. */
+.hero-app-wrap .clock-canvas-layer {
+  pointer-events: none;
+}
+
+/* Anonymous landing — auth-related UI never appears.
+   When the landing renders, the auth state is guaranteed anonymous
+   (logged-in users get redirected to /app via useAnonymousLandingGuard).
+   These rules are belt-and-suspenders for any edge case where the
+   async useAuth hook hasn't resolved yet. */
+.hero-app-wrap .account-icon,
+.hero-app-wrap .today-summary,
+.hero-app-wrap .daily-goal-bar,
+.hero-app-wrap .schedule-badge {
+  display: none !important;
+}
+
 /* Blackout vignette — sits ABOVE the app, opacity driven by scroll */
 .hero-blackout {
   position: absolute;
@@ -264,6 +289,45 @@
   padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0, 0, 0, 0);
   white-space: nowrap; border: 0;
+}
+
+/* =========================================================================
+   .hero-clock — shared visual clock wrapper used by Scenes 3 + 7
+   (visual-only HeroClock component; the real interactive clock lives in
+   Scene 1's embedded FocusClockApp)
+
+   Each scene that uses HeroClock sets its own outer width on the
+   wrapper (.clicks-clock, .invite-clock). These rules ensure the
+   inner clock fills that wrapper and renders at the right size.
+   ========================================================================= */
+
+.hero-clock {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* The clock face is NEVER clickable on landing — purely visual */
+  pointer-events: none;
+}
+
+.hero-clock__inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Force the AnalogClock / DigitalClock root to fill the wrapper.
+   Both components default to their own intrinsic vmin-based sizes
+   which would overflow our smaller wrappers; this override clamps
+   them to the wrapper's box. */
+.hero-clock__inner > .analog,
+.hero-clock__inner > [class*='digital-face'] {
+  width: 100%;
+  max-width: none;
+  height: 100%;
 }
 
 /* Mobile portrait — reduce zoom range, smaller headline */
@@ -628,17 +692,32 @@
 }
 
 /* =========================================================================
-   SCENE 5 — "Coming Soon"
+   SCENE 5 — "Coming Soon" (sticky sequential reveal)
 
-   Three future features float up as the scene enters viewport. Subtle
-   particle field drifts in the background. Theme stays consistent with
-   user preference.
+   Outer height: 250vh (set in scene-heights section). Inner is sticky
+   pinned for the duration. Heading fades in alone, then each card
+   raises up one-by-one as user scrolls. Once all 3 are visible, the
+   section releases scroll to Scene 6.
    ========================================================================= */
 
 .scene--roadmap {
-  padding: 10vh 6vw;
+  display: block;
   position: relative;
+  background: var(--bg);
   overflow: hidden;
+}
+
+/* Sticky inner — pins for the duration of the 250vh outer scroll */
+.roadmap-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6vh 6vw;
 }
 
 .roadmap-stage {
@@ -734,7 +813,10 @@
   text-wrap: pretty;
 }
 
-/* Particle field — soft drift upward */
+/* Particle field — soft drift upward.
+   Opacity boosted from earlier version (0.18 peak → 0.55 peak) so the
+   "brewing, in progress" atmosphere reads on screen. Also adds a soft
+   glow so each particle catches light against the bg. */
 .roadmap-particles {
   position: absolute;
   inset: 0;
@@ -745,27 +827,41 @@
 .roadmap-particle {
   position: absolute;
   bottom: -20px;
-  width: 3px;
-  height: 3px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
-  background: var(--fg);
+  background: var(--hand-second);   /* red — matches second-hand tint */
+  box-shadow: 0 0 8px 1px color-mix(in srgb, var(--hand-second) 60%, transparent);
   opacity: 0;
-  animation: roadmap-particle-drift 12s linear infinite;
+  animation: roadmap-particle-drift 14s linear infinite;
+}
+[data-theme='dark'] .roadmap-particle {
+  background: color-mix(in srgb, var(--hand-second) 80%, white);
+  box-shadow: 0 0 10px 2px color-mix(in srgb, var(--hand-second) 70%, transparent);
 }
 @keyframes roadmap-particle-drift {
-  0%   { transform: translateY(0)     scale(0.6); opacity: 0; }
-  10%  { opacity: 0.18; }
-  90%  { opacity: 0.12; }
+  0%   { transform: translateY(0)     scale(0.55); opacity: 0; }
+  10%  { opacity: 0.55; }
+  80%  { opacity: 0.35; }
   100% { transform: translateY(-110vh) scale(1.0); opacity: 0; }
 }
 
-/* ── Tablet (≤ 960px): 2-column grid ──────────────────────────────────── */
+/* ── Tablet & smaller (≤ 960px): single-column stack ─────────────────── */
 @media (max-width: 960px) {
+  .scene--roadmap { min-height: auto; }
+  .roadmap-sticky {
+    position: relative;
+    height: auto;
+    overflow: visible;
+    padding: 8vh 6vw;
+  }
   .roadmap-grid { grid-template-columns: 1fr; max-width: 460px; }
   .roadmap-particles { display: none; }   /* Battery savings on mobile */
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .scene--roadmap { min-height: auto; }
+  .roadmap-sticky { position: relative; height: auto; }
   .roadmap-particle { animation: none; display: none; }
   .roadmap-card, .roadmap-eyebrow, .roadmap-heading {
     opacity: 1 !important; transform: none !important;
@@ -882,12 +978,26 @@
   will-change: opacity;
 }
 
-/* Testimonial */
-.trust-testimonial {
+/* Three testimonials in a row — each card holds one quote */
+.trust-testimonials {
+  list-style: none;
   margin: 4vh 0 0;
-  max-width: 640px;
-  padding: 32px 36px;
-  border-radius: 20px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 1100px;
+}
+.trust-testimonial-item {
+  display: flex;
+}
+
+.trust-testimonial {
+  margin: 0;
+  width: 100%;
+  padding: 26px 28px;
+  border-radius: 18px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-pop);
@@ -896,7 +1006,7 @@
   will-change: opacity, transform;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   text-align: left;
 }
 
@@ -904,11 +1014,11 @@
   margin: 0;
   font-family: var(--font-display);
   font-weight: 300;
-  font-size: clamp(17px, 2.2vmin, 22px);
-  line-height: 1.45;
-  letter-spacing: -0.015em;
+  font-size: clamp(15px, 1.7vmin, 18px);
+  line-height: 1.5;
+  letter-spacing: -0.012em;
   color: var(--fg);
-  text-wrap: balance;
+  text-wrap: pretty;
 }
 
 .trust-testimonial__by {
@@ -928,12 +1038,20 @@
   font-style: italic;
 }
 
+/* ── Tablet (≤ 960px): testimonials stack to 1 column ────────────────── */
+@media (max-width: 960px) {
+  .trust-testimonials {
+    grid-template-columns: 1fr;
+    max-width: 560px;
+  }
+}
+
 /* ── Mobile ──────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .scene--trust { padding: 10vh 5vw; }
   .trust-institutions { gap: 6px 20px; }
   .trust-institution { font-size: 14px; }
-  .trust-testimonial { padding: 24px 22px; }
+  .trust-testimonial { padding: 22px 20px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

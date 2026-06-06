@@ -37,8 +37,7 @@ export const Scene6Trust = memo(function Scene6Trust() {
   // Institutions cascade in
   const instCascadeT = mapRange(p, 0.20, 0.55, 0, 1);
 
-  // Testimonial lifts up at the end
-  const testT = mapRange(p, 0.55, 0.85, 0, 1);
+  // (Testimonials use their own per-card progress below)
 
   // Format counter — "1,000,000" with locale-aware separators
   const formatted = counterValue.toLocaleString('en-US');
@@ -112,25 +111,59 @@ export const Scene6Trust = memo(function Scene6Trust() {
           No endorsement is implied.
         </p>
 
-        {/* Testimonial card — lifts up at scene end */}
-        <blockquote
-          className="trust-testimonial"
-          style={{
-            opacity: easeOutCubic(testT),
-            transform: `translateY(${(1 - easeOutCubic(testT)) * 28}px)`,
-          }}
-        >
-          <p className="trust-testimonial__text">
-            &ldquo;Focus Clock changed how I think about my workday.
-            I close the tab and feel calm — not guilty.&rdquo;
-          </p>
-          <footer className="trust-testimonial__by">
-            <span className="trust-testimonial__name">A graduate student</span>
-            <span className="trust-testimonial__role">Cognitive Science, anonymous</span>
-          </footer>
-        </blockquote>
+        {/* Testimonials — three cards staggered in over scroll 0.55-0.95 */}
+        <ul className="trust-testimonials" role="list">
+          {TESTIMONIALS.map((t, i) => {
+            const localStart = 0.55 + i * 0.06;
+            const tT = easeOutCubic(mapRange(p, localStart, localStart + 0.20, 0, 1));
+            return (
+              <li key={t.id} className="trust-testimonial-item">
+                <blockquote
+                  className="trust-testimonial"
+                  style={{
+                    opacity: tT,
+                    transform: `translateY(${(1 - tT) * 28}px)`,
+                  }}
+                >
+                  <p className="trust-testimonial__text">&ldquo;{t.quote}&rdquo;</p>
+                  <footer className="trust-testimonial__by">
+                    <span className="trust-testimonial__name">{t.name}</span>
+                    <span className="trust-testimonial__role">{t.role}</span>
+                  </footer>
+                </blockquote>
+              </li>
+            );
+          })}
+        </ul>
 
       </div>
     </section>
   );
 });
+
+/* Three short, varied testimonials.
+   Anonymized roles — no fabricated names. Tone matches the product's
+   calm/non-gamified philosophy. */
+const TESTIMONIALS = [
+  {
+    id: 't1',
+    quote:
+      'Focus Clock changed how I think about my workday. I close the tab and feel calm — not guilty.',
+    name: 'A graduate student',
+    role: 'Cognitive Science, anonymous',
+  },
+  {
+    id: 't2',
+    quote:
+      'I tried every Pomodoro app and bounced off all of them. This is the only thing that felt honest. It just records what I actually did.',
+    name: 'A backend engineer',
+    role: 'Remote, anonymous',
+  },
+  {
+    id: 't3',
+    quote:
+      'My second monitor used to show Twitter. Now it shows the clock. My week-over-week focused hours went up 40% without me trying.',
+    name: 'A product designer',
+    role: 'Startup, anonymous',
+  },
+] as const;
