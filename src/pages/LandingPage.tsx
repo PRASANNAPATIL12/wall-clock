@@ -9,6 +9,7 @@
  */
 
 import { useEffect } from 'react';
+import { Scene1Hero } from './landing/Scene1Hero';
 import './LandingPage.css';
 
 /* ------------------------------------------------------------------ */
@@ -41,16 +42,11 @@ export default function LandingPage() {
 
   return (
     <div className="landing">
-      {/* SCENE 1 — Hero (live clock) — placeholder */}
-      <section className="scene scene--hero" data-scene="1" aria-label="Hero — live focus clock">
-        <div className="scene-placeholder">
-          <h1>Focus Clock</h1>
-          <p>Scene 1 — hero with live clock (Step 4)</p>
-        </div>
-      </section>
+      {/* SCENE 1 — Hero (live clock) */}
+      <Scene1Hero />
 
       {/* SCENE 2 — Zoom & inciting sentence */}
-      <section className="scene scene--zoom" data-scene="2" aria-label="Your time is finite">
+      <section id="scene-2" className="scene scene--zoom" data-scene="2" aria-label="Your time is finite">
         <div className="scene-placeholder">
           <p>Scene 2 — zoom + headline (Steps 5–6)</p>
         </div>

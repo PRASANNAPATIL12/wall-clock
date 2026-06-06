@@ -85,3 +85,159 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* =========================================================================
+   SCENE 1 — "The Clock Is Alive"
+
+   A calm, full-viewport hero. Live clock centered, single tagline below,
+   subtle scroll-hint at the bottom. Theme toggle in top-left is the only
+   visible control.
+   ========================================================================= */
+
+.scene--hero {
+  flex-direction: column;
+  gap: 4vh;
+  padding: 6vh 4vw 12vh;
+  /* Subtle radial vignette to focus eye on the clock */
+  background: var(--bg);
+  position: relative;
+}
+
+/* Vignette overlay — pulls focus inward to the clock */
+.scene--hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--vignette);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Theme toggle position — matches existing app's top-left placement */
+.scene--hero .hero-controls {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 3;
+  animation: fade-up 800ms var(--ease-apple) 200ms both;
+}
+
+/* Main composition wrapper */
+.scene--hero .hero-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6vh;
+  z-index: 1;
+  width: 100%;
+  max-width: min(72vmin, 720px);
+  animation: fade-up 1000ms var(--ease-apple) 400ms both;
+}
+
+/* The live clock wrapper — locks size + aspect ratio */
+.hero-clock {
+  width: min(58vmin, 560px);
+  height: min(58vmin, 560px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Non-interactive on Scene 1 — pure visual.
+     Visitors interact via the CTA in Scene 7, not by clicking here. */
+  pointer-events: none;
+  filter: drop-shadow(var(--shadow-face));
+}
+.hero-clock__inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* AnalogClock + DigitalClock fill the wrapper */
+.hero-clock__inner > * {
+  width: 100%;
+  height: 100%;
+}
+
+/* Tagline — typewriter-style, two lines */
+.hero-tagline {
+  font-family: 'Special Elite', var(--font-display);
+  font-size: clamp(18px, 2.2vmin, 26px);
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  line-height: 1.55;
+  color: var(--fg-muted);
+  text-align: center;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+  max-width: 38ch;
+}
+.hero-tagline em {
+  color: var(--hand-second);
+  font-style: normal;
+  font-weight: 500;
+}
+
+/* Scroll-hint chevron — pulses gently at the bottom */
+.scroll-hint {
+  position: absolute;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--fg-muted);
+  opacity: 0.55;
+  text-decoration: none;
+  z-index: 2;
+  animation:
+    fade-up 700ms var(--ease-apple) 2400ms both,
+    scroll-hint-bob 2.4s var(--ease-out) 3000ms infinite;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  transition: opacity 220ms var(--ease-apple), background 220ms var(--ease-apple);
+}
+.scroll-hint:hover,
+.scroll-hint:focus-visible {
+  opacity: 1;
+  background: var(--glass-bg);
+  outline: none;
+}
+
+/* Fade-up entry — used for hero elements + scroll hint */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Bobbing chevron — subtle vertical drift to draw the eye downward */
+@keyframes scroll-hint-bob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(6px); }
+}
+
+/* ── Mobile portrait (≤ 640px) ─────────────────────────────────────── */
+@media (max-width: 640px) {
+  .scene--hero {
+    padding: 4vh 5vw 10vh;
+    gap: 3vh;
+  }
+  .scene--hero .hero-controls {
+    top: 16px;
+    left: 16px;
+  }
+  .hero-clock {
+    width: min(72vmin, 380px);
+    height: min(72vmin, 380px);
+  }
+  .hero-tagline {
+    font-size: 16px;
+  }
+  .scroll-hint {
+    bottom: 24px;
+  }
+}
