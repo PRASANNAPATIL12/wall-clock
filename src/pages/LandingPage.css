@@ -241,3 +241,135 @@
     bottom: 24px;
   }
 }
+
+/* =========================================================================
+   SCENE 2 — "Your Time Is Finite"
+
+   A scroll-driven cinematic zoom. The clock scales up to 2.4× as the user
+   scrolls through this scene, the world darkens, and the inciting sentence
+   reveals word by word over the blackout.
+
+   The outer .scene--zoom is 250vh tall (defined above). The inner
+   .zoom-sticky pins to the viewport for the duration, creating the
+   "camera dive" effect.
+   ========================================================================= */
+
+.scene--zoom {
+  /* Outer container provides scroll length; visuals live in .zoom-sticky */
+  display: block;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.zoom-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The zooming clock */
+.zoom-clock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  /* Hardware-accelerated transform origin at viewport center */
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+  /* Smooth out any frame skips */
+  transition: opacity 80ms linear;
+}
+.zoom-clock .hero-clock {
+  /* Slightly smaller than Scene 1 so the zoom feels like a real dive */
+  width: min(50vmin, 480px);
+  height: min(50vmin, 480px);
+  filter: drop-shadow(var(--shadow-face));
+}
+
+/* Blackout overlay — darkens as we zoom deeper into the dial */
+.zoom-blackout {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 10%,
+    /* Theme-aware deepening */
+    var(--bg) 55%,
+    #000 100%
+  );
+  /* In dark mode, the inner color matches the existing bg */
+  z-index: 2;
+  pointer-events: none;
+  will-change: opacity;
+}
+
+[data-theme='dark'] .zoom-blackout {
+  background: radial-gradient(
+    ellipse at center,
+    transparent 8%,
+    rgba(0, 0, 0, 0.85) 50%,
+    #000 100%
+  );
+}
+
+/* Headline — sits above the blackout, revealed word by word */
+.zoom-headline {
+  position: relative;
+  z-index: 3;
+  margin: 0;
+  padding: 0 6vw;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(28px, 5.4vmin, 64px);
+  letter-spacing: -0.025em;
+  line-height: 1.18;
+  text-align: center;
+  /* Light text in both themes (always over blackout) */
+  color: #ece9e2;
+  max-width: 22ch;
+  text-wrap: balance;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Each word — animates with clip-path mask reveal driven by JS inline style */
+.zoom-word {
+  display: inline-block;
+  will-change: opacity, transform, clip-path;
+  transition: none; /* Updates driven by scroll JS, not CSS easing */
+}
+
+/* Visually-hidden but screen-reader-accessible (full sentence for a11y) */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0);
+  white-space: nowrap; border: 0;
+}
+
+/* Mobile — reduce zoom range so we don't blow past the dial */
+@media (max-width: 640px) {
+  .zoom-clock .hero-clock {
+    width: min(64vmin, 360px);
+    height: min(64vmin, 360px);
+  }
+  .zoom-headline {
+    font-size: clamp(22px, 6.5vmin, 36px);
+    padding: 0 8vw;
+  }
+}
+
+/* Reduced motion — show final state immediately, no zoom */
+@media (prefers-reduced-motion: reduce) {
+  .scene--zoom { min-height: 100vh; }
+  .zoom-clock { transform: scale(1) !important; opacity: 1 !important; }
+  .zoom-blackout { opacity: 0 !important; }
+  .zoom-headline { display: none; }
+}

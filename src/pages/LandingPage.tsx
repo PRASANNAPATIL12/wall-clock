@@ -10,6 +10,7 @@
 
 import { useEffect } from 'react';
 import { Scene1Hero } from './landing/Scene1Hero';
+import { Scene2Zoom } from './landing/Scene2Zoom';
 import './LandingPage.css';
 
 /* ------------------------------------------------------------------ */
@@ -46,11 +47,7 @@ export default function LandingPage() {
       <Scene1Hero />
 
       {/* SCENE 2 — Zoom & inciting sentence */}
-      <section id="scene-2" className="scene scene--zoom" data-scene="2" aria-label="Your time is finite">
-        <div className="scene-placeholder">
-          <p>Scene 2 — zoom + headline (Steps 5–6)</p>
-        </div>
-      </section>
+      <Scene2Zoom />
 
       {/* SCENE 3 — Three clicks demo */}
       <section className="scene scene--three-clicks" data-scene="3" aria-label="Set a goal in three clicks">
