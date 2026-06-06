@@ -87,103 +87,135 @@
 }
 
 /* =========================================================================
-   SCENE 1 — "The Clock Is Alive"
+   SCENE 1 + 2 (merged) — "The Clock Is Alive" → "Your Time Is Finite"
 
-   Visually identical to the existing /app live clock — same controls in
-   the same corners, same JoinPill in top-center, same HeroMessage
-   typewriter, same analog/digital clock at center. The only difference:
-   the focus ring is non-interactive (pointer-events: none on the clock).
+   ONE tall section (350vh) holds the REAL FocusClockApp (embedded mode).
+   A sticky inner stage pins the app to the viewport while the outer
+   container scrolls. Scroll progress (0..1) drives:
 
-   As the user scrolls down, Scene 1 scrolls naturally out of view (no
-   sticky/fixed positioning), and the cinematic scenes take over.
+     · 0.00–0.28  IDLE — full app, fully interactive (matches /app)
+     · 0.28–0.55  ZOOM — clock scales 1× → 2.4×, controls fade out
+     · 0.55–0.92  BLACKOUT + word-by-word headline reveal
+     · 0.92–1.00  HOLD before Scene 3
+
+   This is the ONLY scene that embeds the real <FocusClockApp />. Every
+   later scene uses lighter-weight visuals so the page stays fast.
    ========================================================================= */
 
-.scene--hero {
+.scene--hero-plus-zoom {
   display: block;
   position: relative;
-  height: 100vh;
-  padding: 0;
+  height: 350vh;          /* outer scroll length — gives 250vh of zoom */
   background: var(--bg);
+  overflow: visible;
+}
+
+/* Sticky inner — pins the live app + overlays to the viewport */
+.hero-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
   overflow: hidden;
 }
 
-/* Vignette overlay — pulls focus inward to the clock */
-.scene--hero::before {
-  content: '';
+/* The embedded FocusClockApp wrapper.
+   Scroll-driven transforms applied via inline style:
+     · transform: scale(...)
+     · opacity: ...
+     · pointer-events
+     · --controls-opacity (CSS var consumed by descendant rules below) */
+.hero-app-wrap {
   position: absolute;
   inset: 0;
-  background: var(--vignette);
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* The live clock at center — matches /app's centering exactly */
-.scene--hero .hero-stage {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 5vmin 4vmin;
   z-index: 1;
-  animation: fade-up 1000ms var(--ease-apple) 200ms both;
+  /* Hardware-accelerated transform origin at viewport center */
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+  /* Scale + opacity changes update at scroll-event rate; transition
+     smooths between RAF frames without overshooting */
+  transition: opacity 80ms linear;
 }
 
-/* The live clock wrapper — sized like /app's clock */
-.hero-clock {
-  width: min(78vmin, 720px);
-  height: min(78vmin, 720px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* Non-interactive in Scene 1 — pure visual.
-     Visitors interact via CTAs in Scene 7. */
+/* When the zoom phase begins, fade out everything that ISN'T the clock.
+   The --controls-opacity custom property is updated by the inline style
+   on .hero-app-wrap (driven by scroll progress).
+
+   We target the corner controls, the JoinPill, the HeroMessage, the
+   AccountIcon, and the TodaySummary — i.e. EVERYTHING except the
+   .clock-canvas-layer at the center. */
+.hero-app-wrap .stage--embedded .controls,
+.hero-app-wrap .stage--embedded .joinpill,
+.hero-app-wrap .stage--embedded .joinpill-wrap,
+.hero-app-wrap .stage--embedded .hero-message,
+.hero-app-wrap .stage--embedded .account-icon,
+.hero-app-wrap .stage--embedded .today-summary,
+.hero-app-wrap .stage--embedded .daily-goal-bar,
+.hero-app-wrap .stage--embedded .schedule-badge,
+.hero-app-wrap .stage--embedded .pause-stop-control {
+  opacity: var(--controls-opacity, 1);
+  transition: opacity 200ms var(--ease-apple);
+  will-change: opacity;
+}
+
+/* When pointer events are locked (set as data attribute on the wrapper),
+   no descendant can be clicked. Belt-and-suspenders with the inline
+   pointer-events: none. */
+.hero-app-wrap[data-locked='true'] {
   pointer-events: none;
 }
-.hero-clock__inner {
-  width: 100%;
-  height: 100%;
+
+/* Blackout vignette — sits ABOVE the app, opacity driven by scroll */
+.hero-blackout {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 8%,
+    var(--bg) 55%,
+    #000 100%
+  );
+  pointer-events: none;
+  will-change: opacity;
+}
+[data-theme='dark'] .hero-blackout {
+  background: radial-gradient(
+    ellipse at center,
+    transparent 8%,
+    rgba(0, 0, 0, 0.85) 50%,
+    #000 100%
+  );
+}
+
+/* Zoom-phase headline — sits ABOVE the blackout */
+.hero-zoom-headline {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  margin: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-}
-.hero-clock__inner > * {
-  width: 100%;
-  height: 100%;
-}
-
-/* ── Controls — positioned to match existing /app exactly ──────────── */
-
-.hero-controls {
-  position: absolute;
-  display: flex;
-  gap: 8px;
-  z-index: 3;
-  animation: fade-up 800ms var(--ease-apple) 400ms both;
-}
-.hero-controls--tl { top: 24px;    left: 24px; }
-.hero-controls--tr { top: 24px;    right: 24px; }
-.hero-controls--bl { bottom: 28px; left: 24px;   flex-wrap: wrap; align-items: flex-end; }
-.hero-controls--br { bottom: 28px; right: 24px; }
-
-/* The JoinPill + HeroMessage have their own `position: fixed` styles.
-   Inside the landing's scrolling document, we override to `absolute`
-   so they live with Scene 1 and scroll AWAY when the user descends.
-   Without this they'd remain glued to the viewport on every scene. */
-
-.scene--hero .joinpill,
-.scene--hero .joinpill-wrap {
-  position: absolute !important;
+  padding: 0 6vw;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(28px, 5.4vmin, 64px);
+  letter-spacing: -0.025em;
+  line-height: 1.18;
+  text-align: center;
+  color: #ece9e2;
+  max-width: none;
+  text-wrap: balance;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
 }
 
-.scene--hero .hero-message {
-  position: absolute !important;
+.hero-zoom-word {
+  display: inline-block;
+  will-change: opacity, transform, clip-path;
 }
-
-/* Hero controls inside Scene 1 already use position: absolute (above).
-   We also need to override the `.controls--*` classes that the existing
-   FullscreenToggle / TimezoneSelector / etc. components apply via parent
-   className. But our LandingPage wraps them in .hero-controls--* instead,
-   so they don't apply those classes themselves. Good. */
 
 /* Scroll-hint chevron — pulses gently at the bottom */
 .scroll-hint {
@@ -225,122 +257,6 @@
   50%      { transform: translateX(-50%) translateY(6px); }
 }
 
-/* ── Mobile portrait (≤ 640px) ─────────────────────────────────────── */
-@media (max-width: 640px) {
-  .hero-controls--tl { top: 16px;    left: 16px; }
-  .hero-controls--tr { top: 16px;    right: 16px; }
-  .hero-controls--bl { bottom: 60px; left: 16px; }
-  .hero-controls--br { bottom: 60px; right: 16px; }
-  .hero-clock {
-    width: min(82vmin, 380px);
-    height: min(82vmin, 380px);
-  }
-  .scroll-hint { bottom: 24px; }
-}
-
-/* =========================================================================
-   SCENE 2 — "Your Time Is Finite"
-
-   A scroll-driven cinematic zoom. The clock scales up to 2.4× as the user
-   scrolls through this scene, the world darkens, and the inciting sentence
-   reveals word by word over the blackout.
-
-   The outer .scene--zoom is 250vh tall (defined above). The inner
-   .zoom-sticky pins to the viewport for the duration, creating the
-   "camera dive" effect.
-   ========================================================================= */
-
-.scene--zoom {
-  /* Outer container provides scroll length; visuals live in .zoom-sticky */
-  display: block;
-  align-items: stretch;
-  justify-content: stretch;
-}
-
-.zoom-sticky {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  width: 100%;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* The zooming clock */
-.zoom-clock {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-  /* Hardware-accelerated transform origin at viewport center */
-  transform-origin: 50% 50%;
-  will-change: transform, opacity;
-  /* Smooth out any frame skips */
-  transition: opacity 80ms linear;
-}
-.zoom-clock .hero-clock {
-  /* Slightly smaller than Scene 1 so the zoom feels like a real dive */
-  width: min(50vmin, 480px);
-  height: min(50vmin, 480px);
-  filter: drop-shadow(var(--shadow-face));
-}
-
-/* Blackout overlay — darkens as we zoom deeper into the dial */
-.zoom-blackout {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 10%,
-    /* Theme-aware deepening */
-    var(--bg) 55%,
-    #000 100%
-  );
-  /* In dark mode, the inner color matches the existing bg */
-  z-index: 2;
-  pointer-events: none;
-  will-change: opacity;
-}
-
-[data-theme='dark'] .zoom-blackout {
-  background: radial-gradient(
-    ellipse at center,
-    transparent 8%,
-    rgba(0, 0, 0, 0.85) 50%,
-    #000 100%
-  );
-}
-
-/* Headline — sits above the blackout, revealed word by word */
-.zoom-headline {
-  position: relative;
-  z-index: 3;
-  margin: 0;
-  padding: 0 6vw;
-  font-family: var(--font-display);
-  font-weight: 300;
-  font-size: clamp(28px, 5.4vmin, 64px);
-  letter-spacing: -0.025em;
-  line-height: 1.18;
-  text-align: center;
-  /* Light text in both themes (always over blackout) */
-  color: #ece9e2;
-  max-width: 22ch;
-  text-wrap: balance;
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.5);
-}
-
-/* Each word — animates with clip-path mask reveal driven by JS inline style */
-.zoom-word {
-  display: inline-block;
-  will-change: opacity, transform, clip-path;
-  transition: none; /* Updates driven by scroll JS, not CSS easing */
-}
-
 /* Visually-hidden but screen-reader-accessible (full sentence for a11y) */
 .visually-hidden {
   position: absolute;
@@ -350,24 +266,27 @@
   white-space: nowrap; border: 0;
 }
 
-/* Mobile — reduce zoom range so we don't blow past the dial */
+/* Mobile portrait — reduce zoom range, smaller headline */
 @media (max-width: 640px) {
-  .zoom-clock .hero-clock {
-    width: min(64vmin, 360px);
-    height: min(64vmin, 360px);
-  }
-  .zoom-headline {
+  .scene--hero-plus-zoom { height: 280vh; }
+  .hero-zoom-headline {
     font-size: clamp(22px, 6.5vmin, 36px);
     padding: 0 8vw;
   }
+  .scroll-hint { bottom: 24px; }
 }
 
-/* Reduced motion — show final state immediately, no zoom */
+/* Reduced motion — show static idle state, no zoom or blackout */
 @media (prefers-reduced-motion: reduce) {
-  .scene--zoom { min-height: 100vh; }
-  .zoom-clock { transform: scale(1) !important; opacity: 1 !important; }
-  .zoom-blackout { opacity: 0 !important; }
-  .zoom-headline { display: none; }
+  .scene--hero-plus-zoom { height: 100vh; }
+  .hero-app-wrap {
+    transform: scale(1) !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+  .hero-app-wrap .stage--embedded * { opacity: 1 !important; }
+  .hero-blackout { opacity: 0 !important; }
+  .hero-zoom-headline { display: none; }
 }
 
 /* =========================================================================

@@ -1,64 +1,89 @@
 /**
- * Scene 1 — "The Clock Is Alive"
+ * Scene 1 + 2 — "The Clock Is Alive" merging into "Your Time Is Finite"
  *
- * Visual target: this MUST look identical to the existing live app
- * (the reference image the user shared). Same controls, same clock,
- * same hero typewriter message, same layout.
+ * The opening act of the cinematic landing. ONE sticky stage holds the
+ * REAL live application (FocusClockApp embedded). As the user scrolls
+ * through 350vh of outer height:
  *
- * What differs from /app:
- *   · The focus ring is non-interactive (pointer-events: none) — clicking
- *     does nothing here; the user goes to /app to actually track.
- *   · The HeroMessage typewriter is always shown (not just first visit).
- *   · A "scroll" hint chevron at the bottom invites descent.
+ *   Outer scroll progress (p) maps to scene beats:
+ *   ───────────────────────────────────────────────
+ *   0.00 — 0.28   IDLE
+ *                 The full live app is visible and fully interactive.
+ *                 All controls, hero message, 3-click focus ring — works
+ *                 exactly as /app. Identical pixels.
  *
- * As the user scrolls past Scene 1, all controls + clock scroll away
- * naturally (no fixed positioning) — the cinematic story takes over
- * from Scene 2 onward.
+ *   0.28 — 0.55   ZOOM (the camera dive)
+ *                 · Controls fade out (opacity 1 → 0)
+ *                 · Clock scales 1× → 2.4× (easeOutCubic)
+ *                 · Vignette/blackout intensifies
+ *                 · Focus ring becomes non-interactive (pointer-events: none
+ *                   on the wrapper) — the user is now watching a cinematic
+ *                   moment, not interacting
+ *
+ *   0.55 — 0.92   HEADLINE REVEAL
+ *                 · 11 words appear with clip-path mask reveal:
+ *                   "Every moment you don't measure is one you can't get back."
+ *
+ *   0.92 — 1.00   HOLD before Scene 3 takes over
+ *
+ * The clock that's pinned in the sticky stage IS the same clock the user
+ * saw in Scene 1's idle state — same DOM node, same React instance, same
+ * useFocusTrack state. There's no swap, no remount. That continuity is
+ * what makes the cinematic moment feel real.
+ *
+ * If the user scrolls BACK UP, every transform reverses and they return
+ * to the fully interactive app.
  */
-import { memo, useEffect, useState, lazy, Suspense } from 'react';
-import { ThemeToggle } from '../../components/controls/ThemeToggle';
-import { FullscreenToggle } from '../../components/controls/FullscreenToggle';
-import { TimezoneSelector } from '../../components/controls/TimezoneSelector';
-import { ModeToggle, type Mode } from '../../components/controls/ModeToggle';
-import { FormatToggle, type Format } from '../../components/controls/FormatToggle';
-import { CoffeeLink } from '../../components/controls/CoffeeLink';
-import { JoinPill } from '../../components/JoinPill';
-import { HeroMessage } from '../../components/HeroMessage';
-import { useTheme } from '../../hooks/useTheme';
-import { useFullscreen } from '../../hooks/useFullscreen';
-import { usePersistedState } from '../../hooks/usePersistedState';
-import { useAuth } from '../../hooks/useAuth';
-import { HeroClock } from './HeroClock';
-
-// AuthModal is heavy (auth providers, validation) — lazy-load it
-const AuthModal = lazy(() =>
-  import('../../components/AuthModal').then((m) => ({ default: m.AuthModal })),
-);
+import { memo, useRef } from 'react';
+import { FocusClockApp } from '../../FocusClockApp';
+import {
+  useScrollProgress,
+  mapRange,
+  easeOutCubic,
+} from '../../hooks/useScrollProgress';
 
 export const Scene1Hero = memo(function Scene1Hero() {
-  const [theme, , toggleTheme] = useTheme();
-  const [isFs, toggleFs]       = useFullscreen();
-  const [mode, setMode]        = usePersistedState<Mode>('wall.mode', 'analog');
-  const [tz, setTz]            = usePersistedState<string>('wall.tz', 'local');
-  const [format, setFormat]    = usePersistedState<Format>('wall.format', '24');
+  const sceneRef = useRef<HTMLElement>(null);
+  const p = useScrollProgress(sceneRef);
 
-  const auth = useAuth();
-  const [authOpen, setAuthOpen] = useState(false);
-  const [hintBoostMs, setHintBoostMs] = useState(0);
-  void hintBoostMs;  // HeroMessage requires the setter; value isn't used in Scene 1
+  /* ── Phase progress (each 0..1 within its sub-range) ───────────── */
+  // 0.00–0.28 = idle (no transforms yet)
+  // 0.28–0.55 = zoom phase
+  const zoomT = easeOutCubic(mapRange(p, 0.28, 0.55, 0, 1));
+  // 0.55–0.70 = clock fades behind blackout
+  const clockOpacityT = mapRange(p, 0.55, 0.70, 1, 0);
+  // 0.28–0.70 = controls fade away
+  const controlsOpacityT = mapRange(p, 0.28, 0.48, 1, 0);
+  // 0.20–0.70 = vignette darkens
+  const blackoutT = mapRange(p, 0.28, 0.70, 0, 0.92);
 
-  /**
-   * Sync the document title to the live clock just like /app does.
-   * Only the FIRST mount of Scene 1 owns the title — once the user
-   * scrolls past this scene, we leave it where it is.
-   */
-  useEffect(() => {
-    document.title = 'Focus Clock — Focus Timer & Productivity Tracker';
-  }, []);
+  /* ── Computed transforms ───────────────────────────────────────── */
+  const scale = 1 + zoomT * 1.4;            // 1 → 2.4
+  // Once the zoom has begun, disable pointer events on the entire app
+  // so users don't accidentally click a ring or button while watching
+  // the cinematic moment.
+  const interactionsLocked = p > 0.28;
+
+  /* ── Headline words for the zoom-blackout reveal ──────────────── */
+  const words = [
+    { text: 'Every',    range: [0.58, 0.63] },
+    { text: 'moment',   range: [0.61, 0.66] },
+    { text: 'you',      range: [0.64, 0.69] },
+    { text: "don't",    range: [0.67, 0.72] },
+    { text: 'measure',  range: [0.70, 0.75] },
+    { text: 'is',       range: [0.76, 0.80] },
+    { text: 'one',      range: [0.78, 0.82] },
+    { text: 'you',      range: [0.80, 0.84] },
+    { text: "can't",    range: [0.82, 0.86] },
+    { text: 'get',      range: [0.84, 0.88] },
+    { text: 'back.',    range: [0.86, 0.92] },
+  ] as const;
 
   return (
     <section
-      className="scene scene--hero"
+      ref={sceneRef}
+      id="scene-1"
+      className="scene scene--hero-plus-zoom"
       data-scene="1"
       aria-label="Welcome to Focus Clock"
     >
@@ -67,68 +92,74 @@ export const Scene1Hero = memo(function Scene1Hero() {
         Focus Clock — a calm browser-based focus timer and productivity tracker
       </h1>
 
-      {/* ── Hero typewriter — always shown on landing (anonymous-style) ── */}
-      {!auth.loading && !auth.user && (
-        <HeroMessage onStart={setHintBoostMs} />
-      )}
+      {/* Sticky stage — pins for the entire 350vh outer scroll */}
+      <div className="hero-sticky" aria-hidden={false}>
 
-      {/* ── Center: the live clock ── */}
-      <div className="hero-stage">
-        <HeroClock />
+        {/* The live app — embedded, scroll-driven scale + fade */}
+        <div
+          className="hero-app-wrap"
+          style={{
+            transform: `scale(${scale})`,
+            opacity:   clockOpacityT,
+            // Pointer events lock when the zoom starts
+            pointerEvents: interactionsLocked ? 'none' : 'auto',
+            // Wrapper also fades the controls as a group via custom prop
+            ['--controls-opacity' as never]: controlsOpacityT,
+          }}
+          data-locked={interactionsLocked ? 'true' : 'false'}
+        >
+          <FocusClockApp embedded />
+        </div>
+
+        {/* Blackout vignette — darkens as we zoom past the dial */}
+        <div
+          className="hero-blackout"
+          style={{ opacity: blackoutT }}
+          aria-hidden="true"
+        />
+
+        {/* Headline — word-by-word reveal over blackout */}
+        <h2
+          className="hero-zoom-headline"
+          aria-hidden={p < 0.55}
+        >
+          {words.map((w, i) => {
+            const wp = mapRange(p, w.range[0], w.range[1], 0, 1);
+            return (
+              <span
+                key={i}
+                className="hero-zoom-word"
+                style={{
+                  opacity: wp,
+                  clipPath: `inset(0 ${100 - wp * 100}% 0 0)`,
+                  transform: `translateY(${(1 - wp) * 8}px)`,
+                }}
+              >
+                {w.text}
+                {i < words.length - 1 ? ' ' : ''}
+                {i === 4 ? <br /> : null}
+              </span>
+            );
+          })}
+        </h2>
+        <p className="visually-hidden">
+          Every moment you don&apos;t measure is one you can&apos;t get back.
+        </p>
+
+        {/* Scroll-hint chevron — only visible in idle phase */}
+        <a
+          className="scroll-hint"
+          href="#scene-3"
+          aria-label="Scroll to learn more"
+          style={{ opacity: mapRange(p, 0.0, 0.15, 1, 0) }}
+        >
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none"
+               stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"
+               strokeLinejoin="round" aria-hidden="true">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </a>
       </div>
-
-      {/* ── Controls — match existing app layout 1:1 ─────────────────── */}
-
-      {/* Top-left: theme */}
-      <div className="hero-controls hero-controls--tl">
-        <ThemeToggle theme={theme} onToggle={toggleTheme} />
-      </div>
-
-      {/* Top-center-ish: Join pill (anonymous) or account icon (signed in).
-          For the landing, we always show the JoinPill — signed-in users
-          get redirected to /app by useOAuthCallbackRedirect in production. */}
-      {!auth.loading && !auth.user && (
-        <JoinPill onClick={() => setAuthOpen(true)} />
-      )}
-
-      {/* Top-right: fullscreen */}
-      <div className="hero-controls hero-controls--tr">
-        <FullscreenToggle isFullscreen={isFs} onToggle={toggleFs} />
-      </div>
-
-      {/* Bottom-left: timezone + mode + (format for digital) */}
-      <div className="hero-controls hero-controls--bl">
-        <TimezoneSelector value={tz} onChange={setTz} />
-        <ModeToggle mode={mode} onChange={setMode} />
-        {mode === 'digital' && (
-          <FormatToggle format={format} onChange={setFormat} />
-        )}
-      </div>
-
-      {/* Bottom-right: coffee link */}
-      <div className="hero-controls hero-controls--br">
-        <CoffeeLink />
-      </div>
-
-      {/* ── Scroll hint chevron — bottom center, pulses gently ── */}
-      <a
-        className="scroll-hint"
-        href="#scene-2"
-        aria-label="Scroll to learn more"
-      >
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none"
-             stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"
-             strokeLinejoin="round" aria-hidden="true">
-          <path d="M6 9l6 6 6-6" />
-        </svg>
-      </a>
-
-      {/* AuthModal — opens from JoinPill */}
-      {authOpen && (
-        <Suspense fallback={null}>
-          <AuthModal auth={auth} onClose={() => setAuthOpen(false)} />
-        </Suspense>
-      )}
     </section>
   );
 });

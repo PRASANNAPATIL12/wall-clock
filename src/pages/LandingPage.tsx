@@ -7,7 +7,8 @@
 
 import { useEffect } from 'react';
 import { Scene1Hero } from './landing/Scene1Hero';
-import { Scene2Zoom } from './landing/Scene2Zoom';
+// Scene 2 (zoom) is now merged into Scene 1 — same sticky stage, one
+// continuous flow from the live app to the zoom-into-dial cinematic.
 import { Scene3ThreeClicks } from './landing/Scene3ThreeClicks';
 import { Scene4Features } from './landing/Scene4Features';
 import { Scene5ComingSoon } from './landing/Scene5ComingSoon';
@@ -59,7 +60,6 @@ export default function LandingPage() {
   return (
     <div className="landing">
       <Scene1Hero />
-      <Scene2Zoom />
       <Scene3ThreeClicks />
       <Scene4Features />
       <Scene5ComingSoon />

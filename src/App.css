@@ -5,6 +5,20 @@
   overflow: hidden;
 }
 
+/**
+ * Embedded mode — when the FocusClockApp is rendered INSIDE Scene 1
+ * of the cinematic landing, it fills its parent (the sticky stage) not
+ * the viewport. Same visuals, same interactions, just contained.
+ *
+ * The parent can now apply scroll-driven transforms (scale, opacity)
+ * to the embedded surface for the zoom-into-clock cinematic effect.
+ */
+.stage--embedded {
+  position: absolute;
+  inset: 0;
+  z-index: auto;
+}
+
 .canvas {
   position: absolute;
   inset: 0;
