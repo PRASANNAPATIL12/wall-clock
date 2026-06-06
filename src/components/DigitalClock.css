@@ -48,9 +48,10 @@
   -webkit-user-select: none;
 }
 
-/* Compact mode — fits inside the FocusRing circle (HH:MM only) */
+/* Compact mode — fits inside the FocusRing circle (HH:MM only).
+   Sized to fill the ring with gentle padding — not too compressed. */
 .digital--compact {
-  font-size: clamp(52px, 9vmin, 104px);
+  font-size: clamp(56px, 14vmin, 170px);
 }
 
 .d-hr,
@@ -76,11 +77,9 @@
   60.01%, 100%  { opacity: 0.35; }
 }
 
-/* Seconds — normal mode only, orange/red accent, smaller */
+/* Seconds — normal mode only, red accent, same size as hours/minutes */
 .d-sec {
   color: var(--hand-second);
-  font-size: 0.42em;
-  align-self: center;
   transition: color var(--d-theme) var(--ease-apple);
 }
 
@@ -343,7 +342,7 @@ body.idle .dt-focus-cta {
 
 @media (max-width: 640px) {
   .digital              { font-size: clamp(44px, 14vmin, 160px); }
-  .digital--compact     { font-size: clamp(40px, 8vmin, 88px); }
+  .digital--compact     { font-size: clamp(44px, 12vmin, 130px); }
   .dt-tag-picker        { bottom: 200px; }
   .dt-focus-cta         { bottom: 80px; }
   .dt-start-btn         { height: 30px; padding: 0 14px; font-size: 11px; }

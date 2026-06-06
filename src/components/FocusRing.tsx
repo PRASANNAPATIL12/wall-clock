@@ -52,15 +52,15 @@ interface Props {
     startWithGoalAndTag: (startMs: number, endMs: number, tag: string | null) => void;
   }) => void;
   /**
-   * When true (digital mode), disables the click-1/2/3 hit band so the ring is
-   * purely visual. Planned arc taps still work via PlannedRingsLayer's own events.
+   * When true, the ring is purely visual — only the colored progress arc
+   * (goal + bonus) and PlannedRingsLayer render. All analog-specific visual
+   * affordances are hidden: dotted track, drops (start/head/end), todo arc,
+   * comet, floating timer, hit circles, drag, onboarding hint, tag picker.
+   *
+   * The digital UI (Start Focus button, TagPicker, DurationPicker) handles
+   * session creation separately via portals to document.body.
    */
-  disableInteraction?: boolean;
-  /**
-   * When false (digital mode), hides the floating timer label — the digital
-   * display itself acts as the timer, so the label would be redundant.
-   */
-  showFloatingTimer?: boolean;
+  digitalMode?: boolean;
 }
 
 /* viewBox geometry — all values in viewBox units (0..100). */
@@ -108,8 +108,7 @@ export const FocusRing = memo(function FocusRing({
   onScheduleClose,
   onPlanSessionCompleted,
   onFocusContext,
-  disableInteraction = false,
-  showFloatingTimer = true,
+  digitalMode = false,
 }: Props) {
   const now = useNow('second');
   const svgRef = useRef<SVGSVGElement>(null);
@@ -755,16 +754,18 @@ export const FocusRing = memo(function FocusRing({
         preserveAspectRatio="xMidYMid meet"
         role="presentation"
       >
-        {/* Ghost track — always there, faintly */}
-        <circle
-          cx={C}
-          cy={C}
-          r={RING_R}
-          fill="none"
-          className="track"
-          strokeWidth={STROKE * 0.65}
-          strokeDasharray="0.6 1.2"
-        />
+        {/* Ghost track — dotted ring, analog mode only */}
+        {!digitalMode && (
+          <circle
+            cx={C}
+            cy={C}
+            r={RING_R}
+            fill="none"
+            className="track"
+            strokeWidth={STROKE * 0.65}
+            strokeDasharray="0.6 1.2"
+          />
+        )}
 
         {/* Concentric day rings — visible during schedule view OR active plan countdown */}
         {showRingsOverlay && (
@@ -781,8 +782,8 @@ export const FocusRing = memo(function FocusRing({
           />
         )}
 
-        {/* To-do ghost arc — hidden during plan countdown (countdown arc takes over) */}
-        {data.end !== null && data.head !== null && !data.complete && !isInPlanSession && (
+        {/* To-do ghost arc — analog only, hidden during plan countdown */}
+        {!digitalMode && data.end !== null && data.head !== null && !data.complete && !isInPlanSession && (
           <path
             d={arcPath(data.head, data.end, RING_R)}
             className="todo"
@@ -814,8 +815,8 @@ export const FocusRing = memo(function FocusRing({
           />
         )}
 
-        {/* Start drop */}
-        {data.start !== null &&
+        {/* Start drop — analog only */}
+        {!digitalMode && data.start !== null &&
           (() => {
             const p = polar(data.start, RING_R);
             return <circle cx={p.x} cy={p.y} r={DROP_R} className="drop drop-start" />;
@@ -824,8 +825,8 @@ export const FocusRing = memo(function FocusRing({
         {/* End drop is rendered AFTER the main hit area below — see comment
             there. Removed from this slot in the DOM. */}
 
-        {/* Drop head — current minute hand position */}
-        {data.head !== null &&
+        {/* Drop head — current minute hand position, analog only */}
+        {!digitalMode && data.head !== null &&
           (() => {
             const p = polar(data.head, RING_R);
             return <circle cx={p.x} cy={p.y} r={DROP_R * 0.78} className="drop drop-head" />;
@@ -844,12 +845,8 @@ export const FocusRing = memo(function FocusRing({
             );
           })()}
 
-        {/* Comet — one-shot orbit on session start.
-            Four stacked tail arcs of decreasing length, thickness, and opacity
-            create a properly tapered comet silhouette: dense at the leading
-            edge, fading to nothing at the far end. No head circle — the
-            rounded line-cap at the leading edge IS the head. */}
-        {comet && (
+        {/* Comet — one-shot orbit on session start (analog only). */}
+        {!digitalMode && comet && (
           <g
             key={comet.key}
             className="comet"
@@ -867,10 +864,8 @@ export const FocusRing = memo(function FocusRing({
           </g>
         )}
 
-        {/* Hit band — generous, only stroke catches pointer.
-            Hidden in digital mode (disableInteraction=true) so ring clicks
-            don't start/stop sessions; the UI buttons handle that instead. */}
-        {!disableInteraction && (
+        {/* Hit band — generous, only stroke catches pointer. Analog only. */}
+        {!digitalMode && (
           <circle
             cx={C}
             cy={C}
@@ -896,25 +891,22 @@ export const FocusRing = memo(function FocusRing({
               · The visible end-drop circle on top, pointer-events: none —
                 doesn't catch events itself (those pass through to the hit
                 zone below); just renders the visual marker. */}
-        {data.end !== null &&
+        {/* End drop — analog only (both hit zone and visual marker) */}
+        {!digitalMode && data.end !== null &&
           (() => {
             const p = polar(data.end, RING_R);
             return (
               <>
-                {/* Drag hit-zone: hidden in digital mode — no drag in digital */}
-                {!disableInteraction && (
-                  <circle
-                    cx={p.x}
-                    cy={p.y}
-                    r={DROP_R + 4.6}
-                    className={`drop-end-hit ${dragging ? 'is-dragging' : ''}`}
-                    fill="transparent"
-                    onPointerDown={onEndDropPointerDown}
-                    onMouseEnter={() => { if (userId && sessionTag) setEndDropHovered(true); }}
-                    onMouseLeave={() => setEndDropHovered(false)}
-                  />
-                )}
-                {/* Visual end-drop always shown (marks where goal is set) */}
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r={DROP_R + 4.6}
+                  className={`drop-end-hit ${dragging ? 'is-dragging' : ''}`}
+                  fill="transparent"
+                  onPointerDown={onEndDropPointerDown}
+                  onMouseEnter={() => { if (userId && sessionTag) setEndDropHovered(true); }}
+                  onMouseLeave={() => setEndDropHovered(false)}
+                />
                 <circle
                   ref={endDropRef}
                   cx={p.x}
@@ -928,8 +920,8 @@ export const FocusRing = memo(function FocusRing({
           })()}
       </svg>
 
-      {/* Floating timer — hidden in digital mode (the HH:MM display IS the timer) */}
-      {showFloatingTimer && data.start !== null && timerPos && (
+      {/* Floating timer — analog only (digital mode uses its own HH:MM display) */}
+      {!digitalMode && data.start !== null && timerPos && (
         <div
           className="focus-timer"
           style={
@@ -963,8 +955,8 @@ export const FocusRing = memo(function FocusRing({
         </div>
       )}
 
-      {/* Onboarding hint — anonymous users see it every visit; logged-in once */}
-      <OnboardingHint visible={hintVisible} hintKind={hintKind} />
+      {/* Onboarding hint — analog only (teaches ring clicks, irrelevant in digital) */}
+      {!digitalMode && <OnboardingHint visible={hintVisible} hintKind={hintKind} />}
 
       {/* Subtle in-face feedback message — centered inside the clock face */}
       {feedback && (
@@ -997,8 +989,8 @@ export const FocusRing = memo(function FocusRing({
         />
       )}
 
-      {/* End-drop tag tooltip — shows selected session tag on hover */}
-      {endDropHovered && userId && sessionTag && data.end !== null && svgRef.current && (() => {
+      {/* End-drop tag tooltip — analog only */}
+      {!digitalMode && endDropHovered && userId && sessionTag && data.end !== null && svgRef.current && (() => {
         const rect = svgRef.current!.getBoundingClientRect();
         const scale = rect.width / 100;
         const rad = ((data.end - 90) * Math.PI) / 180;
@@ -1013,12 +1005,8 @@ export const FocusRing = memo(function FocusRing({
         );
       })()}
 
-      {/* Tag picker — rendered via portal to document.body so it escapes
-          any ancestor stacking context (mode-layer opacity transition
-          creates one, trapping z-index comparisons inside it). The portal
-          guarantees z-index 50 is evaluated in the root stacking context,
-          above ScheduleBadge (8) and TodaySummary (8) on all devices. */}
-      {tagPickerOpen && createPortal(
+      {/* Tag picker — analog only (digital mode uses its own tag flow) */}
+      {!digitalMode && tagPickerOpen && createPortal(
         <TagPicker
           endAngleDeg={data.end ?? undefined}
           onPick={(tag) => {

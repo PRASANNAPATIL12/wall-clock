@@ -21,12 +21,17 @@
   will-change: opacity, transform, filter;
 }
 
-/* Active mode — fully visible */
+/* Active mode — fully visible.
+   pointer-events: none is intentional — the face layers sit ON TOP of the
+   FocusRing SVG in DOM order. Without this, they intercept all clicks before
+   they reach the ring's .hit circle, breaking analog click-1/2/3 and drag.
+   Neither face has interactive elements in it: AnalogClock is purely visual
+   (ticks/numerals/hands), and DigitalClock's buttons are portaled to body. */
 .face-layer--in {
   opacity: 1;
   transform: scale(1);
   filter: blur(0);
-  pointer-events: auto;
+  pointer-events: none;
   transition-delay: 140ms;
 }
 

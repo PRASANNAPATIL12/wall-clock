@@ -90,11 +90,10 @@ export const ClockCanvas = memo(function ClockCanvas({
         onScheduleClose={onScheduleClose}
         onPlanSessionCompleted={onPlanSessionCompleted}
         onFocusContext={onFocusContext}
-        /* Digital mode: disable ring click-1/2/3 (Start Focus button handles sessions).
-           Planned arc taps (PlannedRingsLayer) still work via their own pointer events. */
-        disableInteraction={!isAnalog}
-        /* Digital mode: hide the floating mm:ss label — the HH:MM countdown IS the timer. */
-        showFloatingTimer={isAnalog}
+        /* Digital mode: ring is purely visual — only colored progress arc renders.
+           No track, drops, hit circles, comet, floating timer, or tag picker.
+           The digital UI (Start Focus button) handles session creation separately. */
+        digitalMode={!isAnalog}
       />
 
       {/* ── Analog face — ticks, numerals, hands ── */}
