@@ -118,13 +118,20 @@
   overflow: visible;
 }
 
-/* Sticky inner — pins the live app + overlays to the viewport */
+/* Sticky inner — pins the live app + overlays to the viewport.
+   `isolation: isolate` creates an explicit stacking context so that
+   z-indices of EVERYTHING inside (.hero-app-wrap children, .hero-blackout,
+   .hero-zoom-headline) are resolved WITHIN this element — no child can
+   "escape" and compete with elements outside. This is the primary guard
+   against position:fixed UI (Controls, JoinPill) appearing above the
+   blackout overlay. */
 .hero-sticky {
   position: sticky;
   top: 0;
   height: 100vh;
   width: 100%;
   overflow: hidden;
+  isolation: isolate;
 }
 
 /* The embedded FocusClockApp wrapper.
@@ -210,7 +217,11 @@
 .hero-blackout {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  /* z-index must be > z-index of .hero-app-wrap (1) AND > z-indices of any
+     position:fixed descendants of FocusClockApp (Controls: 10, JoinPill: 9,
+     HeroMessage: 7) in case those elements participate in .hero-sticky's
+     stacking context rather than .hero-app-wrap's. 100 is safely above all. */
+  z-index: 100;
   background: radial-gradient(ellipse at center, #1a1a1a 0%, #000000 100%);
   pointer-events: none;
   will-change: opacity;
@@ -234,13 +245,17 @@
 .hero-zoom-headline {
   position: absolute;
   inset: 0;
-  z-index: 3;
+  /* z-index above blackout (100) so the headline reads on top of it */
+  z-index: 200;
   margin: 0;
+  /* flex-column with TWO .hero-zoom-headline-line children (one per line of
+     text). The gap here is the space between LINE 1 and LINE 2 — not between
+     individual words, which is controlled by word margin. */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.3em;
+  gap: 0.2em;
   padding: 0 6vw;
   /* Special Elite — typewriter voice, ties back to hero message + footer */
   font-family: 'Special Elite', var(--font-display);
@@ -255,6 +270,16 @@
     0 2px 12px rgba(0, 0, 0, 0.85),
     0 0 36px rgba(0, 0, 0, 0.55);
   pointer-events: none;
+}
+
+/* One line-container per prose line ("Every moment you don't measure" /
+   "is one you can't get back."). Being block-level flex items inside the
+   column flex parent, they stack vertically. Words INSIDE each container
+   are inline-blocks that flow left-to-right and wrap naturally on mobile. */
+.hero-zoom-headline-line {
+  display: block;
+  text-align: center;
+  max-width: 100%;
 }
 
 /* Each word starts hidden and slides up.
@@ -272,13 +297,18 @@
   opacity: 1;
   transform: translateY(0);
 }
-/* Red accent on the final word "back." — rhymes with the second-hand
-   colour and lands the beat with visual weight. */
-.hero-zoom-word:last-of-type {
-  color: var(--hand-second);
+/* Red accent on the final word "back." — rhymes with the second-hand colour
+   and lands the beat with visual weight.
+   HARDCODED #c8312b (not var(--hand-second)) because Scene 2 ALWAYS renders
+   against a dark background regardless of light/dark theme — using a CSS
+   variable would risk the wrong hue if the token ever diverges per-theme.
+   Selector targets .last-word.revealed so the glow only activates once the
+   word is actually visible (avoids a faint invisible glow during scroll). */
+.hero-zoom-word.last-word.revealed {
+  color: #c8312b;
   text-shadow:
     0 2px 12px rgba(0, 0, 0, 0.85),
-    0 0 48px color-mix(in srgb, var(--hand-second) 55%, transparent);
+    0 0 48px rgba(200, 49, 43, 0.45);
 }
 
 /* Mobile: slightly larger vw-relative value so text fills the narrower screen */
@@ -396,7 +426,8 @@
   .hero-app-wrap .stage--embedded * { opacity: 1 !important; }
   .hero-blackout { opacity: 0 !important; }
   .hero-zoom-headline { display: none; }
-  /* Words: show immediately in final state if somehow headline is visible */
+  /* Line containers + words: final state immediately if headline somehow visible */
+  .hero-zoom-headline-line { opacity: 1 !important; }
   .hero-zoom-word { opacity: 1 !important; transform: none !important; transition: none !important; }
 }
 

@@ -6,35 +6,31 @@
  *
  *   Outer scroll progress (p) maps to scene beats:
  *
- *   0.00 — 0.35   CONTROLS FADE + ZOOM PHASE I
+ *   0.00 — 0.35   CONTROLS FADE
  *                 Controls (pills/buttons) fade from opacity 1 → 0.
- *                 Clock simultaneously scales 1.0× → ~1.5× by the time
- *                 controls are fully gone. Still no interaction lock until
- *                 p = 0.35. Clock canvas is always pointer-events: none.
  *                 NO TRANSFORM applied until scale > 1.001 — keeps fixed-
  *                 positioned children (OnboardingHint) on the viewport.
  *
  *   0.00 — 0.50   ZOOM PHASE I — 1.0× → 1.7× (easeInOutCubic)
  *                 Clock scales from natural size to 1.7× its width/height.
- *                 Center point stays locked to the viewport center.
  *
  *   0.50 — 1.00   ZOOM PHASE II — 1.7× → 2.8× (easeInOutCubic)
- *                 Camera continues pushing in. Blackout and clock fade
- *                 overlap to "pass through" the clock face.
+ *                 Camera continues pushing in. Blackout overlaps.
  *
- *   0.50 — 0.75   BLACKOUT
- *                 Dark overlay fades from opacity 0 → 1, covering the
- *                 screen as the clock is swallowed by the zoom.
+ *   0.45 — 0.72   BLACKOUT
+ *                 Dark overlay fades 0 → 1. Fully opaque at p = 0.72,
+ *                 giving the headline a guaranteed dark canvas.
  *
  *   0.68 — 0.82   CLOCK FADE
  *                 The embedded clock fades behind the blackout.
  *
- *   0.72 — 1.00   HEADLINE REVEAL
- *                 11 words — "Every moment you don't measure is one you
- *                 can't get back." — reveal one by one via CSS transition.
- *                 Each word hits its threshold at evenly spaced intervals
- *                 across 0.72 → 1.0. Container opacity also fades in from
- *                 0.72 → 0.87 for a soft entrance.
+ *   0.72 — 0.98   HEADLINE REVEAL
+ *                 11 words across two lines reveal word-by-word:
+ *                   Line 1: "Every moment you don't measure"
+ *                   Line 2: "is one you can't get back."
+ *                 Word thresholds start at p = 0.74 (after blackout is
+ *                 fully opaque at 0.72) and end at p = 0.98. Container
+ *                 opacity fades in from 0.72 → 0.82 for a soft entrance.
  *
  * Scrolling BACK UP reverses every transform — the user returns to
  * the fully interactive idle state.
@@ -68,13 +64,16 @@ export const Scene1Hero = memo(function Scene1Hero() {
   // Combined scale: max 1 + 0.7 + 1.1 = 2.8
   const scale = 1 + zoomPhaseI * 0.7 + zoomPhaseII * 1.1;
 
-  // Blackout fades in once Phase II begins, fully opaque at 75%
-  const blackoutT    = mapRange(p, 0.5, 0.75, 0, 1);
+  // Blackout starts a little earlier than Phase II for a longer cinematic
+  // fade, and reaches FULL opacity at p=0.72 — guaranteeing a completely
+  // dark canvas BEFORE any headline word is revealed (words start at 0.74).
+  const blackoutT    = mapRange(p, 0.45, 0.72, 0, 1);
   // Clock fades behind the blackout
   const clockOpacityT = mapRange(p, 0.68, 0.82, 1, 0);
 
-  // Headline container fades in from 72% → 87%
-  const headlineOpacityT = mapRange(p, 0.72, 0.87, 0, 1);
+  // Headline container fades in quickly (0.72 → 0.82) so words appear on
+  // an already-dark background rather than fading in against a light one.
+  const headlineOpacityT = mapRange(p, 0.72, 0.82, 0, 1);
 
   // Interaction lock: once controls are gone (p > 0.35) nothing is clickable
   const interactionsLocked = p > 0.35;
@@ -91,16 +90,22 @@ export const Scene1Hero = memo(function Scene1Hero() {
   const wrapTransform = shouldTransform ? `scale(${scale})` : 'none';
 
   /* ── Headline words ────────────────────────────────────────────
-     11 words, thresholds evenly spaced across REVEAL_START → REVEAL_END.
-     Each word gets a CSS transition via `.revealed` class. Container
-     opacity provides a soft overall fade-in on top.
+     11 words split into two prose lines. Thresholds are evenly spaced
+     across REVEAL_START → REVEAL_END using the GLOBAL word index so the
+     pace of reveals is consistent regardless of which line a word is on.
+
+     REVEAL_START = 0.74: 0.02 buffer after blackout is fully opaque (0.72).
+     This guarantees every word appears on a solid dark background — no
+     word ever flashes against a semi-transparent or light bg.
+
+     REVEAL_END = 0.98: leaves a small tail before the sticky releases so
+     the final word ("back.") has time to fully transition in.
   ─────────────────────────────────────────────────────────────── */
-  const REVEAL_START = 0.72;
-  const REVEAL_END   = 1.0;
-  const WORDS = [
-    'Every', 'moment', 'you', "don't", 'measure',
-    'is', 'one', 'you', "can't", 'get', 'back.',
-  ] as const;
+  const REVEAL_START    = 0.74;
+  const REVEAL_END      = 0.98;
+  const LINE1 = ['Every', 'moment', 'you', "don't", 'measure'] as const;
+  const LINE2 = ['is', 'one', 'you', "can't", 'get', 'back.'] as const;
+  const TOTAL_WORDS     = LINE1.length + LINE2.length; // 11
 
   return (
     <section
@@ -142,27 +147,56 @@ export const Scene1Hero = memo(function Scene1Hero() {
         {/* Headline — word-by-word CSS-transition reveal over blackout.
             Container fades in for a soft entrance; each word flips in
             via `.revealed` class + CSS transition once its threshold
-            is crossed. */}
+            is crossed.
+
+            Structure: TWO .hero-zoom-headline-line containers (one per
+            prose line). Each is a block flex-item in the column flex
+            parent. Words inside each line are inline-blocks so they flow
+            left-to-right and wrap naturally on narrow viewports.
+
+            Thresholds use GLOBAL word indices so the reveal pace is
+            identical whether a word is in line 1 or line 2. */}
         <h2
           className="hero-zoom-headline"
           style={{ opacity: headlineOpacityT }}
           aria-hidden={p < 0.72}
         >
-          {WORDS.map((word, i) => {
-            const threshold = REVEAL_START + (i / WORDS.length) * (REVEAL_END - REVEAL_START);
-            const isRevealed = p >= threshold;
-            return (
-              <span
-                key={i}
-                className={`hero-zoom-word${isRevealed ? ' revealed' : ''}`}
-              >
-                {word}
-                {i < WORDS.length - 1 ? ' ' : ''}
-                {/* Line break between "measure" and "is" */}
-                {i === 4 ? <br /> : null}
-              </span>
-            );
-          })}
+          {/* Line 1: "Every moment you don't measure" */}
+          <span className="hero-zoom-headline-line">
+            {LINE1.map((word, i) => {
+              const threshold = REVEAL_START + (i / TOTAL_WORDS) * (REVEAL_END - REVEAL_START);
+              return (
+                <span
+                  key={i}
+                  className={`hero-zoom-word${p >= threshold ? ' revealed' : ''}`}
+                >
+                  {word}
+                </span>
+              );
+            })}
+          </span>
+
+          {/* Line 2: "is one you can't get back." — last word gets .last-word
+              for the hardcoded #c8312b red glow (theme-safe, always dark bg) */}
+          <span className="hero-zoom-headline-line">
+            {LINE2.map((word, i) => {
+              const globalIdx  = LINE1.length + i;
+              const threshold  = REVEAL_START + (globalIdx / TOTAL_WORDS) * (REVEAL_END - REVEAL_START);
+              const isLastWord = i === LINE2.length - 1;
+              return (
+                <span
+                  key={globalIdx}
+                  className={[
+                    'hero-zoom-word',
+                    p >= threshold ? 'revealed' : '',
+                    isLastWord     ? 'last-word' : '',
+                  ].filter(Boolean).join(' ')}
+                >
+                  {word}
+                </span>
+              );
+            })}
+          </span>
         </h2>
         <p className="visually-hidden">
           Every moment you don&apos;t measure is one you can&apos;t get back.
