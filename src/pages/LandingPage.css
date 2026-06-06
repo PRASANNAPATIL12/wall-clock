@@ -373,3 +373,168 @@
   .zoom-blackout { opacity: 0 !important; }
   .zoom-headline { display: none; }
 }
+
+/* =========================================================================
+   SCENE 3 — "Three Clicks. One Focused Hour."
+
+   Two-column layout: clock pinned to the LEFT, three cards reveal on the
+   RIGHT as the user scrolls. On mobile, flips to vertical stack.
+
+   Outer height: 300vh (defined above). Inner is sticky for the duration.
+   ========================================================================= */
+
+.scene--three-clicks {
+  display: block;
+}
+
+.clicks-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clicks-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 6vw;
+  align-items: center;
+  width: 100%;
+  max-width: 1280px;
+  padding: 0 6vw;
+}
+
+.clicks-clock-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clicks-clock {
+  width: min(48vmin, 480px);
+  height: min(48vmin, 480px);
+  pointer-events: none;
+  filter: drop-shadow(var(--shadow-face));
+}
+.clicks-clock .hero-clock { width: 100%; height: 100%; }
+
+.clicks-cards-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.clicks-heading {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(28px, 4.2vmin, 48px);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--fg);
+  text-wrap: balance;
+  will-change: opacity, transform;
+}
+
+.clicks-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.clicks-card {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 22px 22px 22px 18px;
+  border-radius: 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-pill);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  will-change: opacity, transform;
+  /* Card-level highlight when this step is "active" via scroll */
+  transition: box-shadow 320ms var(--ease-apple), border-color 320ms var(--ease-apple);
+}
+.clicks-card[aria-current='step'] {
+  box-shadow: var(--shadow-pop);
+  border-color: color-mix(in srgb, var(--hand-second) 28%, var(--glass-border));
+}
+
+.clicks-card__step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--hand-second) 12%, transparent);
+  color: var(--hand-second);
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+.clicks-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.clicks-card__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(17px, 1.8vmin, 21px);
+  letter-spacing: -0.015em;
+  color: var(--fg);
+}
+
+.clicks-card__text {
+  margin: 0;
+  font-size: clamp(14px, 1.45vmin, 16px);
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--fg-muted);
+  text-wrap: pretty;
+}
+
+/* ── Tablet & smaller (≤ 960px): stack vertical ──────────────────────── */
+@media (max-width: 960px) {
+  .scene--three-clicks { min-height: 250vh; }
+  .clicks-stage {
+    grid-template-columns: 1fr;
+    gap: 4vh;
+    padding: 4vh 6vw;
+  }
+  .clicks-clock { width: min(42vmin, 360px); height: min(42vmin, 360px); }
+  .clicks-heading { text-align: center; font-size: clamp(24px, 5vmin, 36px); }
+  .clicks-cards { max-width: 540px; margin: 0 auto; width: 100%; }
+}
+
+@media (max-width: 640px) {
+  .clicks-clock { width: min(56vmin, 280px); height: min(56vmin, 280px); }
+  .clicks-card { padding: 16px 16px 16px 14px; gap: 14px; }
+  .clicks-card__step { width: 32px; height: 32px; font-size: 12px; }
+}
+
+/* Reduced motion — show all cards immediately */
+@media (prefers-reduced-motion: reduce) {
+  .scene--three-clicks { min-height: 100vh; }
+  .clicks-heading,
+  .clicks-card {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

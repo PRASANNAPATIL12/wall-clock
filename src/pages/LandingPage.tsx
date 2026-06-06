@@ -11,6 +11,7 @@
 import { useEffect } from 'react';
 import { Scene1Hero } from './landing/Scene1Hero';
 import { Scene2Zoom } from './landing/Scene2Zoom';
+import { Scene3ThreeClicks } from './landing/Scene3ThreeClicks';
 import './LandingPage.css';
 
 /* ------------------------------------------------------------------ */
@@ -50,11 +51,7 @@ export default function LandingPage() {
       <Scene2Zoom />
 
       {/* SCENE 3 — Three clicks demo */}
-      <section className="scene scene--three-clicks" data-scene="3" aria-label="Set a goal in three clicks">
-        <div className="scene-placeholder">
-          <p>Scene 3 — three-clicks layout (Step 7)</p>
-        </div>
-      </section>
+      <Scene3ThreeClicks />
 
       {/* SCENE 4 — Horizontal feature gallery */}
       <section className="scene scene--features" data-scene="4" aria-label="Features">
