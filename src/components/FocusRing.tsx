@@ -13,7 +13,7 @@ import { useOnboardingHint } from '../hooks/useOnboardingHint';
 import { TagPicker } from './TagPicker';
 import { TagIcon } from './TagIcon';
 import { getTag } from '../lib/tags';
-import { PlannedRingsLayer } from './PlannedRingsLayer';
+import { PlannedRingsLayer, tagColor } from './PlannedRingsLayer';
 import { PlanActionCard } from './PlanActionCard';
 import { useUpcomingPlanned } from '../hooks/usePlannedSessions';
 import { FocusMessage } from './FocusMessage';
@@ -449,6 +449,29 @@ export const FocusRing = memo(function FocusRing({
     return (remainMs / totalMs) * 360;
   }, [activePlanSession, arcStartMinAngle, state, now]);
 
+  /**
+   * Digital countdown arc — renders a shrinking full-circle arc for ALL
+   * digital sessions (not just planned ones).
+   *
+   * Anchored at 12 o'clock (0°). Starts at 360° and shrinks to 0° as
+   * time passes. Uses the session tag's color from the PlannedRingsLayer
+   * color system for visual consistency.
+   *
+   * This is the digital equivalent of the PlannedRingsLayer countdown arc
+   * that shows for scheduled tasks in analog mode.
+   */
+  const digitalCountdown = useMemo(() => {
+    if (!digitalMode) return null;
+    if (state.kind !== 'targeted' && state.kind !== 'paused') return null;
+    const totalMs      = state.end - state.start;
+    if (totalMs <= 0) return null;
+    const effectiveNow = state.kind === 'paused' ? state.pausedAt : now.getTime();
+    const remainMs     = Math.max(0, state.end - effectiveNow);
+    const degrees      = (remainMs / totalMs) * 360;
+    const color        = tagColor(sessionTagRef.current);
+    return { degrees, color, complete: remainMs <= 0 };
+  }, [digitalMode, state, now]);
+
   /* ---- "Start now" from a planned session ---- */
   const startFromPlan = useCallback((session: PlannedSession) => {
     if (state.kind !== 'idle') return; // block if already tracking
@@ -793,8 +816,9 @@ export const FocusRing = memo(function FocusRing({
           />
         )}
 
-        {/* Goal arc — hidden during plan countdown (countdown arc is the visual) */}
-        {data.start !== null && data.goalEnd !== null && !isInPlanSession && (
+        {/* ── Goal / countdown arc ── */}
+        {/* Analog: growing arc from start angle to current progress (minute-hand based) */}
+        {!digitalMode && data.start !== null && data.goalEnd !== null && !isInPlanSession && (
           <path
             d={arcPath(data.start, data.goalEnd, RING_R)}
             className="progress goal"
@@ -804,8 +828,26 @@ export const FocusRing = memo(function FocusRing({
           />
         )}
 
-        {/* Bonus arc — only after target reached */}
-        {data.complete && data.end !== null && data.bonusHead !== null && (
+        {/* Digital: SHRINKING countdown arc (360° → 0°), anchored at 12 o'clock.
+            Uses the session tag's color. Same visual style as PlannedRingsLayer
+            countdown but rendered at the main ring radius for ALL digital sessions. */}
+        {digitalMode && digitalCountdown && digitalCountdown.degrees > 0.5 && (
+          <path
+            d={arcPath(0, digitalCountdown.degrees, RING_R)}
+            fill="none"
+            strokeLinecap="round"
+            stroke={digitalCountdown.color}
+            strokeWidth={STROKE + 0.35}
+            strokeOpacity={0.92}
+            style={{
+              filter: `drop-shadow(0 0 4px ${digitalCountdown.color}66)`,
+              transition: 'stroke-width 220ms ease-out',
+            }}
+          />
+        )}
+
+        {/* Bonus arc — only after target reached (analog only — digital arc shrinks to 0) */}
+        {!digitalMode && data.complete && data.end !== null && data.bonusHead !== null && (
           <path
             d={arcPath(data.end, data.bonusHead, RING_R)}
             className="progress bonus"

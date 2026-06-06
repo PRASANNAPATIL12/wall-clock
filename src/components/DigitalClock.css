@@ -136,7 +136,7 @@
 
 .dt-focus-cta {
   position: fixed;
-  bottom: 72px;
+  bottom: 112px; /* above ScheduleBadge (70px) and TodaySummary (28px) */
   left: 0;
   right: 0;
   margin: 0 auto;
@@ -344,6 +344,6 @@ body.idle .dt-focus-cta {
   .digital              { font-size: clamp(44px, 14vmin, 160px); }
   .digital--compact     { font-size: clamp(44px, 12vmin, 130px); }
   .dt-tag-picker        { bottom: 200px; }
-  .dt-focus-cta         { bottom: 80px; }
+  .dt-focus-cta         { bottom: 120px; }
   .dt-start-btn         { height: 30px; padding: 0 14px; font-size: 11px; }
 }
