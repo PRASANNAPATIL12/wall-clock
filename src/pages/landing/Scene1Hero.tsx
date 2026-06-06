@@ -40,7 +40,7 @@
 import { memo, useRef } from 'react';
 import { FocusClockApp } from '../../FocusClockApp';
 import {
-  useScrollProgress,
+  useStickyScrollProgress,
   mapRange,
   easeOutCubic,
   easeInOutCubic,
@@ -48,7 +48,11 @@ import {
 
 export const Scene1Hero = memo(function Scene1Hero() {
   const sceneRef = useRef<HTMLElement>(null);
-  const p = useScrollProgress(sceneRef);
+  /* Sticky-aware progress: 0 = fresh page load (no scroll), 1 = sticky
+     about to release. Critical: the standard `useScrollProgress` would
+     return ~0.278 at scrollY=0 because Scene 1 is at the page top.
+     That mis-firing made the buttons fade out instantly on reload. */
+  const p = useStickyScrollProgress(sceneRef);
 
   /* ── Phase progress ────────────────────────────────────────────── */
   // Controls fade — first thing to happen

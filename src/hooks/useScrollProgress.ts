@@ -83,6 +83,92 @@ export function useScrollProgress<T extends HTMLElement>(
 }
 
 /**
+ * useStickyScrollProgress — Returns a 0..1 progress value purpose-built
+ * for scenes that use a `position: sticky` inner stage to pin to the
+ * viewport while the outer container scrolls.
+ *
+ * USE THIS FOR THE FIRST SCENE (and any scene that starts at the very
+ * top of the page or whose top is already touching the viewport top
+ * before the user scrolls).
+ *
+ * Why the standard `useScrollProgress` is wrong here:
+ *   The standard hook measures "how far through the viewport this
+ *   element has travelled," meaning at scrollY = 0, p = vh / (sceneHeight + vh).
+ *   For a 260vh scene at the page top, that's ALREADY 0.278 — past the
+ *   button-fade range. The buttons appear hidden on fresh page load.
+ *
+ * What this hook does instead:
+ *   Maps progress to the SCROLL DISTANCE that the inner sticky element
+ *   can travel while pinned. For a sticky inner of 100vh inside a 260vh
+ *   outer, the sticky pins from scrollY = 0 to scrollY = 160vh
+ *   (= sceneHeight − vh). This hook returns:
+ *     · scrollY = 0      → p = 0.0  (correct — fresh page load, no scroll)
+ *     · scrollY = 80vh   → p = 0.5  (halfway through sticky range)
+ *     · scrollY = 160vh  → p = 1.0  (sticky about to release)
+ *     · scrollY > 160vh  → clamped to 1.0
+ *
+ *   So the meaningful 0..1 range maps onto the actual user-controlled
+ *   scroll, with no dead zone on either side.
+ *
+ * Reduced motion:
+ *   Returns 1.0 immediately (final state) so all scroll-tied transforms
+ *   show their settled values without animation.
+ */
+export function useStickyScrollProgress<T extends HTMLElement>(
+  ref: RefObject<T | null>,
+): number {
+  const [progress, setProgress] = useState(0);
+  const lastValueRef = useRef(0);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      setProgress(1);
+      return;
+    }
+
+    let raf = 0;
+    let running = true;
+
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      const vh   = window.innerHeight;
+
+      // The sticky inner can travel a maximum of (sceneHeight - vh) pixels
+      // while pinned. `scrolled` is how far we've moved into that range,
+      // measured by how far the scene's top has moved above the viewport top.
+      const stickyDistance = Math.max(1, rect.height - vh);
+      const scrolled       = Math.max(0, -rect.top);
+      const next           = Math.max(0, Math.min(1, scrolled / stickyDistance));
+
+      if (Math.abs(next - lastValueRef.current) > 0.001) {
+        lastValueRef.current = next;
+        setProgress(next);
+      }
+    };
+
+    const tick = () => {
+      if (!running) return;
+      measure();
+      raf = requestAnimationFrame(tick);
+    };
+
+    measure();
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      running = false;
+      cancelAnimationFrame(raf);
+    };
+  }, [ref]);
+
+  return progress;
+}
+
+/**
  * mapRange — Linearly remap `value` from one range [inMin, inMax] to
  * another [outMin, outMax], with clamping.
  *
