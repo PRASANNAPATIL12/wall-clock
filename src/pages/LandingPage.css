@@ -105,16 +105,15 @@
 .scene--hero-plus-zoom {
   display: block;
   position: relative;
-  /* Outer scroll length. Choreography:
-     · 0–6%      idle (no transforms — hints render correctly)
-     · 6–20%     controls fade
-     · 20–55%    clock zooms 1.0× → 1.7×
-     · 55–75%    zoom + blackout 1.7× → 2.6×
-     · 65–94%    headline reveal
-     · 94–100%   hold before Scene 3
-     260vh = ~160vh of zoom journey + 100vh idle reveal.
-     Reduced from 350vh to tighten the gap before Scene 3. */
-  height: 260vh;
+  /* Outer scroll length drives the full cinematic sequence:
+     · 0–35%     controls fade out while clock begins zooming
+     · 0–50%     clock zooms 1.0× → 1.7× (Phase I, easeInOutCubic)
+     · 50–100%   clock continues 1.7× → 2.8× (Phase II, easeInOutCubic)
+     · 50–75%    blackout fades in (opacity 0 → 1)
+     · 68–82%    clock fades behind blackout
+     · 72–100%   headline "Every moment…" word-by-word reveal
+     350vh gives ~250vh of scroll travel inside the sticky stage. */
+  height: 350vh;
   background: var(--bg);
   overflow: visible;
 }
@@ -201,28 +200,18 @@
 
 /* Blackout overlay — sits ABOVE the app, opacity driven by scroll.
 
-   IMPORTANT: solid dark in BOTH themes so the headline text reads
-   reliably. The earlier radial-gradient with `var(--bg)` mid-stop
-   meant the center area (where the headline sits) became cream in
-   light mode — and the cream-coloured headline text was invisible
-   against it. A solid near-black overlay works in both themes:
+   Starts at opacity 0 (p=0.5) and reaches fully opaque at p=0.75.
+   Uses a solid dark radial gradient in BOTH themes so the headline
+   text reads reliably regardless of light/dark mode.
 
-   - The clock is shown through a SEPARATE opacity fade on the wrapper
-     (`clockOpacityT` in Scene1Hero.tsx), so we don't need a transparent
-     hole in the centre of the blackout.
-   - White headline at ~94% opacity reads sharply against #050505.
-   - Subtle radial vignette around edges keeps it from looking flat. */
+   - The clock fades separately via clockOpacityT on .hero-app-wrap
+   - Headline text (#ece9e2 cream) has ~15:1 contrast on #1a1a1a — ✓
+   - Lighter centre (#1a1a1a) + pure black edges gives cinematic depth */
 .hero-blackout {
   position: absolute;
   inset: 0;
   z-index: 2;
-  background:
-    radial-gradient(
-      ellipse 80% 65% at center,
-      rgba(20, 20, 22, 0.92) 0%,
-      rgba(8, 8, 10, 1) 60%,
-      #000 100%
-    );
+  background: radial-gradient(ellipse at center, #1a1a1a 0%, #000000 100%);
   pointer-events: none;
   will-change: opacity;
 }
@@ -231,18 +220,16 @@
    Zoom-phase headline — "Every moment you don't measure is one you can't
    get back." Sits ABOVE the blackout overlay.
 
-   Typography choices (cinematic + on-brand):
+   Typography choices:
    · Font family: 'Special Elite' — same typewriter used by Scene 1's
-     hero message + footer credit. Creates visual continuity: the hero
-     opens in typewriter, this revelation moment lands in typewriter,
-     the credits roll in typewriter. Unified voice.
-   · Size: clamp(34px, 6.2vmin, 76px) — bigger than before for impact
-   · Letter-spacing: 0.01em — slight breathing room (typewriters feel
-     too tight at large sizes without this)
-   · Color: pure white #ffffff for maximum contrast against blackout
-   · Drop-shadow: stronger now — adds depth + softens the edges so the
-     text feels physical, not pasted on
-   · text-wrap: balance — keeps each line visually weighted evenly
+     hero message + footer credit. One consistent voice throughout.
+   · Size: clamp(1.4rem, 3vw, 2.6rem) — scales with viewport width,
+     clamped for very narrow/wide extremes
+   · Color: #ece9e2 (warm cream) — high contrast (~15:1) against the
+     solid dark blackout in both light and dark themes. Previously used
+     white; cream is softer and more on-brand with the clock's warm tone.
+   · line-height/gap: 1.6 with 0.3em flex gap for breathing room
+   · Drop-shadow: keeps text legible even at the darkest blackout edges
    ========================================================================= */
 .hero-zoom-headline {
   position: absolute;
@@ -253,29 +240,40 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0.3em;
   padding: 0 6vw;
-  /* Special Elite — typewriter, ties this back to the hero + footer */
+  /* Special Elite — typewriter voice, ties back to hero message + footer */
   font-family: 'Special Elite', var(--font-display);
   font-weight: 400;
-  font-size: clamp(34px, 6.2vmin, 76px);
-  letter-spacing: 0.01em;
-  line-height: 1.22;
+  font-size: clamp(1.4rem, 3vw, 2.6rem);
+  letter-spacing: 0.02em;
+  line-height: 1.6;
   text-align: center;
-  color: #ffffff;
+  color: #ece9e2;
   max-width: none;
-  text-wrap: balance;
   text-shadow:
     0 2px 12px rgba(0, 0, 0, 0.85),
     0 0 36px rgba(0, 0, 0, 0.55);
   pointer-events: none;
 }
 
+/* Each word starts hidden and slides up.
+   `.revealed` is toggled by Scene1Hero.tsx when the scroll threshold
+   for that word is crossed. CSS transition handles the smooth reveal. */
 .hero-zoom-word {
   display: inline-block;
-  will-change: opacity, transform, clip-path;
-  /* Subtle red accent on the word "back." — visual rhyme with the
-     second-hand red of the clock, lands the final beat with weight. */
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  margin: 0 0.18em;
+  will-change: opacity, transform;
 }
+.hero-zoom-word.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+/* Red accent on the final word "back." — rhymes with the second-hand
+   colour and lands the beat with visual weight. */
 .hero-zoom-word:last-of-type {
   color: var(--hand-second);
   text-shadow:
@@ -283,11 +281,12 @@
     0 0 48px color-mix(in srgb, var(--hand-second) 55%, transparent);
 }
 
-/* Mobile: smaller but still impactful */
+/* Mobile: slightly larger vw-relative value so text fills the narrower screen */
 @media (max-width: 640px) {
   .hero-zoom-headline {
-    font-size: clamp(22px, 7vmin, 36px);
-    letter-spacing: 0.005em;
+    font-size: clamp(1.2rem, 5vw, 2rem);
+    letter-spacing: 0.01em;
+    padding: 0 8vw;
   }
 }
 
@@ -379,27 +378,26 @@
   height: 100%;
 }
 
-/* Mobile portrait — reduce zoom range, smaller headline */
+/* Mobile portrait — same proportional 350vh keeps timing consistent.
+   Font override handled by the .hero-zoom-headline @media rule above. */
 @media (max-width: 640px) {
-  .scene--hero-plus-zoom { height: 280vh; }
-  .hero-zoom-headline {
-    font-size: clamp(22px, 6.5vmin, 36px);
-    padding: 0 8vw;
-  }
+  .scene--hero-plus-zoom { height: 350vh; }
   .scroll-hint { bottom: 24px; }
 }
 
-/* Reduced motion — show static idle state, no zoom or blackout */
+/* Reduced motion — static clock at full size, no zoom/blackout/headline */
 @media (prefers-reduced-motion: reduce) {
   .scene--hero-plus-zoom { height: 100vh; }
   .hero-app-wrap {
-    transform: scale(1) !important;
+    transform: none !important;
     opacity: 1 !important;
     pointer-events: auto !important;
   }
   .hero-app-wrap .stage--embedded * { opacity: 1 !important; }
   .hero-blackout { opacity: 0 !important; }
   .hero-zoom-headline { display: none; }
+  /* Words: show immediately in final state if somehow headline is visible */
+  .hero-zoom-word { opacity: 1 !important; transform: none !important; transition: none !important; }
 }
 
 /* =========================================================================

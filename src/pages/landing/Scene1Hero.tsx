@@ -2,37 +2,39 @@
  * Scene 1 + 2 (merged) — "The Clock Is Alive" → "Your Time Is Finite"
  *
  * ONE sticky stage holds the REAL live application (FocusClockApp
- * embedded). As the user scrolls through 260vh of outer height:
+ * embedded). As the user scrolls through 350vh of outer height:
  *
  *   Outer scroll progress (p) maps to scene beats:
  *
- *   0.00 — 0.06   IDLE
- *                 The full live app is visible. Onboarding hint shows
- *                 (handwritten arrow + "click anywhere on the ring").
- *                 NO TRANSFORM is applied — keeping fixed-positioned
- *                 children (OnboardingHint) positioned relative to the
- *                 actual viewport instead of the wrapper.
+ *   0.00 — 0.35   CONTROLS FADE + ZOOM PHASE I
+ *                 Controls (pills/buttons) fade from opacity 1 → 0.
+ *                 Clock simultaneously scales 1.0× → ~1.5× by the time
+ *                 controls are fully gone. Still no interaction lock until
+ *                 p = 0.35. Clock canvas is always pointer-events: none.
+ *                 NO TRANSFORM applied until scale > 1.001 — keeps fixed-
+ *                 positioned children (OnboardingHint) on the viewport.
  *
- *   0.06 — 0.20   CONTROLS FADE
- *                 Pills/buttons (theme toggle, JoinPill, fullscreen,
- *                 timezone, mode, format, coffee, hero-message) fade
- *                 from opacity 1 → 0. Clock remains at scale 1 in
- *                 the SAME position. Still no transform on the wrapper.
+ *   0.00 — 0.50   ZOOM PHASE I — 1.0× → 1.7× (easeInOutCubic)
+ *                 Clock scales from natural size to 1.7× its width/height.
+ *                 Center point stays locked to the viewport center.
  *
- *   0.20 — 0.55   ZOOM PHASE I — 1.0× → 1.7×
- *                 Clock smoothly scales up to 1.7× its natural size.
- *                 Stays centered. easeInOutCubic for a deliberate
- *                 cinematic motion (not rubbery).
+ *   0.50 — 1.00   ZOOM PHASE II — 1.7× → 2.8× (easeInOutCubic)
+ *                 Camera continues pushing in. Blackout and clock fade
+ *                 overlap to "pass through" the clock face.
  *
- *   0.55 — 0.75   ZOOM PHASE II — 1.7× → 2.6× + BLACKOUT
- *                 Camera pushes further. Vignette darkens. Clock fades
- *                 behind the blackout as we "pass through" the dial.
+ *   0.50 — 0.75   BLACKOUT
+ *                 Dark overlay fades from opacity 0 → 1, covering the
+ *                 screen as the clock is swallowed by the zoom.
  *
- *   0.65 — 0.92   HEADLINE REVEAL
- *                 11 words clip-path mask in over the blackout:
- *                 "Every moment you don't measure is one you can't get back."
+ *   0.68 — 0.82   CLOCK FADE
+ *                 The embedded clock fades behind the blackout.
  *
- *   0.92 — 1.00   HOLD before Scene 3 takes over.
+ *   0.72 — 1.00   HEADLINE REVEAL
+ *                 11 words — "Every moment you don't measure is one you
+ *                 can't get back." — reveal one by one via CSS transition.
+ *                 Each word hits its threshold at evenly spaced intervals
+ *                 across 0.72 → 1.0. Container opacity also fades in from
+ *                 0.72 → 0.87 for a soft entrance.
  *
  * Scrolling BACK UP reverses every transform — the user returns to
  * the fully interactive idle state.
@@ -42,63 +44,62 @@ import { FocusClockApp } from '../../FocusClockApp';
 import {
   useStickyScrollProgress,
   mapRange,
-  easeOutCubic,
   easeInOutCubic,
 } from '../../hooks/useScrollProgress';
 
 export const Scene1Hero = memo(function Scene1Hero() {
   const sceneRef = useRef<HTMLElement>(null);
   /* Sticky-aware progress: 0 = fresh page load (no scroll), 1 = sticky
-     about to release. Critical: the standard `useScrollProgress` would
-     return ~0.278 at scrollY=0 because Scene 1 is at the page top.
-     That mis-firing made the buttons fade out instantly on reload. */
+     about to release. Standard `useScrollProgress` would return ~0.22
+     at scrollY=0 for a 350vh scene at the page top, causing controls to
+     appear already-faded on fresh load. useStickyScrollProgress always
+     returns 0 at scroll=0. */
   const p = useStickyScrollProgress(sceneRef);
 
   /* ── Phase progress ────────────────────────────────────────────── */
-  // Controls fade — first thing to happen
-  const controlsOpacityT = mapRange(p, 0.06, 0.20, 1, 0);
 
-  // Phase I zoom: 1.0× → 1.7× over 0.20-0.55
-  // easeInOutCubic gives the "deliberate camera move" feel
-  const zoomPhaseI = easeInOutCubic(mapRange(p, 0.20, 0.55, 0, 1));
-  // Phase II zoom: 1.7× → 2.6× over 0.55-0.75
-  const zoomPhaseII = easeOutCubic(mapRange(p, 0.55, 0.75, 0, 1));
-  // Final scale = phase I contribution + phase II contribution
-  const scale = 1 + zoomPhaseI * 0.7 + zoomPhaseII * 0.9;
+  // Controls fade: immediately on first scroll, gone by 35%
+  const controlsOpacityT = mapRange(p, 0.0, 0.35, 1, 0);
 
-  // Blackout starts when phase II begins
-  const blackoutT = mapRange(p, 0.55, 0.75, 0, 0.92);
-  // Clock fades behind blackout
-  const clockOpacityT = mapRange(p, 0.65, 0.80, 1, 0);
+  // Phase I zoom: 1.0× → 1.7× over the first half (0.0–0.5)
+  const zoomPhaseI  = easeInOutCubic(mapRange(p, 0.0, 0.5, 0, 1));
+  // Phase II zoom: 1.7× → 2.8× over the second half (0.5–1.0)
+  const zoomPhaseII = easeInOutCubic(mapRange(p, 0.5, 1.0, 0, 1));
+  // Combined scale: max 1 + 0.7 + 1.1 = 2.8
+  const scale = 1 + zoomPhaseI * 0.7 + zoomPhaseII * 1.1;
 
-  // Interaction lock kicks in as soon as controls start fading
-  const interactionsLocked = p > 0.06;
+  // Blackout fades in once Phase II begins, fully opaque at 75%
+  const blackoutT    = mapRange(p, 0.5, 0.75, 0, 1);
+  // Clock fades behind the blackout
+  const clockOpacityT = mapRange(p, 0.68, 0.82, 1, 0);
+
+  // Headline container fades in from 72% → 87%
+  const headlineOpacityT = mapRange(p, 0.72, 0.87, 0, 1);
+
+  // Interaction lock: once controls are gone (p > 0.35) nothing is clickable
+  const interactionsLocked = p > 0.35;
 
   /* ── Transform optimization ────────────────────────────────────
      Apply `transform` ONLY when actually zooming. Any transform value
      (even scale(1)) creates a "transformed containing block" that
      re-anchors fixed-positioned descendants (including OnboardingHint)
      to the wrapper instead of the viewport. By keeping `transform: none`
-     during idle, the OnboardingHint positions correctly off the real
-     viewport, so its arrow + handwritten text appear in the right
-     place on initial page load.
+     during scale ≈ 1, the OnboardingHint positions correctly on initial
+     page load.
   ─────────────────────────────────────────────────────────────── */
   const shouldTransform = scale > 1.001;
   const wrapTransform = shouldTransform ? `scale(${scale})` : 'none';
 
-  /* ── Headline words for the zoom-blackout reveal ──────────────── */
-  const words = [
-    { text: 'Every',    range: [0.66, 0.71] },
-    { text: 'moment',   range: [0.69, 0.74] },
-    { text: 'you',      range: [0.72, 0.77] },
-    { text: "don't",    range: [0.75, 0.80] },
-    { text: 'measure',  range: [0.78, 0.83] },
-    { text: 'is',       range: [0.81, 0.84] },
-    { text: 'one',      range: [0.83, 0.86] },
-    { text: 'you',      range: [0.85, 0.88] },
-    { text: "can't",    range: [0.86, 0.89] },
-    { text: 'get',      range: [0.88, 0.91] },
-    { text: 'back.',    range: [0.90, 0.94] },
+  /* ── Headline words ────────────────────────────────────────────
+     11 words, thresholds evenly spaced across REVEAL_START → REVEAL_END.
+     Each word gets a CSS transition via `.revealed` class. Container
+     opacity provides a soft overall fade-in on top.
+  ─────────────────────────────────────────────────────────────── */
+  const REVEAL_START = 0.72;
+  const REVEAL_END   = 1.0;
+  const WORDS = [
+    'Every', 'moment', 'you', "don't", 'measure',
+    'is', 'one', 'you', "can't", 'get', 'back.',
   ] as const;
 
   return (
@@ -113,12 +114,11 @@ export const Scene1Hero = memo(function Scene1Hero() {
         Focus Clock — a calm browser-based focus timer and productivity tracker
       </h1>
 
-      {/* Sticky stage — pins for the entire 260vh outer scroll */}
+      {/* Sticky stage — pins for the entire 350vh outer scroll */}
       <div className="hero-sticky">
 
         {/* The live app — embedded. Transform + opacity driven by scroll.
-            We pass --controls-opacity down as a CSS variable so the
-            cascade can fade only the controls (not the clock face). */}
+            --controls-opacity cascades down to all non-clock UI. */}
         <div
           className="hero-app-wrap"
           style={{
@@ -139,22 +139,26 @@ export const Scene1Hero = memo(function Scene1Hero() {
           aria-hidden="true"
         />
 
-        {/* Headline — word-by-word reveal over blackout */}
-        <h2 className="hero-zoom-headline" aria-hidden={p < 0.65}>
-          {words.map((w, i) => {
-            const wp = mapRange(p, w.range[0], w.range[1], 0, 1);
+        {/* Headline — word-by-word CSS-transition reveal over blackout.
+            Container fades in for a soft entrance; each word flips in
+            via `.revealed` class + CSS transition once its threshold
+            is crossed. */}
+        <h2
+          className="hero-zoom-headline"
+          style={{ opacity: headlineOpacityT }}
+          aria-hidden={p < 0.72}
+        >
+          {WORDS.map((word, i) => {
+            const threshold = REVEAL_START + (i / WORDS.length) * (REVEAL_END - REVEAL_START);
+            const isRevealed = p >= threshold;
             return (
               <span
                 key={i}
-                className="hero-zoom-word"
-                style={{
-                  opacity: wp,
-                  clipPath: `inset(0 ${100 - wp * 100}% 0 0)`,
-                  transform: `translateY(${(1 - wp) * 8}px)`,
-                }}
+                className={`hero-zoom-word${isRevealed ? ' revealed' : ''}`}
               >
-                {w.text}
-                {i < words.length - 1 ? ' ' : ''}
+                {word}
+                {i < WORDS.length - 1 ? ' ' : ''}
+                {/* Line break between "measure" and "is" */}
                 {i === 4 ? <br /> : null}
               </span>
             );
