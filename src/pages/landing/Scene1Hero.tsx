@@ -170,7 +170,7 @@ export const Scene1Hero = memo(function Scene1Hero() {
                   key={i}
                   className={`hero-zoom-word${p >= threshold ? ' revealed' : ''}`}
                 >
-                  {word}
+                  {word}{' '}
                 </span>
               );
             })}
@@ -192,7 +192,7 @@ export const Scene1Hero = memo(function Scene1Hero() {
                     isLastWord     ? 'last-word' : '',
                   ].filter(Boolean).join(' ')}
                 >
-                  {word}
+                  {word}{isLastWord ? '' : ' '}
                 </span>
               );
             })}
