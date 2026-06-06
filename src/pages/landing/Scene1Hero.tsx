@@ -1,38 +1,41 @@
 /**
- * Scene 1 + 2 — "The Clock Is Alive" merging into "Your Time Is Finite"
+ * Scene 1 + 2 (merged) — "The Clock Is Alive" → "Your Time Is Finite"
  *
- * The opening act of the cinematic landing. ONE sticky stage holds the
- * REAL live application (FocusClockApp embedded). As the user scrolls
- * through 350vh of outer height:
+ * ONE sticky stage holds the REAL live application (FocusClockApp
+ * embedded). As the user scrolls through 260vh of outer height:
  *
  *   Outer scroll progress (p) maps to scene beats:
- *   ───────────────────────────────────────────────
- *   0.00 — 0.28   IDLE
- *                 The full live app is visible and fully interactive.
- *                 All controls, hero message, 3-click focus ring — works
- *                 exactly as /app. Identical pixels.
  *
- *   0.28 — 0.55   ZOOM (the camera dive)
- *                 · Controls fade out (opacity 1 → 0)
- *                 · Clock scales 1× → 2.4× (easeOutCubic)
- *                 · Vignette/blackout intensifies
- *                 · Focus ring becomes non-interactive (pointer-events: none
- *                   on the wrapper) — the user is now watching a cinematic
- *                   moment, not interacting
+ *   0.00 — 0.06   IDLE
+ *                 The full live app is visible. Onboarding hint shows
+ *                 (handwritten arrow + "click anywhere on the ring").
+ *                 NO TRANSFORM is applied — keeping fixed-positioned
+ *                 children (OnboardingHint) positioned relative to the
+ *                 actual viewport instead of the wrapper.
  *
- *   0.55 — 0.92   HEADLINE REVEAL
- *                 · 11 words appear with clip-path mask reveal:
- *                   "Every moment you don't measure is one you can't get back."
+ *   0.06 — 0.20   CONTROLS FADE
+ *                 Pills/buttons (theme toggle, JoinPill, fullscreen,
+ *                 timezone, mode, format, coffee, hero-message) fade
+ *                 from opacity 1 → 0. Clock remains at scale 1 in
+ *                 the SAME position. Still no transform on the wrapper.
  *
- *   0.92 — 1.00   HOLD before Scene 3 takes over
+ *   0.20 — 0.55   ZOOM PHASE I — 1.0× → 1.7×
+ *                 Clock smoothly scales up to 1.7× its natural size.
+ *                 Stays centered. easeInOutCubic for a deliberate
+ *                 cinematic motion (not rubbery).
  *
- * The clock that's pinned in the sticky stage IS the same clock the user
- * saw in Scene 1's idle state — same DOM node, same React instance, same
- * useFocusTrack state. There's no swap, no remount. That continuity is
- * what makes the cinematic moment feel real.
+ *   0.55 — 0.75   ZOOM PHASE II — 1.7× → 2.6× + BLACKOUT
+ *                 Camera pushes further. Vignette darkens. Clock fades
+ *                 behind the blackout as we "pass through" the dial.
  *
- * If the user scrolls BACK UP, every transform reverses and they return
- * to the fully interactive app.
+ *   0.65 — 0.92   HEADLINE REVEAL
+ *                 11 words clip-path mask in over the blackout:
+ *                 "Every moment you don't measure is one you can't get back."
+ *
+ *   0.92 — 1.00   HOLD before Scene 3 takes over.
+ *
+ * Scrolling BACK UP reverses every transform — the user returns to
+ * the fully interactive idle state.
  */
 import { memo, useRef } from 'react';
 import { FocusClockApp } from '../../FocusClockApp';
@@ -40,43 +43,58 @@ import {
   useScrollProgress,
   mapRange,
   easeOutCubic,
+  easeInOutCubic,
 } from '../../hooks/useScrollProgress';
 
 export const Scene1Hero = memo(function Scene1Hero() {
   const sceneRef = useRef<HTMLElement>(null);
   const p = useScrollProgress(sceneRef);
 
-  /* ── Phase progress (each 0..1 within its sub-range) ───────────── */
-  // 0.00–0.28 = idle (no transforms yet)
-  // 0.28–0.55 = zoom phase
-  const zoomT = easeOutCubic(mapRange(p, 0.28, 0.55, 0, 1));
-  // 0.55–0.70 = clock fades behind blackout
-  const clockOpacityT = mapRange(p, 0.55, 0.70, 1, 0);
-  // 0.28–0.70 = controls fade away
-  const controlsOpacityT = mapRange(p, 0.28, 0.48, 1, 0);
-  // 0.20–0.70 = vignette darkens
-  const blackoutT = mapRange(p, 0.28, 0.70, 0, 0.92);
+  /* ── Phase progress ────────────────────────────────────────────── */
+  // Controls fade — first thing to happen
+  const controlsOpacityT = mapRange(p, 0.06, 0.20, 1, 0);
 
-  /* ── Computed transforms ───────────────────────────────────────── */
-  const scale = 1 + zoomT * 1.4;            // 1 → 2.4
-  // Once the zoom has begun, disable pointer events on the entire app
-  // so users don't accidentally click a ring or button while watching
-  // the cinematic moment.
-  const interactionsLocked = p > 0.28;
+  // Phase I zoom: 1.0× → 1.7× over 0.20-0.55
+  // easeInOutCubic gives the "deliberate camera move" feel
+  const zoomPhaseI = easeInOutCubic(mapRange(p, 0.20, 0.55, 0, 1));
+  // Phase II zoom: 1.7× → 2.6× over 0.55-0.75
+  const zoomPhaseII = easeOutCubic(mapRange(p, 0.55, 0.75, 0, 1));
+  // Final scale = phase I contribution + phase II contribution
+  const scale = 1 + zoomPhaseI * 0.7 + zoomPhaseII * 0.9;
+
+  // Blackout starts when phase II begins
+  const blackoutT = mapRange(p, 0.55, 0.75, 0, 0.92);
+  // Clock fades behind blackout
+  const clockOpacityT = mapRange(p, 0.65, 0.80, 1, 0);
+
+  // Interaction lock kicks in as soon as controls start fading
+  const interactionsLocked = p > 0.06;
+
+  /* ── Transform optimization ────────────────────────────────────
+     Apply `transform` ONLY when actually zooming. Any transform value
+     (even scale(1)) creates a "transformed containing block" that
+     re-anchors fixed-positioned descendants (including OnboardingHint)
+     to the wrapper instead of the viewport. By keeping `transform: none`
+     during idle, the OnboardingHint positions correctly off the real
+     viewport, so its arrow + handwritten text appear in the right
+     place on initial page load.
+  ─────────────────────────────────────────────────────────────── */
+  const shouldTransform = scale > 1.001;
+  const wrapTransform = shouldTransform ? `scale(${scale})` : 'none';
 
   /* ── Headline words for the zoom-blackout reveal ──────────────── */
   const words = [
-    { text: 'Every',    range: [0.58, 0.63] },
-    { text: 'moment',   range: [0.61, 0.66] },
-    { text: 'you',      range: [0.64, 0.69] },
-    { text: "don't",    range: [0.67, 0.72] },
-    { text: 'measure',  range: [0.70, 0.75] },
-    { text: 'is',       range: [0.76, 0.80] },
-    { text: 'one',      range: [0.78, 0.82] },
-    { text: 'you',      range: [0.80, 0.84] },
-    { text: "can't",    range: [0.82, 0.86] },
-    { text: 'get',      range: [0.84, 0.88] },
-    { text: 'back.',    range: [0.86, 0.92] },
+    { text: 'Every',    range: [0.66, 0.71] },
+    { text: 'moment',   range: [0.69, 0.74] },
+    { text: 'you',      range: [0.72, 0.77] },
+    { text: "don't",    range: [0.75, 0.80] },
+    { text: 'measure',  range: [0.78, 0.83] },
+    { text: 'is',       range: [0.81, 0.84] },
+    { text: 'one',      range: [0.83, 0.86] },
+    { text: 'you',      range: [0.85, 0.88] },
+    { text: "can't",    range: [0.86, 0.89] },
+    { text: 'get',      range: [0.88, 0.91] },
+    { text: 'back.',    range: [0.90, 0.94] },
   ] as const;
 
   return (
@@ -87,23 +105,22 @@ export const Scene1Hero = memo(function Scene1Hero() {
       data-scene="1"
       aria-label="Welcome to Focus Clock"
     >
-      {/* SEO H1 — visually hidden, exists for crawlers + screen readers */}
       <h1 className="visually-hidden">
         Focus Clock — a calm browser-based focus timer and productivity tracker
       </h1>
 
-      {/* Sticky stage — pins for the entire 350vh outer scroll */}
-      <div className="hero-sticky" aria-hidden={false}>
+      {/* Sticky stage — pins for the entire 260vh outer scroll */}
+      <div className="hero-sticky">
 
-        {/* The live app — embedded, scroll-driven scale + fade */}
+        {/* The live app — embedded. Transform + opacity driven by scroll.
+            We pass --controls-opacity down as a CSS variable so the
+            cascade can fade only the controls (not the clock face). */}
         <div
           className="hero-app-wrap"
           style={{
-            transform: `scale(${scale})`,
-            opacity:   clockOpacityT,
-            // Pointer events lock when the zoom starts
+            transform:     wrapTransform,
+            opacity:       clockOpacityT,
             pointerEvents: interactionsLocked ? 'none' : 'auto',
-            // Wrapper also fades the controls as a group via custom prop
             ['--controls-opacity' as never]: controlsOpacityT,
           }}
           data-locked={interactionsLocked ? 'true' : 'false'}
@@ -119,10 +136,7 @@ export const Scene1Hero = memo(function Scene1Hero() {
         />
 
         {/* Headline — word-by-word reveal over blackout */}
-        <h2
-          className="hero-zoom-headline"
-          aria-hidden={p < 0.55}
-        >
+        <h2 className="hero-zoom-headline" aria-hidden={p < 0.65}>
           {words.map((w, i) => {
             const wp = mapRange(p, w.range[0], w.range[1], 0, 1);
             return (
@@ -146,12 +160,12 @@ export const Scene1Hero = memo(function Scene1Hero() {
           Every moment you don&apos;t measure is one you can&apos;t get back.
         </p>
 
-        {/* Scroll-hint chevron — only visible in idle phase */}
+        {/* Scroll-hint chevron — visible only during the idle phase */}
         <a
           className="scroll-hint"
           href="#scene-3"
           aria-label="Scroll to learn more"
-          style={{ opacity: mapRange(p, 0.0, 0.15, 1, 0) }}
+          style={{ opacity: mapRange(p, 0.0, 0.08, 1, 0) }}
         >
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none"
                stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"

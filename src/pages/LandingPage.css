@@ -36,7 +36,7 @@
 /* Per-scene heights (extra viewport-units for sticky/scroll-tied animations) */
 .scene--hero          { min-height: 100vh; }
 .scene--zoom          { min-height: 250vh; }   /* sticky zoom over 2.5vh */
-.scene--three-clicks  { min-height: 300vh; }   /* sticky 3-card reveal */
+.scene--three-clicks  { min-height: 220vh; }   /* sticky 3-card reveal — all cards visible by 50% */
 .scene--features      { min-height: 900vh; }   /* horizontal scroll inside — 180vh per card */
 .scene--roadmap       { min-height: 250vh; }   /* sticky reveal of 3 cards */
 .scene--trust         { min-height: 120vh; }
@@ -105,7 +105,16 @@
 .scene--hero-plus-zoom {
   display: block;
   position: relative;
-  height: 350vh;          /* outer scroll length — gives 250vh of zoom */
+  /* Outer scroll length. Choreography:
+     · 0–6%      idle (no transforms — hints render correctly)
+     · 6–20%     controls fade
+     · 20–55%    clock zooms 1.0× → 1.7×
+     · 55–75%    zoom + blackout 1.7× → 2.6×
+     · 65–94%    headline reveal
+     · 94–100%   hold before Scene 3
+     260vh = ~160vh of zoom journey + 100vh idle reveal.
+     Reduced from 350vh to tighten the gap before Scene 3. */
+  height: 260vh;
   background: var(--bg);
   overflow: visible;
 }

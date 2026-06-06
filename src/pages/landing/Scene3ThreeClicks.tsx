@@ -35,23 +35,25 @@ interface CardSpec {
 }
 
 const CARDS: readonly CardSpec[] = [
+  // Tighter staggered ranges — all 3 cards visible by 50% scroll progress,
+  // then they hold while the scene scrolls toward the next.
   {
     step: '1',
     title: 'Begin a session',
     body: 'Click once anywhere on the ring. A comet sweeps. Tracking starts.',
-    range: [0.10, 0.35],
+    range: [0.04, 0.20],
   },
   {
     step: '2',
     title: 'Set your goal',
     body: 'Click again where the minute hand should land. The arc fills toward it.',
-    range: [0.35, 0.60],
+    range: [0.18, 0.36],
   },
   {
     step: '3',
     title: 'Done.',
     body: 'A third click clears the session. If you\'re signed in, it\'s saved automatically.',
-    range: [0.60, 0.85],
+    range: [0.32, 0.52],
   },
 ];
 
@@ -59,8 +61,8 @@ export const Scene3ThreeClicks = memo(function Scene3ThreeClicks() {
   const sceneRef = useRef<HTMLElement>(null);
   const p = useScrollProgress(sceneRef);
 
-  // Section heading — fades in early, holds throughout the scene
-  const headingT = mapRange(p, 0.02, 0.12, 0, 1);
+  // Section heading — fades in early (alongside card 1's reveal), holds throughout
+  const headingT = mapRange(p, 0.02, 0.10, 0, 1);
 
   return (
     <section
