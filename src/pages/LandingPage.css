@@ -538,3 +538,176 @@
     transform: none !important;
   }
 }
+
+/* =========================================================================
+   SCENE 4 — "Five Ways to Use Your Time"
+
+   Vertical scroll drives horizontal motion inside a pinned panel.
+   The track contains 5 cards laid out in a row; we translate it left
+   as the user scrolls past 500vh of outer height.
+
+   On touch devices (≤ 960px), we collapse to a vertical scroll-snap
+   stack — horizontal-inside-vertical is awkward on touch.
+   ========================================================================= */
+
+.scene--features {
+  display: block;
+}
+
+.features-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5vh;
+  padding: 6vh 0;
+}
+
+.features-heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(28px, 5vmin, 56px);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--fg);
+  text-align: center;
+  padding: 0 6vw;
+  will-change: opacity, transform;
+}
+
+/* The horizontal scroll viewport — clips overflow, no scrollbars */
+.features-viewport {
+  width: 100%;
+  overflow: hidden;
+}
+
+/* The track holds all cards in a row */
+.features-track {
+  display: flex;
+  gap: 28px;
+  padding-left: calc(50vw - 200px);  /* Center the first card */
+  padding-right: calc(50vw - 200px); /* Center the last card */
+  will-change: transform;
+  /* No CSS transition — driven by inline transform from JS scroll progress */
+}
+
+/* Individual feature card */
+.feature-card {
+  flex: 0 0 auto;
+  width: min(82vw, 400px);
+  /* Card-internal layout */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 28px;
+  border-radius: 22px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  will-change: transform, box-shadow;
+  transition: box-shadow 280ms var(--ease-apple);
+}
+
+.feature-card__art {
+  width: 100%;
+  aspect-ratio: 5 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
+  border: 1px solid var(--fg-hairline);
+  overflow: hidden;
+}
+.feature-card__art svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.feature-card__title {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(20px, 2.4vmin, 24px);
+  letter-spacing: -0.02em;
+  color: var(--fg);
+}
+
+.feature-card__body {
+  margin: 0;
+  font-size: clamp(14px, 1.5vmin, 16px);
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--fg-muted);
+  text-wrap: pretty;
+}
+
+/* Progress dots at the bottom */
+.features-dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.features-dot {
+  display: inline-block;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--hand-second);
+  transition:
+    width 320ms var(--ease-apple),
+    opacity 320ms var(--ease-apple);
+}
+
+/* ── Tablet & smaller (≤ 960px): vertical scroll snap instead ────────── */
+@media (max-width: 960px) {
+  .scene--features { min-height: auto; }   /* No more 500vh */
+  .features-sticky {
+    position: relative;       /* Drop the sticky pin */
+    height: auto;
+    overflow: visible;
+    padding: 8vh 6vw;
+    gap: 4vh;
+  }
+  .features-heading { font-size: clamp(24px, 6vmin, 36px); }
+  .features-viewport { overflow: visible; }
+  .features-track {
+    flex-direction: column;
+    transform: none !important;  /* Disable horizontal motion */
+    padding: 0;
+    gap: 20px;
+    align-items: center;
+  }
+  .feature-card {
+    width: 100%;
+    max-width: 460px;
+    transform: none !important;
+    box-shadow: var(--shadow-pill) !important;
+  }
+  .features-dots { display: none; }  /* Not needed in vertical layout */
+}
+
+@media (max-width: 640px) {
+  .feature-card { padding: 22px; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .scene--features { min-height: auto; }
+  .features-sticky { position: relative; height: auto; overflow: visible; padding: 8vh 6vw; }
+  .features-heading { opacity: 1 !important; transform: none !important; }
+  .features-track {
+    flex-direction: column;
+    transform: none !important;
+    padding: 0; gap: 20px; align-items: center;
+  }
+  .feature-card { width: 100%; max-width: 460px; transform: none !important; }
+  .features-dots { display: none; }
+}

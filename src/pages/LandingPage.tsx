@@ -12,6 +12,7 @@ import { useEffect } from 'react';
 import { Scene1Hero } from './landing/Scene1Hero';
 import { Scene2Zoom } from './landing/Scene2Zoom';
 import { Scene3ThreeClicks } from './landing/Scene3ThreeClicks';
+import { Scene4Features } from './landing/Scene4Features';
 import './LandingPage.css';
 
 /* ------------------------------------------------------------------ */
@@ -54,11 +55,7 @@ export default function LandingPage() {
       <Scene3ThreeClicks />
 
       {/* SCENE 4 — Horizontal feature gallery */}
-      <section className="scene scene--features" data-scene="4" aria-label="Features">
-        <div className="scene-placeholder">
-          <p>Scene 4 — horizontal feature scroll (Steps 8–9)</p>
-        </div>
-      </section>
+      <Scene4Features />
 
       {/* SCENE 5 — Coming Soon */}
       <section className="scene scene--roadmap" data-scene="5" aria-label="Coming soon">
