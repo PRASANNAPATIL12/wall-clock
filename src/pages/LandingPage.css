@@ -16,8 +16,13 @@
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-display);
-  overflow-x: hidden;       /* prevent horizontal jitter from transforms */
-  overflow-y: visible;      /* let the document scroll naturally */
+  /* CRITICAL: use `clip`, NOT `hidden`. Mixing overflow-x:hidden with
+     overflow-y:visible makes the browser compute overflow-y as `auto`,
+     turning .landing into a scroll container — which breaks EVERY
+     position:sticky scene (they pin to .landing instead of the viewport).
+     `overflow-x: clip` clips horizontal jitter WITHOUT creating a scroll
+     container, so overflow-y stays truly visible and sticky works. */
+  overflow-x: clip;         /* prevent horizontal jitter from transforms */
   transition:
     background var(--d-theme) var(--ease-apple),
     color var(--d-theme) var(--ease-apple);
@@ -215,7 +220,10 @@
    - Headline text (#ece9e2 cream) has ~15:1 contrast on #1a1a1a — ✓
    - Lighter centre (#1a1a1a) + pure black edges gives cinematic depth */
 .hero-blackout {
-  position: fixed;
+  /* `absolute` (not fixed) so the blackout is clipped by .hero-sticky's
+     overflow:hidden — it appears ONLY while Scene 1's stage is pinned and
+     scrolls away with it afterward. (fixed glued it over every later scene.) */
+  position: absolute;
   inset: 0;
   /* z-index must be > z-indices of FocusClockApp descendants (Controls: 10,
      JoinPill: 9, HeroMessage: 7) to ensure blackout appears above all UI */
@@ -241,7 +249,9 @@
    · Drop-shadow: keeps text legible even at the darkest blackout edges
    ========================================================================= */
 .hero-zoom-headline {
-  position: fixed;
+  /* `absolute` (not fixed) — clipped to .hero-sticky like the blackout, so
+     the headline lives inside Scene 1 only and never overlays later scenes. */
+  position: absolute;
   inset: 0;
   /* z-index above blackout (100) so the headline reads on top of it */
   z-index: 200;
