@@ -215,12 +215,10 @@
    - Headline text (#ece9e2 cream) has ~15:1 contrast on #1a1a1a — ✓
    - Lighter centre (#1a1a1a) + pure black edges gives cinematic depth */
 .hero-blackout {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  /* z-index must be > z-index of .hero-app-wrap (1) AND > z-indices of any
-     position:fixed descendants of FocusClockApp (Controls: 10, JoinPill: 9,
-     HeroMessage: 7) in case those elements participate in .hero-sticky's
-     stacking context rather than .hero-app-wrap's. 100 is safely above all. */
+  /* z-index must be > z-indices of FocusClockApp descendants (Controls: 10,
+     JoinPill: 9, HeroMessage: 7) to ensure blackout appears above all UI */
   z-index: 100;
   background: radial-gradient(ellipse at center, #1a1a1a 0%, #000000 100%);
   pointer-events: none;
@@ -243,7 +241,7 @@
    · Drop-shadow: keeps text legible even at the darkest blackout edges
    ========================================================================= */
 .hero-zoom-headline {
-  position: absolute;
+  position: fixed;
   inset: 0;
   /* z-index above blackout (100) so the headline reads on top of it */
   z-index: 200;
