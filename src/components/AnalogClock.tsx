@@ -2,6 +2,7 @@ import { memo, useMemo } from 'react';
 import { useNow } from '../hooks/useNow';
 import { getZonedTime } from '../lib/timezones';
 import { FocusRing } from './FocusRing';
+import type { FocusState } from '../hooks/useFocusTrack';
 import './AnalogClock.css';
 
 interface Props {
@@ -15,6 +16,14 @@ interface Props {
   todayOnly?: boolean;
   onScheduleClose?: () => void;
   onPlanSessionCompleted?: () => void;
+  /** Forwarded to FocusRing so App.tsx can mirror focus state + controls. */
+  onFocusContext?: (ctx: {
+    state: FocusState;
+    pause: () => void;
+    resume: () => void;
+    stop: () => void;
+    startWithGoalAndTag: (startMs: number, endMs: number, tag: string | null) => void;
+  }) => void;
 }
 
 const C = 50; // center of 100x100 viewbox
@@ -71,7 +80,7 @@ const Numerals = memo(function Numerals({ currentHour }: { currentHour: number }
   return <g>{nums}</g>;
 });
 
-export const AnalogClock = memo(function AnalogClock({ timezone, userId, onSessionSaved, onManageTags, hintBoostMs, planRefreshKey, schedulingViewOpen, todayOnly, onScheduleClose, onPlanSessionCompleted }: Props) {
+export const AnalogClock = memo(function AnalogClock({ timezone, userId, onSessionSaved, onManageTags, hintBoostMs, planRefreshKey, schedulingViewOpen, todayOnly, onScheduleClose, onPlanSessionCompleted, onFocusContext }: Props) {
   const now = useNow('frame');
   const { hours, minutes, seconds, ms } = useMemo(
     () => getZonedTime(now, timezone),
@@ -99,6 +108,7 @@ export const AnalogClock = memo(function AnalogClock({ timezone, userId, onSessi
         todayOnly={todayOnly}
         onScheduleClose={onScheduleClose}
         onPlanSessionCompleted={onPlanSessionCompleted}
+        onFocusContext={onFocusContext}
       />
       <div className="analog__face" aria-hidden>
         <svg className="analog__dial" viewBox="0 0 100 100" role="img" aria-label="Analog clock face">

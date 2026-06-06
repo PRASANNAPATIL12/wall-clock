@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnalogClock } from './components/AnalogClock';
 import { DigitalClock } from './components/DigitalClock';
+import { PauseStopControl } from './components/PauseStopControl';
+import type { FocusState } from './hooks/useFocusTrack';
 import { ThemeToggle } from './components/controls/ThemeToggle';
 import { FullscreenToggle } from './components/controls/FullscreenToggle';
 import { TimezoneSelector } from './components/controls/TimezoneSelector';
@@ -61,6 +63,30 @@ export default function App() {
     setSettingsOpen(false);
     setOpenTagAdd(false);
   };
+  // ── Focus state mirror ─────────────────────────────────────────────────
+  // FocusRing publishes its state + controls via onFocusContext so that
+  // PauseStopControl and DigitalClock can consume them without lifting
+  // useFocusTrack out of FocusRing.
+  const [focusState, setFocusState] = useState<FocusState>({ kind: 'idle' });
+  const focusControlsRef = useRef<{
+    pause: () => void;
+    resume: () => void;
+    stop: () => void;
+    startWithGoalAndTag: (startMs: number, endMs: number, tag: string | null) => void;
+  } | null>(null);
+
+  const handleFocusContext = useCallback((ctx: {
+    state: FocusState;
+    pause: () => void;
+    resume: () => void;
+    stop: () => void;
+    startWithGoalAndTag: (startMs: number, endMs: number, tag: string | null) => void;
+  }) => {
+    setFocusState(ctx.state);
+    focusControlsRef.current = ctx;
+  }, []);
+  // ── /Focus state mirror ────────────────────────────────────────────────
+
   // Increments after every focus session save — triggers stats/history refetch.
   const [sessionSavedTick, setSessionSavedTick] = useState(0);
   const handleSessionSaved = () => setSessionSavedTick((n) => n + 1);
@@ -86,12 +112,16 @@ export default function App() {
     planRefreshKey,
   );
 
-  // Today's planned session count for the badge "today" label
-  const todayPlannedCount = (() => {
+  // Today's key and sessions — shared by the schedule badge count + digital chips
+  const todayKey = (() => {
     const today = new Date();
-    const key = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-    return plannedByDay.get(key)?.length ?? 0;
+    return `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   })();
+  const todayPlannedSessions = useMemo(
+    () => plannedByDay.get(todayKey) ?? [],
+    [plannedByDay, todayKey],
+  );
+  const todayPlannedCount = todayPlannedSessions.length;
 
   const todayStats = useTodayStats(auth.user?.id ?? null, tz, sessionSavedTick);
 
@@ -159,7 +189,7 @@ export default function App() {
   const titleRef = useRef<string>('');
   useEffect(() => {
     const { hours, minutes } = getZonedTime(now, tz);
-    const t = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} · Wall Clock`;
+    const t = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} · Focus Clock`;
     if (t !== titleRef.current) {
       document.title = t;
       titleRef.current = t;
@@ -184,12 +214,30 @@ export default function App() {
             todayOnly={scheduleMode === 'today'}
             onScheduleClose={() => setScheduleMode('closed')}
             onPlanSessionCompleted={handleScheduleChanged}
+            onFocusContext={handleFocusContext}
           />
         </div>
         <div className={`mode-layer ${!isAnalog ? 'is-in' : 'is-out-down'}`} aria-hidden={isAnalog}>
-          <DigitalClock timezone={tz} format={format} />
+          <DigitalClock
+            timezone={tz}
+            format={format}
+            focusState={focusState}
+            focusControlsRef={focusControlsRef}
+            userId={auth.user?.id ?? null}
+            todayPlannedSessions={auth.user ? todayPlannedSessions : []}
+            onManageTags={openTagSettings}
+          />
         </div>
       </div>
+
+      {/* Pause / Resume / Stop controls — shown when a session is running or paused.
+          Portal-rendered to body so z-index is evaluated at the root context. */}
+      <PauseStopControl
+        state={focusState}
+        onPause={() => focusControlsRef.current?.pause()}
+        onResume={() => focusControlsRef.current?.resume()}
+        onStop={() => focusControlsRef.current?.stop()}
+      />
 
       {/* Controls */}
       <div className="controls controls--tl">

@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { PointerEvent } from 'react';
 import { useNow } from '../hooks/useNow';
-import { useFocusTrack, type FocusSessionEnd } from '../hooks/useFocusTrack';
+import { useFocusTrack, type FocusSessionEnd, type FocusState } from '../hooks/useFocusTrack';
 import { getZonedTime } from '../lib/timezones';
 import { tick as hapticTick, prepareHaptic, celebrate } from '../lib/haptic';
 import { saveSession } from '../lib/sessionStore';
@@ -38,6 +38,19 @@ interface Props {
   onScheduleClose?: () => void;
   /** Called when a planned session is marked complete so the ring refresh fires. */
   onPlanSessionCompleted?: () => void;
+  /**
+   * Called whenever the focus state or controls change.
+   * App.tsx subscribes to mirror state into its own useState so
+   * PauseStopControl and DigitalClock can read it.
+   */
+  onFocusContext?: (ctx: {
+    state: FocusState;
+    pause: () => void;
+    resume: () => void;
+    stop: () => void;
+    /** Start a session AND pre-set the tag atomically (for digital timer). */
+    startWithGoalAndTag: (startMs: number, endMs: number, tag: string | null) => void;
+  }) => void;
 }
 
 /* viewBox geometry — all values in viewBox units (0..100). */
@@ -84,6 +97,7 @@ export const FocusRing = memo(function FocusRing({
   todayOnly = false,
   onScheduleClose,
   onPlanSessionCompleted,
+  onFocusContext,
 }: Props) {
   const now = useNow('second');
   const svgRef = useRef<SVGSVGElement>(null);
@@ -149,7 +163,26 @@ export const FocusRing = memo(function FocusRing({
     [timezone, onSessionSaved, onPlanSessionCompleted],
   );
 
-  const { state, handleClick, setDragEnd, startWithGoal } = useFocusTrack(timezone, handleSessionEnd);
+  const { state, handleClick, setDragEnd, startWithGoal, pause, resume, stop } = useFocusTrack(timezone, handleSessionEnd);
+
+  /**
+   * Start a session AND pre-set the tag so the TagPicker doesn't open.
+   * Used by the digital timer to pass tag + duration in one shot.
+   */
+  const startWithGoalAndTag = useCallback((startMs: number, endMs: number, tag: string | null) => {
+    // Synchronously update the ref so the TagPicker open-check sees it immediately
+    sessionTagRef.current = tag;
+    setSessionTag(tag);
+    startWithGoal(startMs, endMs);
+  }, [startWithGoal]);
+
+  // Publish focus state + controls to App.tsx so PauseStopControl and
+  // DigitalClock can read them without lifting useFocusTrack.
+  const onFocusContextRef = useRef(onFocusContext);
+  useEffect(() => { onFocusContextRef.current = onFocusContext; }, [onFocusContext]);
+  useEffect(() => {
+    onFocusContextRef.current?.({ state, pause, resume, stop, startWithGoalAndTag });
+  }, [state, pause, resume, stop, startWithGoalAndTag]);
 
   /* ---- Planned session "Start now" state ---- */
   /** The planned session currently running as a countdown arc. null = free session. */
@@ -223,8 +256,9 @@ export const FocusRing = memo(function FocusRing({
     const prev = prevKindRef.current;
     prevKindRef.current = state.kind;
     // Only react to the tracking→targeted transition; ignore drag updates
-    // (which keep state.kind == 'targeted' across renders).
-    if (prev !== 'targeted' && state.kind === 'targeted') {
+    // (which keep state.kind == 'targeted' across renders) and also ignore
+    // resume transitions (paused→targeted) since the tag is already set.
+    if (prev !== 'targeted' && prev !== 'paused' && state.kind === 'targeted') {
       if (userIdRef.current && sessionTagRef.current === null) {
         setTagPickerOpen(true);
       }
@@ -345,12 +379,24 @@ export const FocusRing = memo(function FocusRing({
     }
 
     // Click 2: tracking → targeted (anonymous user — no tag picker)
-    if (prev !== 'targeted' && state.kind === 'targeted' && !userIdRef.current) {
+    // Also ignore paused→targeted (resume) — that's not a new goal
+    if (prev !== 'targeted' && prev !== 'paused' && state.kind === 'targeted' && !userIdRef.current) {
       const mins = Math.round((state.end - state.start) / 60000);
       if (mins > 0) startGoalHintSeq(`Goal set · ${mins} min`);
     }
 
-    // Click 3: any → idle (session cleared)
+    // Pause
+    if (prev === 'targeted' && state.kind === 'paused') {
+      clearHintSeq();
+      showFeedback('Paused', 2000);
+    }
+
+    // Resume
+    if (prev === 'paused' && state.kind === 'targeted') {
+      showFeedback('Resumed', 2000);
+    }
+
+    // Click 3 / stop: any → idle (session cleared)
     if (prev !== 'idle' && state.kind === 'idle') {
       clearHintSeq();
       showFeedback('Session cleared', 2000);
@@ -362,6 +408,7 @@ export const FocusRing = memo(function FocusRing({
     const wasOpen = prevTagPickerOpenRef.current;
     prevTagPickerOpenRef.current = tagPickerOpen;
 
+    // Only on the initial goal-set (not after resume from paused)
     if (wasOpen && !tagPickerOpen && state.kind === 'targeted' && userIdRef.current) {
       const mins = Math.round((state.end - state.start) / 60000);
       if (mins > 0) startGoalHintSeq(`Goal set · ${mins} min`);
@@ -384,9 +431,10 @@ export const FocusRing = memo(function FocusRing({
    */
   const arcLength = useMemo((): number | null => {
     if (!activePlanSession || arcStartMinAngle === null) return null;
-    if (state.kind !== 'targeted') return null;
-    const totalMs  = state.end - state.start;
-    const remainMs = Math.max(0, state.end - now.getTime());
+    if (state.kind !== 'targeted' && state.kind !== 'paused') return null;
+    const totalMs    = state.end - state.start;
+    const effectiveNow = state.kind === 'paused' ? state.pausedAt : now.getTime();
+    const remainMs   = Math.max(0, state.end - effectiveNow);
     return (remainMs / totalMs) * 360;
   }, [activePlanSession, arcStartMinAngle, state, now]);
 
@@ -447,7 +495,9 @@ export const FocusRing = memo(function FocusRing({
 
     const startZt = getZonedTime(new Date(state.start), timezone);
     const startAngle = ((startZt.minutes + startZt.seconds / 60) * 6) % 360;
-    const elapsedMs = now.getTime() - state.start;
+    // When paused, freeze all display calculations at the pause moment
+    const effectiveNow = state.kind === 'paused' ? state.pausedAt : now.getTime();
+    const elapsedMs = effectiveNow - state.start;
     const sweep = (elapsedMs / 60000) * 6;
     const realHead = (startAngle + sweep) % 360;
     const lap = Math.floor(elapsedMs / 3_600_000) + 1;
@@ -467,6 +517,7 @@ export const FocusRing = memo(function FocusRing({
       };
     }
 
+    // targeted or paused — both have start + end
     const endZt = getZonedTime(new Date(state.end), timezone);
     const endAngle = ((endZt.minutes + endZt.seconds / 60) * 6) % 360;
     const targetMs = state.end - state.start;
@@ -876,6 +927,9 @@ export const FocusRing = memo(function FocusRing({
                 <span className="focus-timer__elapsed">{fmt(data.elapsed)}</span>
                 {data.target !== null && (
                   <span className="focus-timer__target"> /{fmt(data.target)}</span>
+                )}
+                {state.kind === 'paused' && (
+                  <span className="focus-timer__paused" aria-label="Paused"> ⏸</span>
                 )}
               </>
             ) : (
