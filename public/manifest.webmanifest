@@ -1,7 +1,7 @@
 {
-  "name": "Wall Clock — Online Analog & Digital Clock",
-  "short_name": "Wall Clock",
-  "description": "A beautiful, minimalist online wall clock with sweep-seconds analog and digital modes, world timezones, dark mode and fullscreen.",
+  "name": "Focus Clock — Focus Timer & Productivity Tracker",
+  "short_name": "Focus Clock",
+  "description": "A free focus timer and productivity tracker. Set timed focus sessions on a beautiful analog clock, tag your work, track streaks, and analyse your focus patterns.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

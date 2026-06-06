@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://wall-clock.vercel.app/sitemap.xml
+Sitemap: https://focusclock.app/sitemap.xml
 
 # Friendly note to crawlers
-# Wall Clock is a single-page web app — index the root URL.
+# Focus Clock is a single-page web app — index the root URL.
