@@ -1,0 +1,1591 @@
+/* =========================================================================
+   LandingPage — Cinematic scrollytelling homepage
+   =========================================================================
+   Layout primitives used across all scenes:
+   · .landing            — root wrapper (lets the page scroll naturally)
+   · .scene              — each viewport section, ≥ 100vh
+   · .scene--<name>      — per-scene styling
+   · .scene-placeholder  — temp dev-marker until each scene is built
+   ========================================================================= */
+
+.landing {
+  /* Allow vertical scroll (the existing App uses position:fixed/inset:0 — we don't) */
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-display);
+  /* CRITICAL: use `clip`, NOT `hidden`. Mixing overflow-x:hidden with
+     overflow-y:visible makes the browser compute overflow-y as `auto`,
+     turning .landing into a scroll container — which breaks EVERY
+     position:sticky scene (they pin to .landing instead of the viewport).
+     `overflow-x: clip` clips horizontal jitter WITHOUT creating a scroll
+     container, so overflow-y stays truly visible and sticky works. */
+  overflow-x: clip;         /* prevent horizontal jitter from transforms */
+  transition:
+    background var(--d-theme) var(--ease-apple),
+    color var(--d-theme) var(--ease-apple);
+}
+
+/* Each scene = full viewport minimum, contains its own narrative beat */
+.scene {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Per-scene heights (extra viewport-units for sticky/scroll-tied animations) */
+.scene--hero          { min-height: 100vh; }
+.scene--zoom          { min-height: 250vh; }   /* sticky zoom over 2.5vh */
+.scene--three-clicks  { min-height: 220vh; }   /* sticky 3-card reveal — all cards visible by 50% */
+.scene--features      { min-height: 900vh; }   /* horizontal scroll inside — 180vh per card */
+.scene--roadmap       { min-height: 250vh; }   /* sticky reveal of 3 cards */
+.scene--trust         { min-height: 120vh; }
+.scene--invite        { min-height: 120vh; }
+.scene--faq           { min-height: 100vh; }
+.scene--footer        { min-height: 80vh; }
+
+/* Placeholder marker — visible during early development.
+   Will be replaced by real scene content in later steps. */
+.scene-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px;
+  border: 1px dashed var(--fg-hairline);
+  border-radius: 14px;
+  background: var(--glass-bg);
+  color: var(--fg-muted);
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  text-align: center;
+  max-width: 480px;
+}
+.scene-placeholder h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 32px;
+  letter-spacing: -0.03em;
+  color: var(--fg);
+  margin: 0;
+}
+.scene-placeholder p {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* Respect reduced-motion preference globally on the landing page */
+@media (prefers-reduced-motion: reduce) {
+  .landing,
+  .landing * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* =========================================================================
+   SCENE 1 + 2 (merged) — "The Clock Is Alive" → "Your Time Is Finite"
+
+   ONE tall section (350vh) holds the REAL FocusClockApp (embedded mode).
+   A sticky inner stage pins the app to the viewport while the outer
+   container scrolls. Scroll progress (0..1) drives:
+
+     · 0.00–0.28  IDLE — full app, fully interactive (matches /app)
+     · 0.28–0.55  ZOOM — clock scales 1× → 2.4×, controls fade out
+     · 0.55–0.92  BLACKOUT + word-by-word headline reveal
+     · 0.92–1.00  HOLD before Scene 3
+
+   This is the ONLY scene that embeds the real <FocusClockApp />. Every
+   later scene uses lighter-weight visuals so the page stays fast.
+   ========================================================================= */
+
+.scene--hero-plus-zoom {
+  display: block;
+  position: relative;
+  /* Outer scroll length drives the full cinematic sequence:
+     · 0–35%     controls fade out while clock begins zooming
+     · 0–50%     clock zooms 1.0× → 1.7× (Phase I, easeInOutCubic)
+     · 50–100%   clock continues 1.7× → 2.8× (Phase II, easeInOutCubic)
+     · 50–75%    blackout fades in (opacity 0 → 1)
+     · 68–82%    clock fades behind blackout
+     · 72–100%   headline "Every moment…" word-by-word reveal
+     350vh gives ~250vh of scroll travel inside the sticky stage. */
+  height: 350vh;
+  background: var(--bg);
+  overflow: visible;
+}
+
+/* Sticky inner — pins the live app + overlays to the viewport.
+   `isolation: isolate` creates an explicit stacking context so that
+   z-indices of EVERYTHING inside (.hero-app-wrap children, .hero-blackout,
+   .hero-zoom-headline) are resolved WITHIN this element — no child can
+   "escape" and compete with elements outside. This is the primary guard
+   against position:fixed UI (Controls, JoinPill) appearing above the
+   blackout overlay. */
+.hero-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* The embedded FocusClockApp wrapper.
+   Scroll-driven transforms applied via inline style:
+     · transform: scale(...)
+     · opacity: ...
+     · pointer-events
+     · --controls-opacity (CSS var consumed by descendant rules below) */
+.hero-app-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  /* Hardware-accelerated transform origin at viewport center */
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+  /* Scale + opacity changes update at scroll-event rate; transition
+     smooths between RAF frames without overshooting */
+  transition: opacity 80ms linear;
+}
+
+/* When the zoom phase begins, fade out everything that ISN'T the clock.
+   The --controls-opacity custom property is updated by the inline style
+   on .hero-app-wrap (driven by scroll progress).
+
+   We target the corner controls, the JoinPill, the HeroMessage, the
+   AccountIcon, and the TodaySummary — i.e. EVERYTHING except the
+   .clock-canvas-layer at the center. */
+.hero-app-wrap .stage--embedded .controls,
+.hero-app-wrap .stage--embedded .joinpill,
+.hero-app-wrap .stage--embedded .joinpill-wrap,
+.hero-app-wrap .stage--embedded .hero-message,
+.hero-app-wrap .stage--embedded .account-icon,
+.hero-app-wrap .stage--embedded .today-summary,
+.hero-app-wrap .stage--embedded .daily-goal-bar,
+.hero-app-wrap .stage--embedded .schedule-badge,
+.hero-app-wrap .stage--embedded .pause-stop-control {
+  opacity: var(--controls-opacity, 1);
+  transition: opacity 200ms var(--ease-apple);
+  will-change: opacity;
+}
+
+/* When pointer events are locked (set as data attribute on the wrapper),
+   no descendant can be clicked. Belt-and-suspenders with the inline
+   pointer-events: none. */
+.hero-app-wrap[data-locked='true'] {
+  pointer-events: none;
+}
+
+/* The clock + focus ring are NEVER interactive on the landing.
+   Reason: clicking the ring would start a session, which is meaningful
+   only in /app. On the landing, the clock is purely cinematic — the
+   user goes to /app (via JoinPill → sign in, or directly) to interact.
+
+   This also prevents the Pause/Stop control from appearing on the
+   landing, which would otherwise show as soon as the user clicked
+   the ring. The ring renders + animates normally, just can't be
+   clicked while on /. */
+.hero-app-wrap .clock-canvas-layer {
+  pointer-events: none;
+}
+
+/* Anonymous landing — auth-related UI never appears.
+   When the landing renders, the auth state is guaranteed anonymous
+   (logged-in users get redirected to /app via useAnonymousLandingGuard).
+   These rules are belt-and-suspenders for any edge case where the
+   async useAuth hook hasn't resolved yet. */
+.hero-app-wrap .account-icon,
+.hero-app-wrap .today-summary,
+.hero-app-wrap .daily-goal-bar,
+.hero-app-wrap .schedule-badge {
+  display: none !important;
+}
+
+/* Blackout overlay — sits ABOVE the app, opacity driven by scroll.
+
+   Starts at opacity 0 (p=0.5) and reaches fully opaque at p=0.75.
+   Uses a solid dark radial gradient in BOTH themes so the headline
+   text reads reliably regardless of light/dark mode.
+
+   - The clock fades separately via clockOpacityT on .hero-app-wrap
+   - Headline text (#ece9e2 cream) has ~15:1 contrast on #1a1a1a — ✓
+   - Lighter centre (#1a1a1a) + pure black edges gives cinematic depth */
+.hero-blackout {
+  /* `absolute` (not fixed) so the blackout is clipped by .hero-sticky's
+     overflow:hidden — it appears ONLY while Scene 1's stage is pinned and
+     scrolls away with it afterward. (fixed glued it over every later scene.) */
+  position: absolute;
+  inset: 0;
+  /* z-index must be > z-indices of FocusClockApp descendants (Controls: 10,
+     JoinPill: 9, HeroMessage: 7) to ensure blackout appears above all UI */
+  z-index: 100;
+  background: radial-gradient(ellipse at center, #1a1a1a 0%, #000000 100%);
+  pointer-events: none;
+  will-change: opacity;
+}
+
+/* =========================================================================
+   Zoom-phase headline — "Every moment you don't measure is one you can't
+   get back." Sits ABOVE the blackout overlay.
+
+   Typography choices:
+   · Font family: 'Special Elite' — same typewriter used by Scene 1's
+     hero message + footer credit. One consistent voice throughout.
+   · Size: clamp(1.4rem, 3vw, 2.6rem) — scales with viewport width,
+     clamped for very narrow/wide extremes
+   · Color: #ece9e2 (warm cream) — high contrast (~15:1) against the
+     solid dark blackout in both light and dark themes. Previously used
+     white; cream is softer and more on-brand with the clock's warm tone.
+   · line-height/gap: 1.6 with 0.3em flex gap for breathing room
+   · Drop-shadow: keeps text legible even at the darkest blackout edges
+   ========================================================================= */
+.hero-zoom-headline {
+  /* `absolute` (not fixed) — clipped to .hero-sticky like the blackout, so
+     the headline lives inside Scene 1 only and never overlays later scenes. */
+  position: absolute;
+  inset: 0;
+  /* z-index above blackout (100) so the headline reads on top of it */
+  z-index: 200;
+  margin: 0;
+  /* flex-column with TWO .hero-zoom-headline-line children (one per line of
+     text). The gap here is the space between LINE 1 and LINE 2 — not between
+     individual words, which is controlled by word margin. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2em;
+  padding: 0 6vw;
+  /* Special Elite — typewriter voice, ties back to hero message + footer */
+  font-family: 'Special Elite', var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.4rem, 3vw, 2.6rem);
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+  text-align: center;
+  color: #ece9e2;
+  max-width: none;
+  text-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.85),
+    0 0 36px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+/* One line-container per prose line ("Every moment you don't measure" /
+   "is one you can't get back."). Being block-level flex items inside the
+   column flex parent, they stack vertically. Words INSIDE each container
+   are inline-blocks that flow left-to-right and wrap naturally on mobile. */
+.hero-zoom-headline-line {
+  display: block;
+  text-align: center;
+  max-width: 100%;
+}
+
+/* Each word starts hidden and slides up.
+   `.revealed` is toggled by Scene1Hero.tsx when the scroll threshold
+   for that word is crossed. CSS transition handles the smooth reveal. */
+.hero-zoom-word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  margin: 0 0.18em;
+  will-change: opacity, transform;
+}
+.hero-zoom-word.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+/* Red accent on the final word "back." — rhymes with the second-hand colour
+   and lands the beat with visual weight.
+   HARDCODED #c8312b (not var(--hand-second)) because Scene 2 ALWAYS renders
+   against a dark background regardless of light/dark theme — using a CSS
+   variable would risk the wrong hue if the token ever diverges per-theme.
+   Selector targets .last-word.revealed so the glow only activates once the
+   word is actually visible (avoids a faint invisible glow during scroll). */
+.hero-zoom-word.last-word.revealed {
+  color: #c8312b;
+  text-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.85),
+    0 0 48px rgba(200, 49, 43, 0.45);
+}
+
+/* Mobile: slightly larger vw-relative value so text fills the narrower screen */
+@media (max-width: 640px) {
+  .hero-zoom-headline {
+    font-size: clamp(1.2rem, 5vw, 2rem);
+    letter-spacing: 0.01em;
+    padding: 0 8vw;
+  }
+}
+
+/* Scroll-hint chevron — pulses gently at the bottom */
+.scroll-hint {
+  position: absolute;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--fg-muted);
+  opacity: 0.55;
+  text-decoration: none;
+  z-index: 2;
+  animation:
+    fade-up 700ms var(--ease-apple) 2400ms both,
+    scroll-hint-bob 2.4s var(--ease-out) 3000ms infinite;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  transition: opacity 220ms var(--ease-apple), background 220ms var(--ease-apple);
+}
+.scroll-hint:hover,
+.scroll-hint:focus-visible {
+  opacity: 1;
+  background: var(--glass-bg);
+  outline: none;
+}
+
+/* Fade-up entry — used for hero elements + scroll hint */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Bobbing chevron — subtle vertical drift to draw the eye downward */
+@keyframes scroll-hint-bob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(6px); }
+}
+
+/* Visually-hidden but screen-reader-accessible (full sentence for a11y) */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0);
+  white-space: nowrap; border: 0;
+}
+
+/* =========================================================================
+   .hero-clock — shared visual clock wrapper used by Scenes 3 + 7
+   (visual-only HeroClock component; the real interactive clock lives in
+   Scene 1's embedded FocusClockApp)
+
+   Each scene that uses HeroClock sets its own outer width on the
+   wrapper (.clicks-clock, .invite-clock). These rules ensure the
+   inner clock fills that wrapper and renders at the right size.
+   ========================================================================= */
+
+.hero-clock {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* The clock face is NEVER clickable on landing — purely visual */
+  pointer-events: none;
+}
+
+.hero-clock__inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Force the AnalogClock / DigitalClock root to fill the wrapper.
+   Both components default to their own intrinsic vmin-based sizes
+   which would overflow our smaller wrappers; this override clamps
+   them to the wrapper's box. */
+.hero-clock__inner > .analog,
+.hero-clock__inner > [class*='digital-face'] {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+}
+
+/* Mobile portrait — same proportional 350vh keeps timing consistent.
+   Font override handled by the .hero-zoom-headline @media rule above. */
+@media (max-width: 640px) {
+  .scene--hero-plus-zoom { height: 350vh; }
+  .scroll-hint { bottom: 24px; }
+}
+
+/* Reduced motion — static clock at full size, no zoom/blackout/headline */
+@media (prefers-reduced-motion: reduce) {
+  .scene--hero-plus-zoom { height: 100vh; }
+  .hero-app-wrap {
+    transform: none !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+  .hero-app-wrap .stage--embedded * { opacity: 1 !important; }
+  .hero-blackout { opacity: 0 !important; }
+  .hero-zoom-headline { display: none; }
+  /* Line containers + words: final state immediately if headline somehow visible */
+  .hero-zoom-headline-line { opacity: 1 !important; }
+  .hero-zoom-word { opacity: 1 !important; transform: none !important; transition: none !important; }
+}
+
+/* =========================================================================
+   SCENE 3 — "Three Clicks. One Focused Hour."
+
+   Two-column layout: clock pinned to the LEFT, three cards reveal on the
+   RIGHT as the user scrolls. On mobile, flips to vertical stack.
+
+   Outer height: 300vh (defined above). Inner is sticky for the duration.
+   ========================================================================= */
+
+.scene--three-clicks {
+  display: block;
+}
+
+.clicks-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clicks-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 6vw;
+  align-items: center;
+  width: 100%;
+  max-width: 1280px;
+  padding: 0 6vw;
+}
+
+.clicks-clock-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clicks-clock {
+  width: min(48vmin, 480px);
+  height: min(48vmin, 480px);
+  pointer-events: none;
+  /* Soft shadow that HUGS the round dial.
+     IMPORTANT: filter:drop-shadow() takes a SINGLE shadow only — the
+     multi-layer `--shadow-face` token (two comma-separated shadows) is
+     invalid inside drop-shadow() and makes the browser silently drop the
+     whole filter, leaving the elevated face floating as an unfitted light
+     disc. Stacked drop-shadow() functions are valid and each follows the
+     face's circular alpha, so the shadow is round and fitted to the clock. */
+  filter:
+    drop-shadow(0 24px 50px rgba(20, 20, 25, 0.18))
+    drop-shadow(0 6px 14px rgba(20, 20, 25, 0.12));
+}
+.clicks-clock .hero-clock { width: 100%; height: 100%; }
+
+.clicks-cards-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.clicks-heading {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(28px, 4.2vmin, 48px);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--fg);
+  text-wrap: balance;
+  will-change: opacity, transform;
+}
+
+.clicks-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.clicks-card {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 22px 22px 22px 18px;
+  border-radius: 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-pill);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  will-change: opacity, transform;
+  /* Card-level highlight when this step is "active" via scroll */
+  transition: box-shadow 320ms var(--ease-apple), border-color 320ms var(--ease-apple);
+}
+.clicks-card[aria-current='step'] {
+  box-shadow: var(--shadow-pop);
+  border-color: color-mix(in srgb, var(--hand-second) 28%, var(--glass-border));
+}
+
+.clicks-card__step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--hand-second) 12%, transparent);
+  color: var(--hand-second);
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+.clicks-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.clicks-card__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(17px, 1.8vmin, 21px);
+  letter-spacing: -0.015em;
+  color: var(--fg);
+}
+
+.clicks-card__text {
+  margin: 0;
+  font-size: clamp(14px, 1.45vmin, 16px);
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--fg-muted);
+  text-wrap: pretty;
+}
+
+/* ── Tablet & smaller (≤ 960px): stack vertical ──────────────────────── */
+@media (max-width: 960px) {
+  .scene--three-clicks { min-height: 250vh; }
+  .clicks-stage {
+    grid-template-columns: 1fr;
+    gap: 4vh;
+    padding: 4vh 6vw;
+  }
+  .clicks-clock { width: min(42vmin, 360px); height: min(42vmin, 360px); }
+  .clicks-heading { text-align: center; font-size: clamp(24px, 5vmin, 36px); }
+  .clicks-cards { max-width: 540px; margin: 0 auto; width: 100%; }
+}
+
+@media (max-width: 640px) {
+  .clicks-clock { width: min(56vmin, 280px); height: min(56vmin, 280px); }
+  .clicks-card { padding: 16px 16px 16px 14px; gap: 14px; }
+  .clicks-card__step { width: 32px; height: 32px; font-size: 12px; }
+}
+
+/* Reduced motion — show all cards immediately */
+@media (prefers-reduced-motion: reduce) {
+  .scene--three-clicks { min-height: 100vh; }
+  .clicks-heading,
+  .clicks-card {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* =========================================================================
+   SCENE 4 — "Five Ways to Use Your Time"
+
+   Vertical scroll drives horizontal motion inside a pinned panel.
+   The track contains 5 cards laid out in a row; we translate it left
+   as the user scrolls past 500vh of outer height.
+
+   On touch devices (≤ 960px), we collapse to a vertical scroll-snap
+   stack — horizontal-inside-vertical is awkward on touch.
+   ========================================================================= */
+
+.scene--features {
+  display: block;
+}
+
+.features-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5vh;
+  padding: 6vh 0;
+}
+
+.features-heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(28px, 5vmin, 56px);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--fg);
+  text-align: center;
+  padding: 0 6vw;
+  will-change: opacity, transform;
+}
+
+/* The horizontal scroll viewport — clips overflow, no scrollbars */
+.features-viewport {
+  width: 100%;
+  overflow: hidden;
+}
+
+/* The track holds all cards in a row */
+.features-track {
+  display: flex;
+  gap: 28px;
+  padding-left: calc(50vw - 200px);  /* Center the first card */
+  padding-right: calc(50vw - 200px); /* Center the last card */
+  will-change: transform;
+  /* No CSS transition — driven by inline transform from JS scroll progress */
+}
+
+/* Individual feature card */
+.feature-card {
+  flex: 0 0 auto;
+  width: min(82vw, 400px);
+  /* Card-internal layout */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 28px;
+  border-radius: 22px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  will-change: transform, box-shadow;
+  transition: box-shadow 280ms var(--ease-apple);
+}
+
+.feature-card__art {
+  width: 100%;
+  aspect-ratio: 5 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
+  border: 1px solid var(--fg-hairline);
+  overflow: hidden;
+}
+.feature-card__art svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.feature-card__title {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(20px, 2.4vmin, 24px);
+  letter-spacing: -0.02em;
+  color: var(--fg);
+}
+
+.feature-card__body {
+  margin: 0;
+  font-size: clamp(14px, 1.5vmin, 16px);
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--fg-muted);
+  text-wrap: pretty;
+}
+
+/* Progress dots at the bottom */
+.features-dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.features-dot {
+  display: inline-block;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--hand-second);
+  transition:
+    width 320ms var(--ease-apple),
+    opacity 320ms var(--ease-apple);
+}
+
+/* ── Tablet & smaller (≤ 960px): vertical scroll snap instead ────────── */
+@media (max-width: 960px) {
+  .scene--features { min-height: auto; }   /* No more 500vh */
+  .features-sticky {
+    position: relative;       /* Drop the sticky pin */
+    height: auto;
+    overflow: visible;
+    padding: 8vh 6vw;
+    gap: 4vh;
+  }
+  .features-heading { font-size: clamp(24px, 6vmin, 36px); }
+  .features-viewport { overflow: visible; }
+  .features-track {
+    flex-direction: column;
+    transform: none !important;  /* Disable horizontal motion */
+    padding: 0;
+    gap: 20px;
+    align-items: center;
+  }
+  .feature-card {
+    width: 100%;
+    max-width: 460px;
+    transform: none !important;
+    box-shadow: var(--shadow-pill) !important;
+  }
+  .features-dots { display: none; }  /* Not needed in vertical layout */
+}
+
+@media (max-width: 640px) {
+  .feature-card { padding: 22px; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .scene--features { min-height: auto; }
+  .features-sticky { position: relative; height: auto; overflow: visible; padding: 8vh 6vw; }
+  .features-heading { opacity: 1 !important; transform: none !important; }
+  .features-track {
+    flex-direction: column;
+    transform: none !important;
+    padding: 0; gap: 20px; align-items: center;
+  }
+  .feature-card { width: 100%; max-width: 460px; transform: none !important; }
+  .features-dots { display: none; }
+}
+
+/* =========================================================================
+   SCENE 5 — "Coming Soon" (sticky sequential reveal)
+
+   Outer height: 250vh (set in scene-heights section). Inner is sticky
+   pinned for the duration. Heading fades in alone, then each card
+   raises up one-by-one as user scrolls. Once all 3 are visible, the
+   section releases scroll to Scene 6.
+   ========================================================================= */
+
+.scene--roadmap {
+  display: block;
+  position: relative;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* Sticky inner — pins for the duration of the 250vh outer scroll */
+.roadmap-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6vh 6vw;
+}
+
+.roadmap-stage {
+  width: 100%;
+  max-width: 1100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6vh;
+  position: relative;
+  z-index: 2;
+}
+
+.roadmap-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.roadmap-eyebrow {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  will-change: opacity, transform;
+}
+
+.roadmap-heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(32px, 5vmin, 56px);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--fg);
+  will-change: opacity, transform;
+}
+
+.roadmap-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  width: 100%;
+}
+
+.roadmap-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 28px;
+  border-radius: 18px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-pill);
+  will-change: opacity, transform;
+}
+
+.roadmap-card__glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--hand-second) 12%, transparent);
+  color: var(--hand-second);
+}
+
+.roadmap-card__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(17px, 1.9vmin, 20px);
+  letter-spacing: -0.015em;
+  color: var(--fg);
+}
+
+.roadmap-card__body {
+  margin: 0;
+  font-size: clamp(14px, 1.45vmin, 15px);
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--fg-muted);
+  text-wrap: pretty;
+}
+
+/* Particle field — soft drift upward.
+   Opacity boosted from earlier version (0.18 peak → 0.55 peak) so the
+   "brewing, in progress" atmosphere reads on screen. Also adds a soft
+   glow so each particle catches light against the bg. */
+.roadmap-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+.roadmap-particle {
+  position: absolute;
+  bottom: -20px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--hand-second);   /* red — matches second-hand tint */
+  box-shadow: 0 0 8px 1px color-mix(in srgb, var(--hand-second) 60%, transparent);
+  opacity: 0;
+  animation: roadmap-particle-drift 14s linear infinite;
+}
+[data-theme='dark'] .roadmap-particle {
+  background: color-mix(in srgb, var(--hand-second) 80%, white);
+  box-shadow: 0 0 10px 2px color-mix(in srgb, var(--hand-second) 70%, transparent);
+}
+@keyframes roadmap-particle-drift {
+  0%   { transform: translateY(0)     scale(0.55); opacity: 0; }
+  10%  { opacity: 0.55; }
+  80%  { opacity: 0.35; }
+  100% { transform: translateY(-110vh) scale(1.0); opacity: 0; }
+}
+
+/* ── Tablet & smaller (≤ 960px): single-column stack ─────────────────── */
+@media (max-width: 960px) {
+  .scene--roadmap { min-height: auto; }
+  .roadmap-sticky {
+    position: relative;
+    height: auto;
+    overflow: visible;
+    padding: 8vh 6vw;
+  }
+  .roadmap-grid { grid-template-columns: 1fr; max-width: 460px; }
+  .roadmap-particles { display: none; }   /* Battery savings on mobile */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene--roadmap { min-height: auto; }
+  .roadmap-sticky { position: relative; height: auto; }
+  .roadmap-particle { animation: none; display: none; }
+  .roadmap-card, .roadmap-eyebrow, .roadmap-heading {
+    opacity: 1 !important; transform: none !important;
+  }
+}
+
+/* =========================================================================
+   SCENE 6 — "Trusted by Humans Who Focus"
+
+   Counter animation, text-only institution cascade (no logo wall),
+   testimonial card at the end. Soft, restrained — not "every SaaS".
+   ========================================================================= */
+
+.scene--trust {
+  padding: 12vh 6vw;
+  flex-direction: column;
+}
+
+.trust-stage {
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5vh;
+  text-align: center;
+}
+
+.trust-headline-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.trust-eyebrow {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  will-change: opacity;
+}
+
+.trust-headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(28px, 4.6vmin, 52px);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--fg);
+  text-wrap: balance;
+  will-change: opacity, transform;
+}
+
+/* The numeric counter — slightly bolder to draw the eye */
+.trust-counter {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  color: var(--hand-second);
+  font-variant-numeric: tabular-nums;
+}
+
+.trust-headline__rest {
+  font-weight: 300;
+  color: var(--fg);
+}
+
+.trust-subhead {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(14px, 1.6vmin, 17px);
+  color: var(--fg-muted);
+  max-width: 56ch;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+/* Institution names — text only, no logo files (legally safe) */
+.trust-institutions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 32px;
+  max-width: 880px;
+}
+
+.trust-institution {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(15px, 1.7vmin, 18px);
+  letter-spacing: 0.005em;
+  color: var(--fg);
+  will-change: opacity, transform;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.trust-disclaimer {
+  margin: -2vh 0 0;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--fg-muted);
+  opacity: 0;
+  max-width: 60ch;
+  line-height: 1.5;
+  will-change: opacity;
+}
+
+/* Three testimonials in a row — each card holds one quote */
+.trust-testimonials {
+  list-style: none;
+  margin: 4vh 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 1100px;
+}
+.trust-testimonial-item {
+  display: flex;
+}
+
+.trust-testimonial {
+  margin: 0;
+  width: 100%;
+  padding: 26px 28px;
+  border-radius: 18px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-pop);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  will-change: opacity, transform;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.trust-testimonial__text {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(15px, 1.7vmin, 18px);
+  line-height: 1.5;
+  letter-spacing: -0.012em;
+  color: var(--fg);
+  text-wrap: pretty;
+}
+
+.trust-testimonial__by {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--fg-muted);
+  border: none;
+}
+.trust-testimonial__name {
+  font-weight: 500;
+  color: var(--fg);
+}
+.trust-testimonial__role {
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* ── Tablet (≤ 960px): testimonials stack to 1 column ────────────────── */
+@media (max-width: 960px) {
+  .trust-testimonials {
+    grid-template-columns: 1fr;
+    max-width: 560px;
+  }
+}
+
+/* ── Mobile ──────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .scene--trust { padding: 10vh 5vw; }
+  .trust-institutions { gap: 6px 20px; }
+  .trust-institution { font-size: 14px; }
+  .trust-testimonial { padding: 22px 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trust-headline, .trust-eyebrow, .trust-subhead,
+  .trust-institution, .trust-testimonial, .trust-disclaimer {
+    opacity: 1 !important; transform: none !important;
+  }
+  .trust-disclaimer { opacity: 0.7 !important; }
+}
+
+/* =========================================================================
+   SCENE 7 — "Start Now" (the invitation)
+
+   Clock RISES from below with a soft glow. Two CTAs follow.
+   Primary: Save your progress (opens AuthModal)
+   Ghost:   Open the clock (go to /app, no account)
+   ========================================================================= */
+
+.scene--invite {
+  padding: 12vh 6vw;
+}
+
+.invite-stage {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3vh;
+  text-align: center;
+}
+
+/* Rising clock with glow halo */
+.invite-clock {
+  position: relative;
+  width: min(36vmin, 380px);
+  height: min(36vmin, 380px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  margin-bottom: 2vh;
+  will-change: opacity, transform;
+}
+.invite-clock .hero-clock {
+  width: 100%;
+  height: 100%;
+}
+.invite-clock__glow {
+  position: absolute;
+  inset: -30%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    color-mix(in srgb, var(--hand-second) 18%, transparent) 0%,
+    color-mix(in srgb, var(--hand-second) 8%, transparent) 30%,
+    transparent 65%
+  );
+  filter: blur(28px);
+  z-index: -1;
+  animation: invite-glow-breathe 5.5s var(--ease-out) infinite;
+}
+@keyframes invite-glow-breathe {
+  0%, 100% { opacity: 0.7; transform: scale(0.95); }
+  50%      { opacity: 1;   transform: scale(1.05); }
+}
+
+.invite-headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(28px, 4.4vmin, 48px);
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: var(--fg);
+  text-wrap: balance;
+  will-change: opacity, transform;
+}
+
+.invite-subhead {
+  margin: 0;
+  font-family: 'Special Elite', var(--font-display);
+  font-size: clamp(16px, 1.9vmin, 19px);
+  font-weight: 400;
+  color: var(--fg-muted);
+  will-change: opacity;
+}
+
+.invite-ctas {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 2vh;
+}
+
+/* CTA base style — matches existing pill design language */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 24px;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 15px;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-decoration: none;
+  user-select: none;
+  will-change: opacity, transform;
+  transition:
+    transform 200ms var(--ease-apple),
+    background-color 200ms var(--ease-apple),
+    border-color 200ms var(--ease-apple),
+    box-shadow 200ms var(--ease-apple);
+}
+.cta:hover {
+  transform: translateY(-1px);
+}
+.cta:active {
+  transform: translateY(0) scale(0.985);
+  transition-duration: 80ms;
+}
+.cta:focus-visible {
+  outline: 2px solid var(--hand-second);
+  outline-offset: 3px;
+}
+
+/* Primary CTA — red, filled */
+.cta--primary {
+  background: var(--hand-second);
+  color: #ffffff;
+  border-color: var(--hand-second);
+  box-shadow: 0 6px 20px -6px color-mix(in srgb, var(--hand-second) 60%, transparent);
+}
+.cta--primary:hover {
+  background: color-mix(in srgb, var(--hand-second) 88%, white);
+  box-shadow: 0 10px 26px -6px color-mix(in srgb, var(--hand-second) 70%, transparent);
+}
+
+/* Ghost CTA — glass pill, matches existing controls */
+.cta--ghost {
+  background: var(--glass-bg);
+  color: var(--fg);
+  border-color: var(--glass-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.cta--ghost:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--fg-hairline);
+}
+
+.invite-foot {
+  margin: 4vh 0 0;
+  font-size: 13px;
+  color: var(--fg-muted);
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  will-change: opacity;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .invite-clock { width: min(56vmin, 280px); height: min(56vmin, 280px); }
+  .invite-ctas { flex-direction: column; width: 100%; max-width: 320px; }
+  .cta { width: 100%; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .invite-clock,
+  .invite-headline,
+  .invite-subhead,
+  .invite-foot,
+  .cta {
+    opacity: 1 !important; transform: none !important;
+  }
+  .invite-clock__glow { animation: none; }
+}
+
+/* =========================================================================
+   SCENE 7.5 — FAQ (accordion + schema)
+
+   Clean accordion. One item open at a time. JSON-LD schema injected via
+   the component to power Google rich results.
+   ========================================================================= */
+
+.scene--faq {
+  padding: 10vh 6vw;
+}
+
+.faq-stage {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5vh;
+}
+
+.faq-eyebrow {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.faq-heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(28px, 4.4vmin, 48px);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--fg);
+  text-align: center;
+  text-wrap: balance;
+}
+
+.faq-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.faq-item {
+  border-top: 1px solid var(--fg-hairline);
+}
+.faq-item:last-child {
+  border-bottom: 1px solid var(--fg-hairline);
+}
+
+.faq-q {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(16px, 1.8vmin, 18px);
+  letter-spacing: -0.01em;
+  color: var(--fg);
+  text-align: left;
+  transition: color 200ms var(--ease-apple);
+}
+.faq-q:hover { color: var(--hand-second); }
+.faq-q:focus-visible {
+  outline: 2px solid var(--hand-second);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.faq-q__chev {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-muted);
+  flex-shrink: 0;
+  transition: transform 280ms var(--ease-apple), color 200ms var(--ease-apple);
+}
+.faq-item.is-open .faq-q__chev {
+  transform: rotate(180deg);
+  color: var(--hand-second);
+}
+
+.faq-a {
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 360ms var(--ease-apple);
+}
+.faq-item.is-open .faq-a {
+  grid-template-rows: 1fr;
+}
+.faq-a > p {
+  min-height: 0;
+  margin: 0 0 22px;
+  font-size: clamp(14px, 1.5vmin, 16px);
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--fg-muted);
+  text-wrap: pretty;
+  padding-right: 36px;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .scene--faq { padding: 8vh 5vw; }
+  .faq-q { padding: 18px 2px; }
+  .faq-a > p { padding-right: 20px; margin-bottom: 18px; }
+}
+
+/* =========================================================================
+   SCENE 8 — Footer (Credits Roll)
+
+   Brand mark + 4-column nav + bottom bar with credit + back-to-top.
+   Calm, restrained — no big CTAs, no newsletter.
+   ========================================================================= */
+
+.scene--footer {
+  align-items: stretch;
+  justify-content: stretch;
+  min-height: auto;
+  padding: 8vh 6vw 6vh;
+  border-top: 1px solid var(--fg-hairline);
+  background: var(--bg);
+}
+
+.footer-stage {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6vh;
+}
+
+/* Brand mark — top of footer */
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 400px;
+}
+.footer-brand__name {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: -0.025em;
+  color: var(--fg);
+  text-decoration: none;
+}
+.footer-brand__name:hover { color: var(--hand-second); }
+.footer-brand__tagline {
+  margin: 0;
+  font-family: 'Special Elite', var(--font-display);
+  font-size: 14px;
+  color: var(--fg-muted);
+  font-weight: 400;
+}
+
+/* Four-column grid */
+.footer-cols {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 32px;
+}
+
+.footer-col__title {
+  margin: 0 0 14px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+.footer-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.footer-col li a {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--fg-muted);
+  text-decoration: none;
+  transition: color 200ms var(--ease-apple);
+}
+.footer-col li a:hover {
+  color: var(--hand-second);
+}
+
+/* Bottom bar — credit + back to top */
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding-top: 4vh;
+  border-top: 1px solid var(--fg-hairline);
+  flex-wrap: wrap;
+}
+
+.footer-credit {
+  margin: 0;
+  font-size: 13px;
+  color: var(--fg-muted);
+  font-family: 'Special Elite', var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.footer-top-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  text-decoration: none;
+  padding: 6px 14px 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--fg-hairline);
+  background: var(--glass-bg);
+  transition:
+    color 200ms var(--ease-apple),
+    border-color 200ms var(--ease-apple),
+    transform 180ms var(--ease-apple);
+}
+.footer-top-link:hover {
+  color: var(--fg);
+  border-color: var(--bezel-strong);
+  transform: translateY(-1px);
+}
+
+/* ── Mobile (≤ 640px): 2x2 column grid ───────────────────────────────── */
+@media (max-width: 640px) {
+  .scene--footer { padding: 6vh 5vw 5vh; }
+  .footer-cols { grid-template-columns: 1fr 1fr; gap: 24px; }
+  .footer-bottom { flex-direction: column; align-items: flex-start; gap: 16px; }
+}
