@@ -51,6 +51,16 @@ interface Props {
     /** Start a session AND pre-set the tag atomically (for digital timer). */
     startWithGoalAndTag: (startMs: number, endMs: number, tag: string | null) => void;
   }) => void;
+  /**
+   * When true (digital mode), disables the click-1/2/3 hit band so the ring is
+   * purely visual. Planned arc taps still work via PlannedRingsLayer's own events.
+   */
+  disableInteraction?: boolean;
+  /**
+   * When false (digital mode), hides the floating timer label — the digital
+   * display itself acts as the timer, so the label would be redundant.
+   */
+  showFloatingTimer?: boolean;
 }
 
 /* viewBox geometry — all values in viewBox units (0..100). */
@@ -98,6 +108,8 @@ export const FocusRing = memo(function FocusRing({
   onScheduleClose,
   onPlanSessionCompleted,
   onFocusContext,
+  disableInteraction = false,
+  showFloatingTimer = true,
 }: Props) {
   const now = useNow('second');
   const svgRef = useRef<SVGSVGElement>(null);
@@ -855,17 +867,21 @@ export const FocusRing = memo(function FocusRing({
           </g>
         )}
 
-        {/* Hit band — generous, only stroke catches pointer */}
-        <circle
-          cx={C}
-          cy={C}
-          r={RING_R}
-          className="hit"
-          fill="none"
-          stroke="transparent"
-          strokeWidth={HIT_STROKE}
-          onPointerDown={onPointerDown}
-        />
+        {/* Hit band — generous, only stroke catches pointer.
+            Hidden in digital mode (disableInteraction=true) so ring clicks
+            don't start/stop sessions; the UI buttons handle that instead. */}
+        {!disableInteraction && (
+          <circle
+            cx={C}
+            cy={C}
+            r={RING_R}
+            className="hit"
+            fill="none"
+            stroke="transparent"
+            strokeWidth={HIT_STROKE}
+            onPointerDown={onPointerDown}
+          />
+        )}
 
         {/* End drop — rendered AFTER the main hit band so it sits ON TOP in
             DOM order. SVG hit-testing picks the topmost element, so
@@ -885,16 +901,20 @@ export const FocusRing = memo(function FocusRing({
             const p = polar(data.end, RING_R);
             return (
               <>
-                <circle
-                  cx={p.x}
-                  cy={p.y}
-                  r={DROP_R + 4.6}
-                  className={`drop-end-hit ${dragging ? 'is-dragging' : ''}`}
-                  fill="transparent"
-                  onPointerDown={onEndDropPointerDown}
-                  onMouseEnter={() => { if (userId && sessionTag) setEndDropHovered(true); }}
-                  onMouseLeave={() => setEndDropHovered(false)}
-                />
+                {/* Drag hit-zone: hidden in digital mode — no drag in digital */}
+                {!disableInteraction && (
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={DROP_R + 4.6}
+                    className={`drop-end-hit ${dragging ? 'is-dragging' : ''}`}
+                    fill="transparent"
+                    onPointerDown={onEndDropPointerDown}
+                    onMouseEnter={() => { if (userId && sessionTag) setEndDropHovered(true); }}
+                    onMouseLeave={() => setEndDropHovered(false)}
+                  />
+                )}
+                {/* Visual end-drop always shown (marks where goal is set) */}
                 <circle
                   ref={endDropRef}
                   cx={p.x}
@@ -908,8 +928,8 @@ export const FocusRing = memo(function FocusRing({
           })()}
       </svg>
 
-      {/* Floating timer */}
-      {data.start !== null && timerPos && (
+      {/* Floating timer — hidden in digital mode (the HH:MM display IS the timer) */}
+      {showFloatingTimer && data.start !== null && timerPos && (
         <div
           className="focus-timer"
           style={

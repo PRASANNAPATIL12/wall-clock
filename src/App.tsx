@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnalogClock } from './components/AnalogClock';
-import { DigitalClock } from './components/DigitalClock';
+import { ClockCanvas } from './components/ClockCanvas';
 import { PauseStopControl } from './components/PauseStopControl';
 import type { FocusState } from './hooks/useFocusTrack';
 import { ThemeToggle } from './components/controls/ThemeToggle';
@@ -41,11 +40,9 @@ export default function App() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsInitialPane, setSettingsInitialPane] = useState<PaneKey>('stats');
-  /** When true, SettingsDialog opens TagsPane with the add-form pre-focused.
-   *  Set when user taps "+" in the TagPicker; cleared when Settings closes. */
+  /** When true, SettingsDialog opens TagsPane with the add-form pre-focused. */
   const [openTagAdd, setOpenTagAdd] = useState(false);
-  /** Extra ms to extend the idle onboarding hint while the hero message plays.
-   *  Set when HeroMessage mounts (anonymous only). */
+  /** Extra ms to extend the idle onboarding hint while the hero message plays. */
   const [hintBoostMs, setHintBoostMs] = useState(0);
 
   const openSettings = (pane: PaneKey = 'stats') => {
@@ -53,7 +50,6 @@ export default function App() {
     setSettingsOpen(true);
   };
 
-  /** Open Settings → Tags with the add form auto-focused (called from TagPicker "+"). */
   const openTagSettings = () => {
     setOpenTagAdd(true);
     openSettings('tags');
@@ -63,9 +59,10 @@ export default function App() {
     setSettingsOpen(false);
     setOpenTagAdd(false);
   };
+
   // ── Focus state mirror ─────────────────────────────────────────────────
-  // FocusRing publishes its state + controls via onFocusContext so that
-  // PauseStopControl and DigitalClock can consume them without lifting
+  // FocusRing (inside ClockCanvas) publishes state + controls via onFocusContext
+  // so PauseStopControl and DigitalClock can consume them without lifting
   // useFocusTrack out of FocusRing.
   const [focusState, setFocusState] = useState<FocusState>({ kind: 'idle' });
   const focusControlsRef = useRef<{
@@ -85,6 +82,20 @@ export default function App() {
     setFocusState(ctx.state);
     focusControlsRef.current = ctx;
   }, []);
+
+  // ── Logout → stop active session ──────────────────────────────────────
+  // When the user signs out while a session is running, stop it first so
+  // the session is saved (user is still authenticated at this moment) and
+  // localStorage is cleared. Belt-and-suspenders: also fires from the
+  // onSignOut handler in SettingsDialog (below) before auth.signOut().
+  const prevUserRef = useRef(auth.user);
+  useEffect(() => {
+    const wasLoggedIn = prevUserRef.current !== null;
+    prevUserRef.current = auth.user;
+    if (wasLoggedIn && auth.user === null) {
+      focusControlsRef.current?.stop();
+    }
+  }, [auth.user]);
   // ── /Focus state mirror ────────────────────────────────────────────────
 
   // Increments after every focus session save — triggers stats/history refetch.
@@ -99,10 +110,8 @@ export default function App() {
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('closed');
   const schedulingViewOpen = scheduleMode !== 'closed';
 
-  // Tap "All sessions" → toggle all-days view; tap again → close
   const handleSelectAll   = () =>
     setScheduleMode(m => m === 'all'   ? 'closed' : 'all');
-  // Tap "Today" → toggle today-only view; tap again → close
   const handleSelectToday = () =>
     setScheduleMode(m => m === 'today' ? 'closed' : 'today');
 
@@ -112,7 +121,7 @@ export default function App() {
     planRefreshKey,
   );
 
-  // Today's key and sessions — shared by the schedule badge count + digital chips
+  // Today's key and sessions — shared by schedule badge + digital chips
   const todayKey = (() => {
     const today = new Date();
     return `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
@@ -130,47 +139,28 @@ export default function App() {
   const dailyGoalMin = parseInt(dailyGoalStr, 10) || 0;
   const dailyGoalMs  = dailyGoalMin * 60_000;
 
-  /**
-   * Today's planned sessions progress — how many of today's
-   * scheduled sessions are done. Refreshes on every plan change.
-   *
-   * fraction = 0.0 → 1.0, or null when nothing is planned today.
-   */
   const todayPlanProgress = useTodayPlanProgress(
     auth.user?.id ?? null,
     planRefreshKey,
   );
 
-  /**
-   * Bottom progress bar fraction (0–1):
-   *   1. If an explicit daily goal is set → focus time vs goal
-   *   2. Else if sessions are planned today → plan completion fraction
-   *   3. Else → null (bar hidden)
-   *
-   * This lets the bar be useful even for users who haven't set a daily
-   * goal — it just reflects "how much of today's plan is done."
-   */
   const barProgress: number | null = (() => {
-    if (dailyGoalMs > 0) {
-      return Math.min(todayStats.totalMs / dailyGoalMs, 1);
-    }
-    return todayPlanProgress.fraction;   // null when nothing planned
+    if (dailyGoalMs > 0) return Math.min(todayStats.totalMs / dailyGoalMs, 1);
+    return todayPlanProgress.fraction;
   })();
 
-  // Keep the old goalProgress alias for the TodaySummary pill fraction display
   const goalProgress = dailyGoalMs > 0
     ? Math.min(todayStats.totalMs / dailyGoalMs, 1)
     : null;
 
   // Goal-reached notification — fires once per day via FocusMessage
-  const [goalMsg, setGoalMsg]         = useState<{ text: string; key: number } | null>(null);
-  const goalCelebDateRef              = useRef('');
-  const prevGoalProgressRef           = useRef<number | null>(null);
+  const [goalMsg, setGoalMsg]       = useState<{ text: string; key: number } | null>(null);
+  const goalCelebDateRef            = useRef('');
+  const prevGoalProgressRef         = useRef<number | null>(null);
   useEffect(() => {
     if (goalProgress === null) { prevGoalProgressRef.current = null; return; }
     const prev = prevGoalProgressRef.current;
     prevGoalProgressRef.current = goalProgress;
-    // Only fire on the crossing from <1 to >=1 (not on every render)
     if (goalProgress < 1 || (prev !== null && prev >= 1)) return;
     const today = new Date().toDateString();
     if (goalCelebDateRef.current === today) return;
@@ -184,7 +174,7 @@ export default function App() {
 
   useIdle(5000);
 
-  // Document title — only ticks once per minute, cheap
+  // Document title — ticks once per minute
   const now = useNow('second');
   const titleRef = useRef<string>('');
   useEffect(() => {
@@ -196,42 +186,31 @@ export default function App() {
     }
   }, [now, tz]);
 
-  const isAnalog = mode === 'analog';
-
   return (
     <main className="stage">
-      {/* Clock canvas with cross-dissolve between modes */}
-      <div className="canvas">
-        <div className={`mode-layer ${isAnalog ? 'is-in' : 'is-out-up'}`} aria-hidden={!isAnalog}>
-          <AnalogClock
-            timezone={tz}
-            userId={auth.user?.id ?? null}
-            onSessionSaved={handleSessionSaved}
-            onManageTags={openTagSettings}
-            hintBoostMs={hintBoostMs}
-            planRefreshKey={planRefreshKey}
-            schedulingViewOpen={schedulingViewOpen}
-            todayOnly={scheduleMode === 'today'}
-            onScheduleClose={() => setScheduleMode('closed')}
-            onPlanSessionCompleted={handleScheduleChanged}
-            onFocusContext={handleFocusContext}
-          />
-        </div>
-        <div className={`mode-layer ${!isAnalog ? 'is-in' : 'is-out-down'}`} aria-hidden={isAnalog}>
-          <DigitalClock
-            timezone={tz}
-            format={format}
-            focusState={focusState}
-            focusControlsRef={focusControlsRef}
-            userId={auth.user?.id ?? null}
-            todayPlannedSessions={auth.user ? todayPlannedSessions : []}
-            onManageTags={openTagSettings}
-          />
-        </div>
+      {/* ── Clock canvas — shared FocusRing + analog/digital faces ── */}
+      <div className="canvas clock-canvas-layer">
+        <ClockCanvas
+          mode={mode}
+          timezone={tz}
+          format={format}
+          userId={auth.user?.id ?? null}
+          focusState={focusState}
+          focusControlsRef={focusControlsRef}
+          onFocusContext={handleFocusContext}
+          onSessionSaved={handleSessionSaved}
+          onManageTags={openTagSettings}
+          hintBoostMs={hintBoostMs}
+          planRefreshKey={planRefreshKey}
+          schedulingViewOpen={schedulingViewOpen}
+          todayOnly={scheduleMode === 'today'}
+          onScheduleClose={() => setScheduleMode('closed')}
+          onPlanSessionCompleted={handleScheduleChanged}
+          todayPlannedSessions={auth.user ? todayPlannedSessions : []}
+        />
       </div>
 
-      {/* Pause / Resume / Stop controls — shown when a session is running or paused.
-          Portal-rendered to body so z-index is evaluated at the root context. */}
+      {/* Pause / Resume / Stop — portal-rendered, shows when session active */}
       <PauseStopControl
         state={focusState}
         onPause={() => focusControlsRef.current?.pause()}
@@ -249,7 +228,7 @@ export default function App() {
         <HeroMessage onStart={setHintBoostMs} />
       )}
 
-      {/* Account entry point — JoinPill for anonymous, AccountIcon for signed-in */}
+      {/* Account entry point */}
       {!auth.loading && (
         auth.user ? (
           <AccountIcon user={auth.user} onClick={() => openSettings('account')} />
@@ -265,7 +244,7 @@ export default function App() {
       <div className="controls controls--bl">
         <TimezoneSelector value={tz} onChange={setTz} />
         <ModeToggle mode={mode} onChange={setMode} />
-        {!isAnalog && (
+        {mode === 'digital' && (
           <div className="fmt-mount">
             <FormatToggle format={format} onChange={setFormat} />
           </div>
@@ -276,13 +255,12 @@ export default function App() {
         <CoffeeLink />
       </div>
 
-      {/* Daily goal reached — top-of-screen FocusMessage (avoids z-index clash
-          with ScheduleBadge that was hiding the old TodaySummary tooltip) */}
+      {/* Daily goal reached */}
       {auth.user && goalMsg && (
         <FocusMessage text={goalMsg.text} duration={3500} msgKey={goalMsg.key} />
       )}
 
-      {/* Today summary — opens Stats pane (History is now embedded inside Stats) */}
+      {/* Today summary */}
       {auth.user && (
         <TodaySummary
           stats={todayStats}
@@ -292,9 +270,7 @@ export default function App() {
         />
       )}
 
-      {/* Bottom progress bar — 2px thin line at viewport edge.
-          Shows today's plan completion % (or daily goal % if set).
-          Visible on both desktop and mobile. */}
+      {/* Bottom progress bar */}
       {auth.user && barProgress !== null && (
         <div
           className="daily-goal-bar"
@@ -315,7 +291,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Schedule badge — shows only when sessions are planned */}
+      {/* Schedule badge */}
       {auth.user && upcomingTotal > 0 && (
         <ScheduleBadge
           count={upcomingTotal}
@@ -341,6 +317,9 @@ export default function App() {
           initialStreak={todayStats.streak}
           onClose={closeSettings}
           onSignOut={async () => {
+            // Stop any running session BEFORE signing out so it is saved
+            // while the user is still authenticated.
+            focusControlsRef.current?.stop();
             await auth.signOut();
             closeSettings();
           }}

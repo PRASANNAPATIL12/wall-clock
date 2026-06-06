@@ -10,7 +10,8 @@ import { TagIcon } from './TagIcon';
 import { DigitalDurationPicker } from './DigitalDurationPicker';
 import { DigitalPlannedCards } from './DigitalPlannedCards';
 import './DigitalClock.css';
-import './DigitalTimerRing.css';
+
+/* ── FocusControls interface ─────────────────────────────────────────── */
 
 interface FocusControls {
   pause: () => void;
@@ -19,17 +20,19 @@ interface FocusControls {
   startWithGoalAndTag: (startMs: number, endMs: number, tag: string | null) => void;
 }
 
+/* ── Props ────────────────────────────────────────────────────────────── */
+
 interface Props {
   timezone: string;
   format: '12' | '24';
   /** Current focus state mirrored from FocusRing via App.tsx. */
   focusState?: FocusState;
   /**
-   * Ref to the live controls from FocusRing (RefObject so callbacks always
+   * Ref to live controls from FocusRing (RefObject so callbacks always
    * read the latest value even if the initial render beat the first context fire).
    */
   focusControlsRef?: RefObject<FocusControls | null>;
-  /** Logged-in user id. Null = anonymous (timer UI hidden for anon users). */
+  /** Logged-in user id. Null = anonymous (timer UI hidden). */
   userId?: string | null;
   /** Today's planned sessions to show as tappable chips. */
   todayPlannedSessions?: PlannedSession[];
@@ -39,7 +42,7 @@ interface Props {
 
 /* ── Countdown format ─────────────────────────────────────────────────── */
 
-/** Remaining ms → { hours: "01", minutes: "30" } — no seconds display. */
+/** Remaining ms → { hours: "01", minutes: "30" } — no seconds shown. */
 function fmtCountdown(ms: number): { hours: string; minutes: string } {
   const total = Math.max(0, Math.floor(ms / 1000));
   const h = Math.floor(total / 3600);
@@ -48,47 +51,6 @@ function fmtCountdown(ms: number): { hours: string; minutes: string } {
     hours:   String(h).padStart(2, '0'),
     minutes: String(m).padStart(2, '0'),
   };
-}
-
-/* ── SVG countdown ring ───────────────────────────────────────────────── */
-
-const RING_R      = 148;
-const RING_SIZE   = (RING_R + 12) * 2;  // tight bounding box
-const RING_CX     = RING_SIZE / 2;
-const RING_CY     = RING_SIZE / 2;
-const CIRCUMFERENCE = 2 * Math.PI * RING_R;
-
-interface TimerRingProps {
-  progress: number;   // 0..1  (1 = full / just started, 0 = done)
-  color: string;
-  isPaused: boolean;
-}
-
-function TimerRing({ progress, color, isPaused }: TimerRingProps) {
-  const offset = CIRCUMFERENCE * (1 - Math.max(0, Math.min(1, progress)));
-  return (
-    <svg
-      className={`dt-ring${isPaused ? ' dt-ring--paused' : ''}`}
-      width={RING_SIZE}
-      height={RING_SIZE}
-      viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
-      aria-hidden
-    >
-      {/* Background track */}
-      <circle cx={RING_CX} cy={RING_CY} r={RING_R}
-        fill="none" className="dt-ring__track" strokeWidth={2.5} />
-      {/* Progress arc — starts at 12 o'clock (transform in CSS) */}
-      <circle cx={RING_CX} cy={RING_CY} r={RING_R}
-        fill="none"
-        stroke={color}
-        strokeWidth={3.5}
-        strokeLinecap="round"
-        strokeDasharray={CIRCUMFERENCE}
-        strokeDashoffset={offset}
-        className="dt-ring__arc"
-      />
-    </svg>
-  );
 }
 
 /* ── Inline TagPicker for digital flow ───────────────────────────────── */
@@ -109,7 +71,7 @@ function DigitalTagPicker({ onPick, onManageTags, onCancel }: DigitalTagPickerPr
     return () => window.removeEventListener(TAGS_CHANGED_EVENT, refresh);
   }, []);
 
-  // Auto-dismiss with null after 6 s
+  // Auto-dismiss with null after 6 s (no-tag chosen)
   useEffect(() => {
     if (picked !== null) return;
     const t = window.setTimeout(() => onPick(null), 6000);
@@ -187,10 +149,10 @@ export const DigitalClock = memo(function DigitalClock({
   const suffix = h24 < 12 ? 'AM' : 'PM';
 
   /* Multi-step timer flow state */
-  const [step, setStep]       = useState<TimerStep>('idle');
+  const [step, setStep]           = useState<TimerStep>('idle');
   const [pickedTag, setPickedTag] = useState<string | null>(null);
 
-  // Reset flow state when session ends
+  // Reset flow when session ends
   useEffect(() => {
     if (focusState.kind === 'idle') {
       setStep('idle');
@@ -202,18 +164,12 @@ export const DigitalClock = memo(function DigitalClock({
   const isRunning = focusState.kind === 'targeted' || focusState.kind === 'paused';
   const isPaused  = focusState.kind === 'paused';
 
-  const { remaining: remainingMs, total: totalMs } = useMemo(() => {
-    if (!isRunning) return { remaining: 0, total: 0 };
+  const { remaining: remainingMs } = useMemo(() => {
+    if (!isRunning) return { remaining: 0 };
     const s = focusState as { kind: 'targeted' | 'paused'; start: number; end: number; pausedAt?: number };
     const effectiveNow = isPaused ? (s.pausedAt ?? now.getTime()) : now.getTime();
-    return {
-      remaining: Math.max(0, s.end - effectiveNow),
-      total:     s.end - s.start,
-    };
+    return { remaining: Math.max(0, s.end - effectiveNow) };
   }, [focusState, isRunning, isPaused, now]);
-
-  const progress = totalMs > 0 ? remainingMs / totalMs : 0;
-  const complete = isRunning && remainingMs === 0;
 
   /* Handlers */
   const handleStartFocus = useCallback(() => setStep('picking-tag'), []);
@@ -266,20 +222,13 @@ export const DigitalClock = memo(function DigitalClock({
   const { hours: cH, minutes: cM } = fmtCountdown(remainingMs);
 
   return (
-    <div className="digital-clock-wrap">
+    <div className="digital-face-content">
 
-      {/* Countdown ring — behind the digits, only when session active */}
-      {isRunning && (
-        <div className="dt-ring-wrap" aria-hidden>
-          <TimerRing progress={progress} color="var(--hand-second)" isPaused={isPaused} />
-        </div>
-      )}
-
-      {/* Digit display */}
+      {/* ── Digit display ── */}
       {isRunning ? (
-        /* ── Timer mode: HH:MM countdown, no seconds ── */
+        /* Timer mode: HH:MM countdown (no seconds) */
         <div
-          className={`digital digital--timer${isPaused ? ' digital--paused' : ''}${complete ? ' digital--complete' : ''}`}
+          className={`digital digital--timer${isPaused ? ' digital--paused' : ''}`}
           role="timer"
           aria-live="off"
           aria-label={isPaused ? 'Session paused' : 'Focus countdown'}
@@ -292,7 +241,7 @@ export const DigitalClock = memo(function DigitalClock({
           )}
         </div>
       ) : (
-        /* ── Clock mode: HH:MM:SS current time ── */
+        /* Clock mode: HH:MM:SS current time */
         <div
           className="digital"
           role="timer"
@@ -308,7 +257,7 @@ export const DigitalClock = memo(function DigitalClock({
         </div>
       )}
 
-      {/* Start Focus CTA + planned chips — logged-in, idle only */}
+      {/* ── Start Focus CTA + planned chips — logged-in + idle only ── */}
       {userId && !isRunning && step === 'idle' && (
         <div className="dt-focus-cta">
           <button
@@ -331,7 +280,7 @@ export const DigitalClock = memo(function DigitalClock({
         </div>
       )}
 
-      {/* Tag picker (step 1) */}
+      {/* ── Tag picker (step 1) ── */}
       {step === 'picking-tag' && (
         <DigitalTagPicker
           onPick={handleTagPick}
@@ -340,13 +289,14 @@ export const DigitalClock = memo(function DigitalClock({
         />
       )}
 
-      {/* Duration picker (step 2) */}
+      {/* ── Duration picker (step 2) ── */}
       {step === 'picking-duration' && (
         <DigitalDurationPicker
           onPick={handleDurationPick}
           onCancel={handleDurationCancel}
         />
       )}
+
     </div>
   );
 });

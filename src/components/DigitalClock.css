@@ -1,9 +1,24 @@
 /* =========================================================================
-   Digital Clock — focus-oriented typography
-   Font: JetBrains Mono 200 (thin) for elegant, low-noise presence.
-   Tabular numerals keep digits dimensionally stable.
-   Subtle gradient fill on hours/minutes adds OLED-like depth.
+   Digital Clock — typography + display inside the analog clock face.
+
+   The digital clock now lives inside .analog__face (the circular bezel)
+   at the same size as the analog face, so font sizes are scaled to fit
+   comfortably within the ring without overflowing.
    ========================================================================= */
+
+/* ── Content wrapper ─────────────────────────────────────────────────── */
+
+.digital-face-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+/* ── Digit display ────────────────────────────────────────────────────── */
 
 .digital {
   display: flex;
@@ -13,13 +28,19 @@
   font-family: var(--font-mono);
   font-weight: 200;
   font-variant-numeric: tabular-nums;
-  font-size: clamp(60px, 17vmin, 220px);
+  /* Clock mode (HH:MM:SS): sized to fit 8 characters inside the face */
+  font-size: clamp(32px, 5.5vmin, 64px);
   letter-spacing: -0.03em;
   line-height: 1;
   color: var(--fg);
   transition: color var(--d-theme) var(--ease-apple);
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* Timer mode (HH:MM only) — larger since fewer characters */
+.digital--timer {
+  font-size: clamp(48px, 8.5vmin, 96px);
 }
 
 .d-hr,
@@ -37,24 +58,25 @@
   position: relative;
   transform: translateY(-0.06em);
   transition: color var(--d-theme) var(--ease-apple);
-  /* Soft heart-beat blink, so the colon feels alive */
   animation: blink 2s steps(2, jump-none) infinite;
 }
 
 @keyframes blink {
-  0%, 60% { opacity: 1; }
-  60.01%, 100% { opacity: 0.35; }
+  0%, 60%       { opacity: 1; }
+  60.01%, 100%  { opacity: 0.35; }
 }
 
 .d-sec {
   color: var(--hand-second);
+  font-size: 0.42em;
+  align-self: center;
   transition: color var(--d-theme) var(--ease-apple);
 }
 
 .d-suffix {
   margin-left: 0.2em;
-  font-size: 0.28em;
-  letter-spacing: 0.2em;
+  font-size: 0.3em;
+  letter-spacing: 0.15em;
   font-weight: 300;
   color: var(--fg-muted);
   align-self: flex-end;
@@ -64,4 +86,251 @@
 
 @media (prefers-reduced-motion: reduce) {
   .d-sep { animation: none; opacity: 1; }
+}
+
+/* ── Timer-mode states ────────────────────────────────────────────────── */
+
+/* Paused: digits and colon dim */
+.digital--paused .d-hr,
+.digital--paused .d-min {
+  opacity: 0.45;
+}
+
+/* Paused colon dims to match */
+.d-sep--dim {
+  opacity: 0.25;
+  animation: none !important;
+}
+
+/* Complete: green tint */
+.digital--complete .d-hr,
+.digital--complete .d-min {
+  color: #2da44e;
+  background: linear-gradient(180deg, #2da44e 0%, #2da44e 60%, color-mix(in srgb, #2da44e 78%, transparent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Paused badge inline with digits */
+.d-paused-badge {
+  font-size: 0.35em;
+  line-height: 1;
+  vertical-align: super;
+  margin-left: 0.1em;
+  color: var(--fg-muted);
+  opacity: 0.7;
+  animation: pse-blink 1.4s steps(2, jump-none) infinite;
+}
+
+@keyframes pse-blink {
+  0%, 60%       { opacity: 0.7; }
+  60.01%, 100%  { opacity: 0.2; }
+}
+
+/* ── Start Focus CTA — button + planned chips ─────────────────────────── */
+
+.dt-focus-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+  /* Enter animation */
+  animation: dt-cta-in 300ms var(--ease-apple) both;
+  /* Idle-fade transition */
+  transition: opacity 600ms var(--ease-apple), transform 320ms var(--ease-apple);
+}
+
+@keyframes dt-cta-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Idle fade — hides Start Focus when cursor has been still (same as all controls) */
+body.idle .dt-focus-cta {
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+}
+
+.dt-start-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 18px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition:
+    background-color 200ms var(--ease-apple),
+    color 200ms var(--ease-apple),
+    border-color 200ms var(--ease-apple),
+    transform 120ms var(--ease-apple);
+  white-space: nowrap;
+}
+
+.dt-start-btn:hover {
+  background: var(--glass-bg-hover);
+  color: var(--fg);
+  border-color: color-mix(in srgb, var(--hand-second) 40%, transparent);
+}
+
+.dt-start-btn:active {
+  transform: scale(0.96);
+  transition-duration: 80ms;
+}
+
+/* ── Digital TagPicker (portal — fixed to viewport) ───────────────────── */
+
+.dt-tag-picker {
+  position: fixed;
+  bottom: 112px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: fit-content;
+  max-width: calc(100vw - 32px);
+  z-index: 50;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 0 14px;
+  height: 44px;
+  border-radius: 999px;
+
+  background: var(--glass-bg-pop);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-pop);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+
+  animation: dt-tag-in 220ms var(--ease-spring) both;
+}
+
+@keyframes dt-tag-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.dt-tag-picker__label {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.dt-tag-picker__scroll {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.dt-tag-picker__scroll::-webkit-scrollbar { display: none; }
+
+.dt-tag-picker__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background-color 160ms var(--ease-apple),
+    transform 100ms var(--ease-apple);
+}
+
+.dt-tag-picker__btn:hover { background: var(--glass-bg-hover); }
+
+.dt-tag-picker__btn.is-picked {
+  background: var(--glass-bg-hover);
+  transform: scale(1.15);
+}
+
+.dt-tag-picker__divider {
+  width: 1px;
+  height: 18px;
+  background: var(--glass-border);
+  flex-shrink: 0;
+  margin: 0 3px;
+}
+
+.dt-tag-picker__manage {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px dashed var(--glass-border);
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background-color 160ms var(--ease-apple),
+    color 160ms var(--ease-apple);
+}
+
+.dt-tag-picker__manage:hover {
+  background: var(--glass-bg-hover);
+  color: var(--fg);
+}
+
+.dt-tag-picker__cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 2px;
+  transition:
+    background-color 160ms var(--ease-apple),
+    color 160ms var(--ease-apple);
+}
+
+.dt-tag-picker__cancel:hover {
+  background: var(--glass-bg-hover);
+  color: var(--fg);
+}
+
+/* ── Paused indicator in the analog FocusRing timer label ─────────────── */
+/* (Displayed next to elapsed time when session is paused in analog mode) */
+.focus-timer__paused {
+  margin-left: 0.15em;
+  font-size: 0.85em;
+  opacity: 0.6;
+}
+
+/* ── Mobile ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .digital         { font-size: clamp(28px, 5vmin, 52px); }
+  .digital--timer  { font-size: clamp(40px, 7.5vmin, 80px); }
+  .dt-tag-picker   { bottom: 200px; }
+  .dt-start-btn    { height: 30px; padding: 0 14px; font-size: 11px; }
 }

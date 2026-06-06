@@ -1,0 +1,88 @@
+/* =========================================================================
+   ClockCanvas — shared container for analog and digital modes.
+
+   The `.analog` class on the root div is intentionally kept so all
+   FocusRing.css selectors (`.analog:hover .focus-ring .track`, etc.)
+   continue to work in both modes without any CSS changes.
+   ========================================================================= */
+
+/* ── Face layers — cross-dissolve between analog and digital ── */
+
+.face-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    opacity 720ms var(--ease-apple),
+    transform 720ms var(--ease-apple),
+    filter 720ms var(--ease-apple);
+  will-change: opacity, transform, filter;
+}
+
+/* Active mode — fully visible */
+.face-layer--in {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
+  pointer-events: auto;
+  transition-delay: 140ms;
+}
+
+/* Analog leaving (scale up + blur, like the original is-out-up) */
+.face-layer--out-up {
+  opacity: 0;
+  transform: scale(1.06);
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+/* Digital leaving (scale down + blur, like the original is-out-down) */
+.face-layer--out-down {
+  opacity: 0;
+  transform: scale(0.94);
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+/* The analog face-layer wraps the .analog__face div (which supplies the
+   87% circle). It inherits the face-layer positioning and the .analog__face
+   handles the visual circle. */
+
+/* The digital face-layer IS the .analog__face circle — it has the same
+   background, shadow, and border-radius. Content is centered inside it.
+   Since .analog__face uses width:87% / height:87% which only works under
+   a grid/flex parent, we position it absolutely and mirror the size. */
+.face-layer.analog__face {
+  width: 87%;
+  height: 87%;
+  /* Absolute so it stays centered in the .analog grid container */
+  position: absolute;
+  inset: unset;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Override transform for mode transitions on the combined face+layer class:
+   merge the centering translate with the scale transition. */
+.face-layer.analog__face.face-layer--in {
+  transform: translate(-50%, -50%) scale(1);
+  filter: blur(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.face-layer.analog__face.face-layer--out-down {
+  transform: translate(-50%, -50%) scale(0.94);
+  filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .face-layer--out-up  { filter: blur(6px); }
+  .face-layer--out-down { filter: blur(5px); }
+}
