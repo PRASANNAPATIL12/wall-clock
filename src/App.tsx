@@ -79,14 +79,7 @@ export default function App() {
     stop: () => void;
     startWithGoalAndTag: (startMs: number, endMs: number, tag: string | null) => void;
   }) => {
-    setFocusState(prev => {
-      // When transitioning from idle → active, close the schedule view
-      // so the PlannedRingsLayer only shows the active session's arc.
-      if (prev.kind === 'idle' && ctx.state.kind !== 'idle') {
-        setScheduleMode('closed');
-      }
-      return ctx.state;
-    });
+    setFocusState(ctx.state);
     focusControlsRef.current = ctx;
   }, []);
 
@@ -116,6 +109,12 @@ export default function App() {
   // Schedule rings view — three states: closed / all days / today only
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('closed');
   const schedulingViewOpen = scheduleMode !== 'closed';
+
+  // Close schedule view when a session starts — PlannedRingsLayer then
+  // renders only the active session's countdown arc.
+  useEffect(() => {
+    if (focusState.kind !== 'idle') setScheduleMode('closed');
+  }, [focusState.kind]);
 
   const handleSelectAll   = () =>
     setScheduleMode(m => m === 'all'   ? 'closed' : 'all');

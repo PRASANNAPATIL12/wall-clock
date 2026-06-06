@@ -234,8 +234,9 @@ export const FocusRing = memo(function FocusRing({
     setSelectedPlanArc(null);
 
     prepareHaptic();
-    showFeedback('Session started', 2000);
-  }, [state.kind, startWithGoal, timezone, showFeedback]);
+    // Note: "Session started" feedback is fired from the state-transition
+    // effect below (idle → targeted with activePlanSession set).
+  }, [state.kind, startWithGoal, timezone]);
 
   // Publish focus state + controls to App.tsx so PauseStopControl and
   // DigitalClock can read them without lifting useFocusTrack.
@@ -437,6 +438,12 @@ export const FocusRing = memo(function FocusRing({
     // Click 1: idle → tracking
     if (prev === 'idle' && state.kind === 'tracking') {
       showFeedback('Tracking started', 3000);
+    }
+
+    // Digital Start Focus: idle → targeted with activePlanSession already set
+    // (startWithGoalAndTag goes directly idle → targeted, skipping tracking)
+    if (prev === 'idle' && state.kind === 'targeted' && activePlanSessionRef.current) {
+      showFeedback('Session started', 2000);
     }
 
     // Click 2: tracking → targeted (anonymous user — no tag picker)
