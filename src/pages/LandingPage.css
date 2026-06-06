@@ -711,3 +711,320 @@
   .feature-card { width: 100%; max-width: 460px; transform: none !important; }
   .features-dots { display: none; }
 }
+
+/* =========================================================================
+   SCENE 5 — "Coming Soon"
+
+   Three future features float up as the scene enters viewport. Subtle
+   particle field drifts in the background. Theme stays consistent with
+   user preference.
+   ========================================================================= */
+
+.scene--roadmap {
+  padding: 10vh 6vw;
+  position: relative;
+  overflow: hidden;
+}
+
+.roadmap-stage {
+  width: 100%;
+  max-width: 1100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6vh;
+  position: relative;
+  z-index: 2;
+}
+
+.roadmap-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.roadmap-eyebrow {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  will-change: opacity, transform;
+}
+
+.roadmap-heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(32px, 5vmin, 56px);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--fg);
+  will-change: opacity, transform;
+}
+
+.roadmap-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  width: 100%;
+}
+
+.roadmap-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 28px;
+  border-radius: 18px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-pill);
+  will-change: opacity, transform;
+}
+
+.roadmap-card__glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--hand-second) 12%, transparent);
+  color: var(--hand-second);
+}
+
+.roadmap-card__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(17px, 1.9vmin, 20px);
+  letter-spacing: -0.015em;
+  color: var(--fg);
+}
+
+.roadmap-card__body {
+  margin: 0;
+  font-size: clamp(14px, 1.45vmin, 15px);
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--fg-muted);
+  text-wrap: pretty;
+}
+
+/* Particle field — soft drift upward */
+.roadmap-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+.roadmap-particle {
+  position: absolute;
+  bottom: -20px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--fg);
+  opacity: 0;
+  animation: roadmap-particle-drift 12s linear infinite;
+}
+@keyframes roadmap-particle-drift {
+  0%   { transform: translateY(0)     scale(0.6); opacity: 0; }
+  10%  { opacity: 0.18; }
+  90%  { opacity: 0.12; }
+  100% { transform: translateY(-110vh) scale(1.0); opacity: 0; }
+}
+
+/* ── Tablet (≤ 960px): 2-column grid ──────────────────────────────────── */
+@media (max-width: 960px) {
+  .roadmap-grid { grid-template-columns: 1fr; max-width: 460px; }
+  .roadmap-particles { display: none; }   /* Battery savings on mobile */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roadmap-particle { animation: none; display: none; }
+  .roadmap-card, .roadmap-eyebrow, .roadmap-heading {
+    opacity: 1 !important; transform: none !important;
+  }
+}
+
+/* =========================================================================
+   SCENE 6 — "Trusted by Humans Who Focus"
+
+   Counter animation, text-only institution cascade (no logo wall),
+   testimonial card at the end. Soft, restrained — not "every SaaS".
+   ========================================================================= */
+
+.scene--trust {
+  padding: 12vh 6vw;
+  flex-direction: column;
+}
+
+.trust-stage {
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5vh;
+  text-align: center;
+}
+
+.trust-headline-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.trust-eyebrow {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  will-change: opacity;
+}
+
+.trust-headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(28px, 4.6vmin, 52px);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--fg);
+  text-wrap: balance;
+  will-change: opacity, transform;
+}
+
+/* The numeric counter — slightly bolder to draw the eye */
+.trust-counter {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  color: var(--hand-second);
+  font-variant-numeric: tabular-nums;
+}
+
+.trust-headline__rest {
+  font-weight: 300;
+  color: var(--fg);
+}
+
+.trust-subhead {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(14px, 1.6vmin, 17px);
+  color: var(--fg-muted);
+  max-width: 56ch;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+/* Institution names — text only, no logo files (legally safe) */
+.trust-institutions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 32px;
+  max-width: 880px;
+}
+
+.trust-institution {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(15px, 1.7vmin, 18px);
+  letter-spacing: 0.005em;
+  color: var(--fg);
+  will-change: opacity, transform;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.trust-disclaimer {
+  margin: -2vh 0 0;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--fg-muted);
+  opacity: 0;
+  max-width: 60ch;
+  line-height: 1.5;
+  will-change: opacity;
+}
+
+/* Testimonial */
+.trust-testimonial {
+  margin: 4vh 0 0;
+  max-width: 640px;
+  padding: 32px 36px;
+  border-radius: 20px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-pop);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  will-change: opacity, transform;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+}
+
+.trust-testimonial__text {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(17px, 2.2vmin, 22px);
+  line-height: 1.45;
+  letter-spacing: -0.015em;
+  color: var(--fg);
+  text-wrap: balance;
+}
+
+.trust-testimonial__by {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--fg-muted);
+  border: none;
+}
+.trust-testimonial__name {
+  font-weight: 500;
+  color: var(--fg);
+}
+.trust-testimonial__role {
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* ── Mobile ──────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .scene--trust { padding: 10vh 5vw; }
+  .trust-institutions { gap: 6px 20px; }
+  .trust-institution { font-size: 14px; }
+  .trust-testimonial { padding: 24px 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trust-headline, .trust-eyebrow, .trust-subhead,
+  .trust-institution, .trust-testimonial, .trust-disclaimer {
+    opacity: 1 !important; transform: none !important;
+  }
+  .trust-disclaimer { opacity: 0.7 !important; }
+}

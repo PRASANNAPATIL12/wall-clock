@@ -13,6 +13,8 @@ import { Scene1Hero } from './landing/Scene1Hero';
 import { Scene2Zoom } from './landing/Scene2Zoom';
 import { Scene3ThreeClicks } from './landing/Scene3ThreeClicks';
 import { Scene4Features } from './landing/Scene4Features';
+import { Scene5ComingSoon } from './landing/Scene5ComingSoon';
+import { Scene6Trust } from './landing/Scene6Trust';
 import './LandingPage.css';
 
 /* ------------------------------------------------------------------ */
@@ -58,18 +60,10 @@ export default function LandingPage() {
       <Scene4Features />
 
       {/* SCENE 5 — Coming Soon */}
-      <section className="scene scene--roadmap" data-scene="5" aria-label="Coming soon">
-        <div className="scene-placeholder">
-          <p>Scene 5 — Coming Soon (Step 10)</p>
-        </div>
-      </section>
+      <Scene5ComingSoon />
 
       {/* SCENE 6 — Social proof */}
-      <section className="scene scene--trust" data-scene="6" aria-label="Trusted by humans who focus">
-        <div className="scene-placeholder">
-          <p>Scene 6 — social proof + counter (Step 11)</p>
-        </div>
-      </section>
+      <Scene6Trust />
 
       {/* SCENE 7 — Invitation */}
       <section className="scene scene--invite" data-scene="7" aria-label="Start now">
