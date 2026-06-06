@@ -24,19 +24,28 @@ import './LandingPage.css';
 /* Returning users — auto-redirect to /app                            */
 /* ------------------------------------------------------------------ */
 /**
- * If a previous session exists in localStorage (Supabase auth token),
- * the user has been here before — send them straight to the app.
+ * If a previous session exists in localStorage (Supabase auth token)
+ * OR the URL contains an OAuth callback hash, the user has been here
+ * before / is mid-auth-flow — send them straight to the app.
  *
- * First-time visitors with no session see the cinematic experience.
+ * First-time anonymous visitors with no session see the cinematic experience.
  */
 function useReturningUserRedirect() {
   useEffect(() => {
     try {
+      // Case 1: Supabase OAuth callback — URL has `#access_token=…`
+      // After Google sign-in, Supabase redirects back with an auth hash.
+      // The auth handler lives in /app's React tree, not here.
+      if (window.location.hash.includes('access_token')) {
+        window.location.replace('/app' + window.location.hash);
+        return;
+      }
+
+      // Case 2: Returning user — Supabase token already in localStorage
       const hasSession = Object.keys(localStorage).some(
         (k) => k.startsWith('sb-') && k.includes('-auth-token'),
       );
       if (hasSession) {
-        // Returning user — straight to app
         window.location.replace('/app');
       }
     } catch {

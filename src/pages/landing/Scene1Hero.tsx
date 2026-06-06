@@ -29,6 +29,16 @@ export const Scene1Hero = memo(function Scene1Hero() {
         <ThemeToggle theme={theme} onToggle={toggleTheme} />
       </div>
 
+      {/*
+        Visually-hidden H1 — required for SEO + screen readers.
+        The hero clock IS the visual headline, but bots and AT users
+        need a single H1 that names the page. The two H2-style spans
+        below remain visible to sighted users.
+      */}
+      <h1 className="visually-hidden">
+        Focus Clock — a calm browser-based focus timer and productivity tracker
+      </h1>
+
       {/* Main composition — clock + tagline */}
       <div className="hero-stage">
         <HeroClock />
