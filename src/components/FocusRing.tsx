@@ -13,7 +13,7 @@ import { useOnboardingHint } from '../hooks/useOnboardingHint';
 import { TagPicker } from './TagPicker';
 import { TagIcon } from './TagIcon';
 import { getTag } from '../lib/tags';
-import { PlannedRingsLayer, tagColor, hexToRgba } from './PlannedRingsLayer';
+import { PlannedRingsLayer } from './PlannedRingsLayer';
 import { PlanActionCard } from './PlanActionCard';
 import { useUpcomingPlanned } from '../hooks/usePlannedSessions';
 import { FocusMessage } from './FocusMessage';
@@ -162,8 +162,9 @@ export const FocusRing = memo(function FocusRing({
       })
         .then(() => {
           onSessionSaved?.();
-          // If this was a planned session, mark it complete in Supabase
-          if (activePlan) {
+          // If this was a real (non-synthetic) planned session, mark it complete in Supabase.
+          // Synthetic digital sessions have ids prefixed with 'digital-' — skip those.
+          if (activePlan && !activePlan.id.startsWith('digital-')) {
             markPlannedComplete(activePlan.id).then(() => {
               onPlanSessionCompleted?.();
             });
@@ -179,13 +180,62 @@ export const FocusRing = memo(function FocusRing({
   /**
    * Start a session AND pre-set the tag so the TagPicker doesn't open.
    * Used by the digital timer to pass tag + duration in one shot.
+   *
+   * Creates a **synthetic PlannedSession** and feeds it through the same
+   * state path as startFromPlan — so PlannedRingsLayer renders the
+   * countdown arc identically to an analog scheduled-task start.
    */
   const startWithGoalAndTag = useCallback((startMs: number, endMs: number, tag: string | null) => {
-    // Synchronously update the ref so the TagPicker open-check sees it immediately
+    if (state.kind !== 'idle') return; // block if already tracking
+
+    // Build a synthetic PlannedSession — same shape the PlannedRingsLayer
+    // expects, but with a `digital-` prefixed id so handleSessionEnd can
+    // skip the Supabase markPlannedComplete call.
+    const durationMin = Math.round((endMs - startMs) / 60_000);
+    const d = new Date(startMs);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    const dateLocal = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    const syntheticSession: PlannedSession = {
+      id:                        `digital-${startMs}`,
+      user_id:                   userIdRef.current ?? '',
+      scheduled_date:            dateLocal,
+      start_time_local:          `${hh}:${mm}:00`,
+      duration_minutes:          durationMin,
+      tz:                        timezone,
+      tag:                       tag,
+      title:                     null,
+      sync_to_calendar:          false,
+      google_calendar_event_id:  null,
+      google_calendar_html_link: null,
+      completed:                 false,
+      linked_session_id:         null,
+      created_at:                new Date().toISOString(),
+      updated_at:                new Date().toISOString(),
+    };
+
+    // Tag — synchronously update ref so the TagPicker open-check sees it
     sessionTagRef.current = tag;
     setSessionTag(tag);
+
+    // Start the timer
     startWithGoal(startMs, endMs);
-  }, [startWithGoal]);
+
+    // Capture minute-hand angle — countdown arc anchors here (same as startFromPlan)
+    const { minutes: nowMin, seconds: nowSec } = getZonedTime(new Date(startMs), timezone);
+    setArcStartMinAngle(((nowMin + nowSec / 60) * 6) % 360);
+
+    // Wire up the PlannedRingsLayer state — same path as startFromPlan
+    setActivePlanSession(syntheticSession);
+    activePlanSessionRef.current = syntheticSession;
+    planCompletionFiredRef.current = false;
+    setTagPickerOpen(false);
+    setSelectedPlanArc(null);
+
+    prepareHaptic();
+    showFeedback('Session started', 2000);
+  }, [state.kind, startWithGoal, timezone, showFeedback]);
 
   // Publish focus state + controls to App.tsx so PauseStopControl and
   // DigitalClock can read them without lifting useFocusTrack.
@@ -448,42 +498,6 @@ export const FocusRing = memo(function FocusRing({
     const remainMs   = Math.max(0, state.end - effectiveNow);
     return (remainMs / totalMs) * 360;
   }, [activePlanSession, arcStartMinAngle, state, now]);
-
-  /**
-   * Digital countdown arc — renders a shrinking full-circle arc for ALL
-   * digital sessions (not just planned ones).
-   *
-   * Anchored at 12 o'clock (0°). Starts at 360° and shrinks to 0° as
-   * time passes. Uses the session tag's color from the PlannedRingsLayer
-   * color system for visual consistency.
-   *
-   * Rendering uses the EXACT same technique as PlannedRingsLayer's
-   * ArcSegment: pathLength=1000, strokeDasharray/offset, ring-arc-draw
-   * animation, same glow filter, same stroke width/opacity.
-   */
-  const digitalCountdown = useMemo(() => {
-    if (!digitalMode) return null;
-    if (state.kind !== 'targeted' && state.kind !== 'paused') return null;
-    const totalMs      = state.end - state.start;
-    if (totalMs <= 0) return null;
-    const effectiveNow = state.kind === 'paused' ? state.pausedAt : now.getTime();
-    const remainMs     = Math.max(0, state.end - effectiveNow);
-    const degrees      = (remainMs / totalMs) * 360;
-    const color        = tagColor(sessionTagRef.current);
-    return { degrees, color, complete: remainMs <= 0, remainMs };
-  }, [digitalMode, state, now]);
-
-  // Stable key for the digital countdown arc — resets the draw-in animation
-  // only when a NEW session starts (not on every re-render as degrees change).
-  const digitalArcStartRef = useRef(0);
-  if (digitalMode && (state.kind === 'targeted' || state.kind === 'paused')) {
-    if (digitalArcStartRef.current !== state.start) {
-      digitalArcStartRef.current = state.start;
-    }
-  } else {
-    digitalArcStartRef.current = 0;
-  }
-  const digitalArcSessionKey = digitalArcStartRef.current;
 
   /* ---- "Start now" from a planned session ---- */
   const startFromPlan = useCallback((session: PlannedSession) => {
@@ -840,50 +854,6 @@ export const FocusRing = memo(function FocusRing({
             strokeLinecap="round"
           />
         )}
-
-        {/* Digital countdown arc — EXACT same rendering as PlannedRingsLayer's
-            ArcSegment: pathLength trick, ring-arc-draw animation, glow filter,
-            tag-based color. Shrinks from 360° → 0° anchored at 12 o'clock. */}
-        {digitalMode && digitalCountdown && digitalCountdown.degrees > 0.5 && (() => {
-          const cdColor = digitalCountdown.color;
-          const cdPath  = arcPath(0, digitalCountdown.degrees, RING_R);
-          if (!cdPath) return null;
-          const isVanishing = digitalCountdown.complete;
-          const cdAnimation = isVanishing
-            ? 'ring-arc-vanish 440ms cubic-bezier(0.4,0,1,1) both'
-            : `ring-arc-draw 580ms cubic-bezier(0.22,0.61,0.36,1) both`;
-          return (
-            <g
-              key={digitalArcSessionKey}
-              style={{
-                transformBox:    'view-box',
-                transformOrigin: `${C}px ${C}px`,
-                filter: `brightness(1.18) drop-shadow(0 0 4px ${hexToRgba(cdColor, 0.55)})`,
-                transition:      'filter 150ms ease-out',
-                pointerEvents:   'none',
-              }}
-            >
-              <path
-                d={cdPath}
-                fill="none"
-                strokeLinecap="round"
-                pathLength={1000}
-                style={{
-                  stroke:           cdColor,
-                  strokeWidth:      STROKE + 0.35,
-                  strokeOpacity:    0.92,
-                  strokeDasharray:  1000,
-                  strokeDashoffset: 1000,
-                  animation:        cdAnimation,
-                  transition:       isVanishing
-                    ? 'none'
-                    : 'stroke-width 220ms ease-out, stroke-opacity 200ms ease-out',
-                  pointerEvents:    'none',
-                }}
-              />
-            </g>
-          );
-        })()}
 
         {/* Bonus arc — only after target reached (analog only — digital arc shrinks to 0) */}
         {!digitalMode && data.complete && data.end !== null && data.bonusHead !== null && (

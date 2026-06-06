@@ -79,7 +79,14 @@ export default function App() {
     stop: () => void;
     startWithGoalAndTag: (startMs: number, endMs: number, tag: string | null) => void;
   }) => {
-    setFocusState(ctx.state);
+    setFocusState(prev => {
+      // When transitioning from idle → active, close the schedule view
+      // so the PlannedRingsLayer only shows the active session's arc.
+      if (prev.kind === 'idle' && ctx.state.kind !== 'idle') {
+        setScheduleMode('closed');
+      }
+      return ctx.state;
+    });
     focusControlsRef.current = ctx;
   }, []);
 
@@ -290,8 +297,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Schedule badge */}
-      {auth.user && upcomingTotal > 0 && (
+      {/* Schedule badge — hidden while a session is running (Pause/Stop takes its slot) */}
+      {auth.user && upcomingTotal > 0 && focusState.kind === 'idle' && (
         <ScheduleBadge
           count={upcomingTotal}
           todayCount={todayPlannedCount}
