@@ -1028,3 +1028,436 @@
   }
   .trust-disclaimer { opacity: 0.7 !important; }
 }
+
+/* =========================================================================
+   SCENE 7 — "Start Now" (the invitation)
+
+   Clock RISES from below with a soft glow. Two CTAs follow.
+   Primary: Save your progress (opens AuthModal)
+   Ghost:   Open the clock (go to /app, no account)
+   ========================================================================= */
+
+.scene--invite {
+  padding: 12vh 6vw;
+}
+
+.invite-stage {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3vh;
+  text-align: center;
+}
+
+/* Rising clock with glow halo */
+.invite-clock {
+  position: relative;
+  width: min(36vmin, 380px);
+  height: min(36vmin, 380px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  margin-bottom: 2vh;
+  will-change: opacity, transform;
+}
+.invite-clock .hero-clock {
+  width: 100%;
+  height: 100%;
+}
+.invite-clock__glow {
+  position: absolute;
+  inset: -30%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    color-mix(in srgb, var(--hand-second) 18%, transparent) 0%,
+    color-mix(in srgb, var(--hand-second) 8%, transparent) 30%,
+    transparent 65%
+  );
+  filter: blur(28px);
+  z-index: -1;
+  animation: invite-glow-breathe 5.5s var(--ease-out) infinite;
+}
+@keyframes invite-glow-breathe {
+  0%, 100% { opacity: 0.7; transform: scale(0.95); }
+  50%      { opacity: 1;   transform: scale(1.05); }
+}
+
+.invite-headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(28px, 4.4vmin, 48px);
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: var(--fg);
+  text-wrap: balance;
+  will-change: opacity, transform;
+}
+
+.invite-subhead {
+  margin: 0;
+  font-family: 'Special Elite', var(--font-display);
+  font-size: clamp(16px, 1.9vmin, 19px);
+  font-weight: 400;
+  color: var(--fg-muted);
+  will-change: opacity;
+}
+
+.invite-ctas {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 2vh;
+}
+
+/* CTA base style — matches existing pill design language */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 24px;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 15px;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-decoration: none;
+  user-select: none;
+  will-change: opacity, transform;
+  transition:
+    transform 200ms var(--ease-apple),
+    background-color 200ms var(--ease-apple),
+    border-color 200ms var(--ease-apple),
+    box-shadow 200ms var(--ease-apple);
+}
+.cta:hover {
+  transform: translateY(-1px);
+}
+.cta:active {
+  transform: translateY(0) scale(0.985);
+  transition-duration: 80ms;
+}
+.cta:focus-visible {
+  outline: 2px solid var(--hand-second);
+  outline-offset: 3px;
+}
+
+/* Primary CTA — red, filled */
+.cta--primary {
+  background: var(--hand-second);
+  color: #ffffff;
+  border-color: var(--hand-second);
+  box-shadow: 0 6px 20px -6px color-mix(in srgb, var(--hand-second) 60%, transparent);
+}
+.cta--primary:hover {
+  background: color-mix(in srgb, var(--hand-second) 88%, white);
+  box-shadow: 0 10px 26px -6px color-mix(in srgb, var(--hand-second) 70%, transparent);
+}
+
+/* Ghost CTA — glass pill, matches existing controls */
+.cta--ghost {
+  background: var(--glass-bg);
+  color: var(--fg);
+  border-color: var(--glass-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.cta--ghost:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--fg-hairline);
+}
+
+.invite-foot {
+  margin: 4vh 0 0;
+  font-size: 13px;
+  color: var(--fg-muted);
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  will-change: opacity;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .invite-clock { width: min(56vmin, 280px); height: min(56vmin, 280px); }
+  .invite-ctas { flex-direction: column; width: 100%; max-width: 320px; }
+  .cta { width: 100%; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .invite-clock,
+  .invite-headline,
+  .invite-subhead,
+  .invite-foot,
+  .cta {
+    opacity: 1 !important; transform: none !important;
+  }
+  .invite-clock__glow { animation: none; }
+}
+
+/* =========================================================================
+   SCENE 7.5 — FAQ (accordion + schema)
+
+   Clean accordion. One item open at a time. JSON-LD schema injected via
+   the component to power Google rich results.
+   ========================================================================= */
+
+.scene--faq {
+  padding: 10vh 6vw;
+}
+
+.faq-stage {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5vh;
+}
+
+.faq-eyebrow {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.faq-heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(28px, 4.4vmin, 48px);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--fg);
+  text-align: center;
+  text-wrap: balance;
+}
+
+.faq-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.faq-item {
+  border-top: 1px solid var(--fg-hairline);
+}
+.faq-item:last-child {
+  border-bottom: 1px solid var(--fg-hairline);
+}
+
+.faq-q {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(16px, 1.8vmin, 18px);
+  letter-spacing: -0.01em;
+  color: var(--fg);
+  text-align: left;
+  transition: color 200ms var(--ease-apple);
+}
+.faq-q:hover { color: var(--hand-second); }
+.faq-q:focus-visible {
+  outline: 2px solid var(--hand-second);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.faq-q__chev {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-muted);
+  flex-shrink: 0;
+  transition: transform 280ms var(--ease-apple), color 200ms var(--ease-apple);
+}
+.faq-item.is-open .faq-q__chev {
+  transform: rotate(180deg);
+  color: var(--hand-second);
+}
+
+.faq-a {
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 360ms var(--ease-apple);
+}
+.faq-item.is-open .faq-a {
+  grid-template-rows: 1fr;
+}
+.faq-a > p {
+  min-height: 0;
+  margin: 0 0 22px;
+  font-size: clamp(14px, 1.5vmin, 16px);
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--fg-muted);
+  text-wrap: pretty;
+  padding-right: 36px;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .scene--faq { padding: 8vh 5vw; }
+  .faq-q { padding: 18px 2px; }
+  .faq-a > p { padding-right: 20px; margin-bottom: 18px; }
+}
+
+/* =========================================================================
+   SCENE 8 — Footer (Credits Roll)
+
+   Brand mark + 4-column nav + bottom bar with credit + back-to-top.
+   Calm, restrained — no big CTAs, no newsletter.
+   ========================================================================= */
+
+.scene--footer {
+  align-items: stretch;
+  justify-content: stretch;
+  min-height: auto;
+  padding: 8vh 6vw 6vh;
+  border-top: 1px solid var(--fg-hairline);
+  background: var(--bg);
+}
+
+.footer-stage {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6vh;
+}
+
+/* Brand mark — top of footer */
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 400px;
+}
+.footer-brand__name {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: -0.025em;
+  color: var(--fg);
+  text-decoration: none;
+}
+.footer-brand__name:hover { color: var(--hand-second); }
+.footer-brand__tagline {
+  margin: 0;
+  font-family: 'Special Elite', var(--font-display);
+  font-size: 14px;
+  color: var(--fg-muted);
+  font-weight: 400;
+}
+
+/* Four-column grid */
+.footer-cols {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 32px;
+}
+
+.footer-col__title {
+  margin: 0 0 14px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+.footer-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.footer-col li a {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--fg-muted);
+  text-decoration: none;
+  transition: color 200ms var(--ease-apple);
+}
+.footer-col li a:hover {
+  color: var(--hand-second);
+}
+
+/* Bottom bar — credit + back to top */
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding-top: 4vh;
+  border-top: 1px solid var(--fg-hairline);
+  flex-wrap: wrap;
+}
+
+.footer-credit {
+  margin: 0;
+  font-size: 13px;
+  color: var(--fg-muted);
+  font-family: 'Special Elite', var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.footer-top-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  text-decoration: none;
+  padding: 6px 14px 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--fg-hairline);
+  background: var(--glass-bg);
+  transition:
+    color 200ms var(--ease-apple),
+    border-color 200ms var(--ease-apple),
+    transform 180ms var(--ease-apple);
+}
+.footer-top-link:hover {
+  color: var(--fg);
+  border-color: var(--bezel-strong);
+  transform: translateY(-1px);
+}
+
+/* ── Mobile (≤ 640px): 2x2 column grid ───────────────────────────────── */
+@media (max-width: 640px) {
+  .scene--footer { padding: 6vh 5vw 5vh; }
+  .footer-cols { grid-template-columns: 1fr 1fr; gap: 24px; }
+  .footer-bottom { flex-direction: column; align-items: flex-start; gap: 16px; }
+}

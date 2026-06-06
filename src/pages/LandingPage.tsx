@@ -15,6 +15,9 @@ import { Scene3ThreeClicks } from './landing/Scene3ThreeClicks';
 import { Scene4Features } from './landing/Scene4Features';
 import { Scene5ComingSoon } from './landing/Scene5ComingSoon';
 import { Scene6Trust } from './landing/Scene6Trust';
+import { Scene7Invite } from './landing/Scene7Invite';
+import { Scene75FAQ } from './landing/Scene75FAQ';
+import { Scene8Footer } from './landing/Scene8Footer';
 import './LandingPage.css';
 
 /* ------------------------------------------------------------------ */
@@ -66,25 +69,13 @@ export default function LandingPage() {
       <Scene6Trust />
 
       {/* SCENE 7 — Invitation */}
-      <section className="scene scene--invite" data-scene="7" aria-label="Start now">
-        <div className="scene-placeholder">
-          <p>Scene 7 — invitation + CTAs (Step 12)</p>
-        </div>
-      </section>
+      <Scene7Invite />
 
       {/* SCENE 7.5 — FAQ (for SEO) */}
-      <section className="scene scene--faq" data-scene="7.5" aria-label="Frequently asked questions">
-        <div className="scene-placeholder">
-          <p>Scene 7.5 — FAQ (Step 13)</p>
-        </div>
-      </section>
+      <Scene75FAQ />
 
       {/* SCENE 8 — Footer / Credits */}
-      <footer className="scene scene--footer" data-scene="8" aria-label="Footer">
-        <div className="scene-placeholder">
-          <p>Scene 8 — Footer (Step 14)</p>
-        </div>
-      </footer>
+      <Scene8Footer />
     </div>
   );
 }
