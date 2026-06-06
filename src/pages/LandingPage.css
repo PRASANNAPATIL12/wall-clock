@@ -1,0 +1,87 @@
+/* =========================================================================
+   LandingPage — Cinematic scrollytelling homepage
+   =========================================================================
+   Layout primitives used across all scenes:
+   · .landing            — root wrapper (lets the page scroll naturally)
+   · .scene              — each viewport section, ≥ 100vh
+   · .scene--<name>      — per-scene styling
+   · .scene-placeholder  — temp dev-marker until each scene is built
+   ========================================================================= */
+
+.landing {
+  /* Allow vertical scroll (the existing App uses position:fixed/inset:0 — we don't) */
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-display);
+  overflow-x: hidden;       /* prevent horizontal jitter from transforms */
+  overflow-y: visible;      /* let the document scroll naturally */
+  transition:
+    background var(--d-theme) var(--ease-apple),
+    color var(--d-theme) var(--ease-apple);
+}
+
+/* Each scene = full viewport minimum, contains its own narrative beat */
+.scene {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Per-scene heights (extra viewport-units for sticky/scroll-tied animations) */
+.scene--hero          { min-height: 100vh; }
+.scene--zoom          { min-height: 250vh; }   /* sticky zoom over 2.5vh */
+.scene--three-clicks  { min-height: 300vh; }   /* sticky 3-card reveal */
+.scene--features      { min-height: 500vh; }   /* horizontal scroll inside */
+.scene--roadmap       { min-height: 120vh; }
+.scene--trust         { min-height: 120vh; }
+.scene--invite        { min-height: 120vh; }
+.scene--faq           { min-height: 100vh; }
+.scene--footer        { min-height: 80vh; }
+
+/* Placeholder marker — visible during early development.
+   Will be replaced by real scene content in later steps. */
+.scene-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px;
+  border: 1px dashed var(--fg-hairline);
+  border-radius: 14px;
+  background: var(--glass-bg);
+  color: var(--fg-muted);
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  text-align: center;
+  max-width: 480px;
+}
+.scene-placeholder h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 32px;
+  letter-spacing: -0.03em;
+  color: var(--fg);
+  margin: 0;
+}
+.scene-placeholder p {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* Respect reduced-motion preference globally on the landing page */
+@media (prefers-reduced-motion: reduce) {
+  .landing,
+  .landing * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

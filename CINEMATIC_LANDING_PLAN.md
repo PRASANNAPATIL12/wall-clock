@@ -89,14 +89,42 @@ Treat the homepage like a **short film, 6 minutes of scroll, 8 scenes**. The use
 | **Sticky/pinned camera** | The clock stays centered for Scenes 1–3 while content scrolls past it |
 | **Scroll-driven zoom** | Scene 2 — camera dives into the clock face, reveals microscopic detail |
 | **Parallax depth** | Scenes 4–6 — feature cards float at different scroll speeds |
-| **Horizontal scroll-in-vertical** | Scene 5 — feature gallery scrolls sideways inside a pinned panel |
+| **Horizontal scroll-in-vertical** | Scene 4 — feature gallery scrolls sideways inside a pinned panel |
 | **Scrubbed video/GIF** | Each feature has a screen recording GIF that "plays" based on scroll position |
-| **Scroll-triggered theme switch** | Scene 6 — light → dark as user scrolls into "Themes coming soon" |
 | **Magnetic cursor + custom pointer** | Desktop only — circular pointer pulls toward CTAs |
 | **Text reveals** | Word-by-word fade (or "split text" mask reveals) for headlines |
 | **Number counters** | "1,000,000+ humans" counts up as it enters viewport |
 | **Logo grid morph** | "Trusted by…" logos fade in stagger, slight rise from below |
 | **Credits roll** | Footer scrolls like film credits — names, links, version |
+
+## 1.7 Theme Strategy — REFINED
+
+**Decision:** Support BOTH light and dark themes **fully throughout** the cinematic experience.
+
+**Reasoning:**
+- The user's theme preference is sacred. We don't override it during marketing.
+- The "scroll-driven theme switch" originally proposed for Scene 5/6 (light → dark) is removed. It's gimmicky and breaks user trust.
+- Both themes already have complete design tokens (`global.css` lines 21–115).
+- Every scene must be designed and tested in both themes.
+
+**Theme toggle visibility:**
+- **Scene 1 only:** Existing theme toggle (top-left) remains visible — exactly as the current app.
+- **Scene 2 onward:** Theme toggle fades out (along with all other controls). Why? The cinematic flow demands a clean canvas. Returning to Scene 1 (or smooth-scroll to top) restores them.
+- **Footer:** Theme toggle does NOT reappear. Users can toggle theme from `/app` if needed.
+
+**Visual treatment per theme:**
+
+| Element | Light Theme | Dark Theme |
+|---------|------------|-----------|
+| Background (default scenes) | `#f4f1ec` warm cream | `#0e0e10` near-black |
+| Background (Scene 2 blackout) | Deep charcoal `#1a1a1a` with vignette | Pure black `#000` with vignette |
+| Headlines | `#1a1a1a` near-black | `#ece9e2` warm white |
+| Feature card glass | `rgba(255,255,255,0.32)` | `rgba(255,255,255,0.06)` |
+| Logo grid | Logos at 60% opacity desaturated, full color on hover | Logos at 50% opacity inverted, full color on hover |
+| Particle dots (Scene 5) | `rgba(0,0,0,0.15)` | `rgba(255,255,255,0.10)` |
+| CTA primary | Red `#c8312b` | Red `#e0463f` |
+
+All scenes use existing CSS custom properties — no hardcoded colors. Theme switches at Scene 1 will visually propagate through all scenes via the cascade.
 
 ---
 
@@ -285,10 +313,10 @@ Inside the pinned panel, content scrolls horizontally:
 ```
 
 **What animates:**
-- Background scrolls into deep dark (`--bg` mutates via CSS variable scroll-tied update — `document.documentElement.style.setProperty('--bg', interpolate(...))`).
-- Cards float in from below (`translateY(40px) opacity:0` → settled), staggered 280ms.
+- Cards float in from below (`translateY(40px) opacity:0` → settled), staggered 280ms with `--ease-spring`.
 - Subtle particle field behind cards: 20 dots drifting upward at 0.5px/frame. Suggests "potential, coming, brewing."
 - Each card has a soft glow (`box-shadow` with the tag color from `PlannedRingsLayer`).
+- Theme stays consistent with user's preference (no forced theme swap).
 
 **Narrative purpose:** Signal momentum. The product is not stagnant. Future features = reason to bookmark / sign up now.
 
@@ -549,7 +577,7 @@ The landing page itself **embeds** the existing clock components for Scenes 1, 3
     </div>
     <div class="footer-meta">
       <p>© 2026 Focus Clock. All rights reserved.</p>
-      <p>Built with care by Prasannagouda Patil.</p>
+      <p>Built with care by Prasanna Patil.</p>
       <a href="#top">↑ Back to top</a>
     </div>
   </footer>
