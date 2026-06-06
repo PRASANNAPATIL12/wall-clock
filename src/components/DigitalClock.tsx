@@ -1,14 +1,12 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { RefObject } from 'react';
 import { useNow } from '../hooks/useNow';
 import { getZonedTime } from '../lib/timezones';
 import type { FocusState } from '../hooks/useFocusTrack';
-import type { PlannedSession } from '../lib/planStore';
 import { getAllTags, TAGS_CHANGED_EVENT } from '../lib/tags';
 import { TagIcon } from './TagIcon';
 import { DigitalDurationPicker } from './DigitalDurationPicker';
-import { DigitalPlannedCards } from './DigitalPlannedCards';
 import './DigitalClock.css';
 
 /* ── FocusControls interface ─────────────────────────────────────────── */
@@ -27,30 +25,23 @@ interface Props {
   format: '12' | '24';
   /** Current focus state mirrored from FocusRing via App.tsx. */
   focusState?: FocusState;
-  /**
-   * Ref to live controls from FocusRing (RefObject so callbacks always
-   * read the latest value even if the initial render beat the first context fire).
-   */
+  /** Ref to live controls from FocusRing. */
   focusControlsRef?: RefObject<FocusControls | null>;
   /** Logged-in user id. Null = anonymous (timer UI hidden). */
   userId?: string | null;
-  /** Today's planned sessions to show as tappable chips. */
-  todayPlannedSessions?: PlannedSession[];
   /** Opens Settings → Tags (for the "+" tag button). */
   onManageTags?: () => void;
-}
-
-/* ── Countdown format ─────────────────────────────────────────────────── */
-
-/** Remaining ms → { hours: "01", minutes: "30" } — no seconds shown. */
-function fmtCountdown(ms: number): { hours: string; minutes: string } {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  return {
-    hours:   String(h).padStart(2, '0'),
-    minutes: String(m).padStart(2, '0'),
-  };
+  /**
+   * True when the digital face is the active mode.
+   * Prevents portal elements (Start Focus, TagPicker) from rendering
+   * when the analog face is currently shown.
+   */
+  isVisible?: boolean;
+  /**
+   * True when the concentric planning rings are open (schedule view).
+   * Triggers compact mode so the clock fits inside the ring center.
+   */
+  schedulingViewOpen?: boolean;
 }
 
 /* ── Inline TagPicker for digital flow ───────────────────────────────── */
@@ -139,8 +130,9 @@ export const DigitalClock = memo(function DigitalClock({
   focusState = { kind: 'idle' },
   focusControlsRef,
   userId = null,
-  todayPlannedSessions = [],
   onManageTags,
+  isVisible = false,
+  schedulingViewOpen = false,
 }: Props) {
   const now = useNow('second');
   const { hours: h24, minutes, seconds } = getZonedTime(now, timezone);
@@ -160,16 +152,18 @@ export const DigitalClock = memo(function DigitalClock({
     }
   }, [focusState.kind]);
 
-  /* Derived timer values */
-  const isRunning = focusState.kind === 'targeted' || focusState.kind === 'paused';
+  /**
+   * Compact mode — clock shrinks to fit inside the FocusRing circle.
+   * Triggered when:
+   *   1. A session is running (targeted/paused/tracking)
+   *   2. The scheduling/planned-rings view is open
+   *
+   * In compact mode: show HH:MM current time (no seconds, no AM/PM).
+   * The FocusRing arc handles the visual session-progress indicator.
+   * We NEVER show a countdown — always the current wall-clock time.
+   */
+  const isCompact = focusState.kind !== 'idle' || schedulingViewOpen;
   const isPaused  = focusState.kind === 'paused';
-
-  const { remaining: remainingMs } = useMemo(() => {
-    if (!isRunning) return { remaining: 0 };
-    const s = focusState as { kind: 'targeted' | 'paused'; start: number; end: number; pausedAt?: number };
-    const effectiveNow = isPaused ? (s.pausedAt ?? now.getTime()) : now.getTime();
-    return { remaining: Math.max(0, s.end - effectiveNow) };
-  }, [focusState, isRunning, isPaused, now]);
 
   /* Handlers */
   const handleStartFocus = useCallback(() => setStep('picking-tag'), []);
@@ -195,70 +189,51 @@ export const DigitalClock = memo(function DigitalClock({
 
   const handleDurationCancel = useCallback(() => setStep('picking-tag'), []);
 
-  const handlePlanStart = useCallback((session: PlannedSession) => {
-    const ctrl = focusControlsRef?.current;
-    if (!ctrl) return;
-    const nowMs = Date.now();
-    const [hhStr, mmStr] = session.start_time_local.split(':');
-    const startH  = parseInt(hhStr ?? '0', 10);
-    const startM  = parseInt(mmStr ?? '0', 10);
-    const today   = new Date();
-    const planned = new Date(
-      today.getFullYear(), today.getMonth(), today.getDate(),
-      startH, startM + session.duration_minutes,
-    );
-    const endMs = planned.getTime() > nowMs
-      ? planned.getTime()
-      : nowMs + session.duration_minutes * 60_000;
-    ctrl.startWithGoalAndTag(nowMs, endMs, session.tag ?? null);
-  }, [focusControlsRef]);
-
-  /* Display helpers */
+  /* Display helpers — always current time */
   const pad = (n: number) => String(n).padStart(2, '0');
   const hrDisplay  = format === '12' ? String(h12)  : pad(h24);
   const minDisplay = pad(minutes);
   const secDisplay = pad(seconds);
 
-  const { hours: cH, minutes: cM } = fmtCountdown(remainingMs);
-
   return (
     <div className="digital-face-content">
 
-      {/* ── Digit display ── */}
-      {isRunning ? (
-        /* Timer mode: HH:MM countdown (no seconds) */
-        <div
-          className={`digital digital--timer${isPaused ? ' digital--paused' : ''}`}
-          role="timer"
-          aria-live="off"
-          aria-label={isPaused ? 'Session paused' : 'Focus countdown'}
-        >
-          <span className="d-hr">{cH}</span>
-          <span className={`d-sep${isPaused ? ' d-sep--dim' : ''}`} aria-hidden>:</span>
-          <span className="d-min">{cM}</span>
-          {isPaused && (
-            <span className="d-paused-badge" aria-label="Paused">⏸</span>
-          )}
-        </div>
-      ) : (
-        /* Clock mode: HH:MM:SS current time */
-        <div
-          className="digital"
-          role="timer"
-          aria-live="off"
-          aria-label="Digital clock"
-        >
-          <span className="d-hr">{hrDisplay}</span>
-          <span className="d-sep" aria-hidden>:</span>
-          <span className="d-min">{minDisplay}</span>
-          <span className="d-sep" aria-hidden>:</span>
-          <span className="d-sec">{secDisplay}</span>
-          {format === '12' && <span className="d-suffix">{suffix}</span>}
-        </div>
-      )}
+      {/* ── Digit display — always shows current wall-clock time ── */}
+      {/*    Normal mode  : HH:MM:SS  (full original size, large)   */}
+      {/*    Compact mode : HH:MM     (smaller, fits inside ring)    */}
+      <div
+        className={[
+          'digital',
+          isCompact  ? 'digital--compact' : '',
+          isPaused   ? 'digital--paused'  : '',
+        ].filter(Boolean).join(' ')}
+        role="timer"
+        aria-live="off"
+        aria-label={isPaused ? 'Session paused' : 'Digital clock'}
+      >
+        <span className="d-hr">{hrDisplay}</span>
+        <span className={`d-sep${isPaused ? ' d-sep--dim' : ''}`} aria-hidden>:</span>
+        <span className="d-min">{minDisplay}</span>
 
-      {/* ── Start Focus CTA + planned chips — logged-in + idle only ── */}
-      {userId && !isRunning && step === 'idle' && (
+        {/* Seconds colon + seconds — hidden in compact mode */}
+        {!isCompact && <span className="d-sep" aria-hidden>:</span>}
+        {!isCompact && <span className="d-sec">{secDisplay}</span>}
+
+        {/* Paused indicator — compact mode only */}
+        {isCompact && isPaused && (
+          <span className="d-paused-badge" aria-label="Paused">⏸</span>
+        )}
+
+        {/* AM/PM suffix — normal mode, 12-hour format only */}
+        {!isCompact && format === '12' && (
+          <span className="d-suffix">{suffix}</span>
+        )}
+      </div>
+
+      {/* ── Start Focus CTA — portal to fixed bottom position ── */}
+      {/*    Only renders when: digital mode active, logged-in,    */}
+      {/*    session idle, no step in progress.                     */}
+      {isVisible && userId && !isCompact && step === 'idle' && createPortal(
         <div className="dt-focus-cta">
           <button
             className="dt-start-btn"
@@ -271,17 +246,12 @@ export const DigitalClock = memo(function DigitalClock({
             </svg>
             Start Focus
           </button>
-
-          <DigitalPlannedCards
-            sessions={todayPlannedSessions}
-            canStart={focusState.kind === 'idle'}
-            onStart={handlePlanStart}
-          />
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* ── Tag picker (step 1) ── */}
-      {step === 'picking-tag' && (
+      {isVisible && step === 'picking-tag' && (
         <DigitalTagPicker
           onPick={handleTagPick}
           onManageTags={onManageTags}
@@ -290,7 +260,7 @@ export const DigitalClock = memo(function DigitalClock({
       )}
 
       {/* ── Duration picker (step 2) ── */}
-      {step === 'picking-duration' && (
+      {isVisible && step === 'picking-duration' && (
         <DigitalDurationPicker
           onPick={handleDurationPick}
           onCancel={handleDurationCancel}

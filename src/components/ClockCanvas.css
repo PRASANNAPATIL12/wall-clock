@@ -47,38 +47,18 @@
 }
 
 /* The analog face-layer wraps the .analog__face div (which supplies the
-   87% circle). It inherits the face-layer positioning and the .analog__face
-   handles the visual circle. */
+   87% circle with ticks/numerals/hands). It inherits face-layer positioning;
+   .analog__face inside it handles its own 87% sizing. */
 
-/* The digital face-layer IS the .analog__face circle — it has the same
-   background, shadow, and border-radius. Content is centered inside it.
-   Since .analog__face uses width:87% / height:87% which only works under
-   a grid/flex parent, we position it absolutely and mirror the size. */
-.face-layer.analog__face {
-  width: 87%;
-  height: 87%;
-  /* Absolute so it stays centered in the .analog grid container */
-  position: absolute;
-  inset: unset;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-/* Override transform for mode transitions on the combined face+layer class:
-   merge the centering translate with the scale transition. */
-.face-layer.analog__face.face-layer--in {
-  transform: translate(-50%, -50%) scale(1);
-  filter: blur(0);
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.face-layer.analog__face.face-layer--out-down {
-  transform: translate(-50%, -50%) scale(0.94);
-  filter: blur(8px);
-  opacity: 0;
-  pointer-events: none;
+/* The digital face-layer is a transparent full-coverage overlay — no bezel,
+   no background. Content (the time digits) is centered via flexbox.
+   The FocusRing arc provides all visual framing in digital mode. */
+.digital-face-layer {
+  /* fill the .analog container — inherited from .face-layer (position:absolute; inset:0) */
+  /* content is centered via .face-layer's display:flex align/justify:center */
+  background: transparent;
+  /* overflow: visible is the default; large idle text can bleed outside
+     the .analog box and still be visible within the stage/viewport */
 }
 
 /* Mobile */

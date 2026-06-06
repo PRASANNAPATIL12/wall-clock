@@ -1,21 +1,28 @@
 /* =========================================================================
-   Digital Clock — typography + display inside the analog clock face.
+   Digital Clock — two visual states:
 
-   The digital clock now lives inside .analog__face (the circular bezel)
-   at the same size as the analog face, so font sizes are scaled to fit
-   comfortably within the ring without overflowing.
+   1. Normal (idle, no active session, planning rings closed):
+      · Full original-size HH:MM:SS at clamp(60px, 17vmin, 220px)
+      · Transparent face — no circular background or bezel
+      · Large, immersive wall-clock display
+
+   2. Compact (session running OR planning rings open):
+      · Smaller HH:MM (no seconds) at clamp(52px, 9vmin, 104px)
+      · Centered inside the FocusRing circle
+      · FocusRing arcs show session progress around it
+      · Still shows current wall-clock time — never a countdown
+
+   The face background is fully transparent — the ring itself provides
+   all visual framing. No circular bezel is shown in digital mode.
    ========================================================================= */
 
 /* ── Content wrapper ─────────────────────────────────────────────────── */
 
 .digital-face-content {
-  width: 100%;
-  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
 }
 
 /* ── Digit display ────────────────────────────────────────────────────── */
@@ -28,19 +35,22 @@
   font-family: var(--font-mono);
   font-weight: 200;
   font-variant-numeric: tabular-nums;
-  /* Clock mode (HH:MM:SS): sized to fit 8 characters inside the face */
-  font-size: clamp(32px, 5.5vmin, 64px);
+  /* Normal mode: full original size — same as the standalone digital clock */
+  font-size: clamp(60px, 17vmin, 220px);
   letter-spacing: -0.03em;
   line-height: 1;
   color: var(--fg);
-  transition: color var(--d-theme) var(--ease-apple);
+  /* Smooth size transition when switching between normal ↔ compact */
+  transition:
+    font-size 420ms var(--ease-apple),
+    color var(--d-theme) var(--ease-apple);
   user-select: none;
   -webkit-user-select: none;
 }
 
-/* Timer mode (HH:MM only) — larger since fewer characters */
-.digital--timer {
-  font-size: clamp(48px, 8.5vmin, 96px);
+/* Compact mode — fits inside the FocusRing circle (HH:MM only) */
+.digital--compact {
+  font-size: clamp(52px, 9vmin, 104px);
 }
 
 .d-hr,
@@ -66,6 +76,7 @@
   60.01%, 100%  { opacity: 0.35; }
 }
 
+/* Seconds — normal mode only, orange/red accent, smaller */
 .d-sec {
   color: var(--hand-second);
   font-size: 0.42em;
@@ -73,6 +84,7 @@
   transition: color var(--d-theme) var(--ease-apple);
 }
 
+/* AM/PM suffix — normal mode, 12h format only */
 .d-suffix {
   margin-left: 0.2em;
   font-size: 0.3em;
@@ -86,9 +98,10 @@
 
 @media (prefers-reduced-motion: reduce) {
   .d-sep { animation: none; opacity: 1; }
+  .digital { transition: color var(--d-theme) var(--ease-apple); }
 }
 
-/* ── Timer-mode states ────────────────────────────────────────────────── */
+/* ── Session states ───────────────────────────────────────────────────── */
 
 /* Paused: digits and colon dim */
 .digital--paused .d-hr,
@@ -100,15 +113,6 @@
 .d-sep--dim {
   opacity: 0.25;
   animation: none !important;
-}
-
-/* Complete: green tint */
-.digital--complete .d-hr,
-.digital--complete .d-min {
-  color: #2da44e;
-  background: linear-gradient(180deg, #2da44e 0%, #2da44e 60%, color-mix(in srgb, #2da44e 78%, transparent) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
 }
 
 /* Paused badge inline with digits */
@@ -127,15 +131,18 @@
   60.01%, 100%  { opacity: 0.2; }
 }
 
-/* ── Start Focus CTA — button + planned chips ─────────────────────────── */
+/* ── Start Focus CTA — fixed portal at bottom center ─────────────────── */
+/* Portal-rendered to document.body — same vertical position as              */
+/* PauseStopControl (they are mutually exclusive: CTA = idle, PSC = active). */
 
 .dt-focus-cta {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  position: relative;
-  z-index: 1;
+  position: fixed;
+  bottom: 72px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: fit-content;
+  z-index: 9;
   /* Enter animation */
   animation: dt-cta-in 300ms var(--ease-apple) both;
   /* Idle-fade transition */
@@ -147,9 +154,15 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Idle fade — hides Start Focus when cursor has been still (same as all controls) */
+/*
+ * Idle fade — hides Start Focus when cursor has been still 5 s (same as all controls).
+ *
+ * !important is required here: the `animation: dt-cta-in ... both` fill-mode
+ * freezes the element at opacity:1 via CSS animation. A plain `opacity: 0`
+ * rule on body.idle cannot override a running/frozen animation without it.
+ */
 body.idle .dt-focus-cta {
-  opacity: 0;
+  opacity: 0 !important;
   transform: translateY(6px);
   pointer-events: none;
 }
@@ -329,8 +342,9 @@ body.idle .dt-focus-cta {
 /* ── Mobile ──────────────────────────────────────────────────────────── */
 
 @media (max-width: 640px) {
-  .digital         { font-size: clamp(28px, 5vmin, 52px); }
-  .digital--timer  { font-size: clamp(40px, 7.5vmin, 80px); }
-  .dt-tag-picker   { bottom: 200px; }
-  .dt-start-btn    { height: 30px; padding: 0 14px; font-size: 11px; }
+  .digital              { font-size: clamp(44px, 14vmin, 160px); }
+  .digital--compact     { font-size: clamp(40px, 8vmin, 88px); }
+  .dt-tag-picker        { bottom: 200px; }
+  .dt-focus-cta         { bottom: 80px; }
+  .dt-start-btn         { height: 30px; padding: 0 14px; font-size: 11px; }
 }

@@ -206,7 +206,6 @@ export default function App() {
           todayOnly={scheduleMode === 'today'}
           onScheduleClose={() => setScheduleMode('closed')}
           onPlanSessionCompleted={handleScheduleChanged}
-          todayPlannedSessions={auth.user ? todayPlannedSessions : []}
         />
       </div>
 

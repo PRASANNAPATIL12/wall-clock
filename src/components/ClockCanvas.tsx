@@ -4,7 +4,6 @@ import { FocusRing } from './FocusRing';
 import { AnalogClock } from './AnalogClock';
 import { DigitalClock } from './DigitalClock';
 import type { FocusState } from '../hooks/useFocusTrack';
-import type { PlannedSession } from '../lib/planStore';
 import './ClockCanvas.css';
 
 /* ── Re-export the FocusControls type so consumers can import it here ── */
@@ -43,8 +42,6 @@ interface Props {
   focusState?: FocusState;
   /** Stable ref to live controls from FocusRing. */
   focusControlsRef?: RefObject<FocusControls | null>;
-  /** Today's planned sessions for digital chip row. */
-  todayPlannedSessions?: PlannedSession[];
 }
 
 /**
@@ -74,7 +71,6 @@ export const ClockCanvas = memo(function ClockCanvas({
   onFocusContext,
   focusState,
   focusControlsRef,
-  todayPlannedSessions,
 }: Props) {
   const isAnalog = mode === 'analog';
 
@@ -107,9 +103,11 @@ export const ClockCanvas = memo(function ClockCanvas({
         <AnalogClock timezone={timezone} />
       </div>
 
-      {/* ── Digital face — HH:MM display, Start Focus, planned chips ── */}
+      {/* ── Digital face — transparent overlay, no bezel background ── */}
+      {/* No analog__face class here — the circular bezel must NOT show  */}
+      {/* in digital mode. The FocusRing arc provides all visual framing. */}
       <div
-        className={`analog__face analog__face--interactive face-layer${!isAnalog ? ' face-layer--in' : ' face-layer--out-down'}`}
+        className={`face-layer digital-face-layer${!isAnalog ? ' face-layer--in' : ' face-layer--out-down'}`}
         aria-hidden={isAnalog}
       >
         <DigitalClock
@@ -118,8 +116,9 @@ export const ClockCanvas = memo(function ClockCanvas({
           focusState={focusState}
           focusControlsRef={focusControlsRef}
           userId={userId}
-          todayPlannedSessions={todayPlannedSessions}
           onManageTags={onManageTags}
+          isVisible={!isAnalog}
+          schedulingViewOpen={schedulingViewOpen}
         />
       </div>
 
