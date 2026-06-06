@@ -2,27 +2,31 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getZonedTime } from '../lib/timezones';
 
 /**
- * Focus-tracking state machine for the analog clock's focus ring.
+ * Focus-tracking state machine for the focus ring.
  *
- *   idle ─── click 1 ──▶ tracking ─── click 2 ──▶ targeted ─── click 3 ──▶ idle
+ *   idle ─── click 1 ──▶ tracking ─── click 2 ──▶ targeted ──▶ idle
+ *                                                     │
+ *                                                  pause()
+ *                                                     │
+ *                                                  paused
+ *                                                     │
+ *                                         resume() / stop()
  *
- *  Click 1 anchors `start` at *now* (start angle is derived from the timestamp,
- *  i.e. wherever the minute hand currently is — NOT where the user clicked).
- *  Click 2 sets `end` such that the minute hand reaching the clicked angle
- *  marks completion.
- *  Click 3 returns to idle — and emits a session-end event so the host
- *  can persist the session (via Supabase / localStorage / wherever).
+ *  Click 1 anchors `start` at *now*.
+ *  Click 2 sets `end` (goal time).
+ *  Click 3 returns to idle — fires session-end event.
+ *  pause() freezes the countdown display (extends end on resume).
+ *  resume() extends `end` by the pause duration so remaining time is preserved.
+ *  stop() forces back to idle from any state — fires session-end event.
  *
- *  In-flight state (start/end timestamps) is mirrored to localStorage so a
- *  refresh mid-session restores correctly. The session-end event is fired
- *  only on the targeted → idle transition; that's when we know the
- *  complete shape of the session.
+ *  State is mirrored to localStorage so a refresh mid-session restores correctly.
  */
 
 export type FocusState =
   | { kind: 'idle' }
   | { kind: 'tracking'; start: number }
-  | { kind: 'targeted'; start: number; end: number };
+  | { kind: 'targeted'; start: number; end: number }
+  | { kind: 'paused'; start: number; end: number; pausedAt: number };
 
 export interface FocusSessionEnd {
   startTime: number;
@@ -32,11 +36,15 @@ export interface FocusSessionEnd {
   bonusSeconds: number;
 }
 
-const KEY_START = 'wall.track.start';
-const KEY_END = 'wall.track.end';
+const KEY_START     = 'wall.track.start';
+const KEY_END       = 'wall.track.end';
+const KEY_PAUSED_AT = 'wall.track.paused_at';
 
-/** 6 hours — sanity cap. Anyone genuinely focused for this long has forgotten the timer. */
+/** 6 hours — sanity cap for targeted sessions. */
 const MAX_TRACK_MS = 6 * 60 * 60 * 1000;
+/** 1 hour — auto-clear tracking-only (no goal set) sessions.
+ *  Prevents stale click-1 from blocking future sessions indefinitely. */
+const MAX_TRACKING_ONLY_MS = 1 * 60 * 60 * 1000;
 
 function load(): FocusState {
   if (typeof window === 'undefined') return { kind: 'idle' };
@@ -48,9 +56,23 @@ function load(): FocusState {
     if (Date.now() - start > MAX_TRACK_MS) return { kind: 'idle' };
 
     const rawEnd = window.localStorage.getItem(KEY_END);
-    if (!rawEnd) return { kind: 'tracking', start };
+    if (!rawEnd) {
+      // Tracking only (no goal) — auto-clear after 1 h to avoid stale state
+      if (Date.now() - start > MAX_TRACKING_ONLY_MS) return { kind: 'idle' };
+      return { kind: 'tracking', start };
+    }
     const end = Number(rawEnd);
     if (!Number.isFinite(end)) return { kind: 'tracking', start };
+
+    // Check for paused state
+    const rawPausedAt = window.localStorage.getItem(KEY_PAUSED_AT);
+    if (rawPausedAt) {
+      const pausedAt = Number(rawPausedAt);
+      if (Number.isFinite(pausedAt)) {
+        return { kind: 'paused', start, end, pausedAt };
+      }
+    }
+
     return { kind: 'targeted', start, end };
   } catch {
     return { kind: 'idle' };
@@ -63,26 +85,33 @@ export function useFocusTrack(
 ) {
   const [state, setState] = useState<FocusState>(load);
 
-  // Persist every change
+  // Persist every state change to localStorage
   useEffect(() => {
     try {
       if (state.kind === 'idle') {
         window.localStorage.removeItem(KEY_START);
         window.localStorage.removeItem(KEY_END);
+        window.localStorage.removeItem(KEY_PAUSED_AT);
       } else if (state.kind === 'tracking') {
         window.localStorage.setItem(KEY_START, String(state.start));
         window.localStorage.removeItem(KEY_END);
-      } else {
+        window.localStorage.removeItem(KEY_PAUSED_AT);
+      } else if (state.kind === 'targeted') {
         window.localStorage.setItem(KEY_START, String(state.start));
         window.localStorage.setItem(KEY_END, String(state.end));
+        window.localStorage.removeItem(KEY_PAUSED_AT);
+      } else {
+        // paused
+        window.localStorage.setItem(KEY_START, String(state.start));
+        window.localStorage.setItem(KEY_END, String(state.end));
+        window.localStorage.setItem(KEY_PAUSED_AT, String(state.pausedAt));
       }
     } catch {
       /* quota / private mode — ignore */
     }
   }, [state]);
 
-  // Emit a session-end event whenever we transition back to `idle`. Using a
-  // ref so callers can change their callback without re-triggering effects.
+  // Emit a session-end event whenever we transition back to `idle`.
   const prevStateRef = useRef<FocusState>(state);
   const onSessionEndRef = useRef(onSessionEnd);
   useEffect(() => {
@@ -99,7 +128,7 @@ export function useFocusTrack(
     if (!cb) return;
 
     if (prev.kind === 'tracking') {
-      // Cancelled before setting a target — short, untracked.
+      // Cancelled before setting a target — short, untracked
       cb({
         startTime: prev.start,
         goalTime: null,
@@ -108,6 +137,7 @@ export function useFocusTrack(
         bonusSeconds: 0,
       });
     } else {
+      // targeted or paused — both have a goal time
       const now = Date.now();
       cb({
         startTime: prev.start,
@@ -122,6 +152,7 @@ export function useFocusTrack(
   /**
    * Handle a click on the ring at the given angular position (0° = top / 12,
    * clockwise). Cycles the state machine.
+   * When paused, clicks are ignored — user must use Resume or Stop controls.
    */
   const handleClick = useCallback((clickAngleDeg: number) => {
     setState((prev) => {
@@ -140,7 +171,12 @@ export function useFocusTrack(
         return { kind: 'targeted', start: prev.start, end: now + deltaMs };
       }
 
-      // Click 3 — clear. The useEffect above will fire onSessionEnd.
+      if (prev.kind === 'paused') {
+        // Ignore ring clicks when paused — use the PauseStopControl overlay
+        return prev;
+      }
+
+      // Click 3 — clear. The useEffect above fires onSessionEnd.
       return { kind: 'idle' };
     });
   }, [timezone]);
@@ -160,12 +196,45 @@ export function useFocusTrack(
 
   /**
    * Directly transition to 'targeted' with explicit timestamps.
-   * Used by "Start now" from a planned session so we can set the goal
-   * time to the exact planned end time without going through angle math.
+   * Used by "Start now" (planned sessions) and the digital timer so we can
+   * set the goal time without going through angle math.
    */
   const startWithGoal = useCallback((startMs: number, endMs: number) => {
     setState({ kind: 'targeted', start: startMs, end: endMs });
   }, []);
 
-  return { state, handleClick, setDragEnd, startWithGoal };
+  /** Pause a targeted session. Freezes the countdown at the current moment. */
+  const pause = useCallback(() => {
+    setState((prev) => {
+      if (prev.kind !== 'targeted') return prev;
+      return { kind: 'paused', start: prev.start, end: prev.end, pausedAt: Date.now() };
+    });
+  }, []);
+
+  /**
+   * Resume a paused session.
+   * Extends `end` by the elapsed pause duration so the remaining time is
+   * preserved exactly as it was when the user paused.
+   */
+  const resume = useCallback(() => {
+    setState((prev) => {
+      if (prev.kind !== 'paused') return prev;
+      const pauseDuration = Date.now() - prev.pausedAt;
+      return {
+        kind: 'targeted',
+        start: prev.start,
+        end: prev.end + pauseDuration,
+      };
+    });
+  }, []);
+
+  /**
+   * Stop the current session immediately (any non-idle state → idle).
+   * Fires onSessionEnd with completed=false unless the goal was already reached.
+   */
+  const stop = useCallback(() => {
+    setState({ kind: 'idle' });
+  }, []);
+
+  return { state, handleClick, setDragEnd, startWithGoal, pause, resume, stop };
 }

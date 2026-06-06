@@ -1,0 +1,73 @@
+/* =========================================================================
+   ClockCanvas — shared container for analog and digital modes.
+
+   The `.analog` class on the root div is intentionally kept so all
+   FocusRing.css selectors (`.analog:hover .focus-ring .track`, etc.)
+   continue to work in both modes without any CSS changes.
+   ========================================================================= */
+
+/* ── Face layers — cross-dissolve between analog and digital ── */
+
+.face-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    opacity 720ms var(--ease-apple),
+    transform 720ms var(--ease-apple),
+    filter 720ms var(--ease-apple);
+  will-change: opacity, transform, filter;
+}
+
+/* Active mode — fully visible.
+   pointer-events: none is intentional — the face layers sit ON TOP of the
+   FocusRing SVG in DOM order. Without this, they intercept all clicks before
+   they reach the ring's .hit circle, breaking analog click-1/2/3 and drag.
+   Neither face has interactive elements in it: AnalogClock is purely visual
+   (ticks/numerals/hands), and DigitalClock's buttons are portaled to body. */
+.face-layer--in {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
+  pointer-events: none;
+  transition-delay: 140ms;
+}
+
+/* Analog leaving (scale up + blur, like the original is-out-up) */
+.face-layer--out-up {
+  opacity: 0;
+  transform: scale(1.06);
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+/* Digital leaving (scale down + blur, like the original is-out-down) */
+.face-layer--out-down {
+  opacity: 0;
+  transform: scale(0.94);
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+/* The analog face-layer wraps the .analog__face div (which supplies the
+   87% circle with ticks/numerals/hands). It inherits face-layer positioning;
+   .analog__face inside it handles its own 87% sizing. */
+
+/* The digital face-layer is a transparent full-coverage overlay — no bezel,
+   no background. Content (the time digits) is centered via flexbox.
+   The FocusRing arc provides all visual framing in digital mode. */
+.digital-face-layer {
+  /* fill the .analog container — inherited from .face-layer (position:absolute; inset:0) */
+  /* content is centered via .face-layer's display:flex align/justify:center */
+  background: transparent;
+  /* overflow: visible is the default; large idle text can bleed outside
+     the .analog box and still be visible within the stage/viewport */
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .face-layer--out-up  { filter: blur(6px); }
+  .face-layer--out-down { filter: blur(5px); }
+}

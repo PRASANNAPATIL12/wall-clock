@@ -101,10 +101,11 @@
   border-color: color-mix(in srgb, #2da44e 30%, transparent);
 }
 
-/* Idle fade — translateY only, no X */
+/* Idle fade — stays subtly visible (not fully hidden) so the user always
+   knows their sessions are there without it being distracting. */
 body.idle .today-summary {
-  opacity: 0;
-  transform: translateY(8px);
+  opacity: 0.22;
+  transform: translateY(4px);
   pointer-events: none;
 }
 

@@ -10,6 +10,13 @@
   inset: 0;
 }
 
+/* Centering wrapper for ClockCanvas (replaces the old mode-layer centering) */
+.clock-canvas-layer {
+  display: grid;
+  place-items: center;
+  padding: 5vmin 4vmin;
+}
+
 /* Each mode is a stacked layer covering the full stage, centering its own content */
 .mode-layer {
   position: absolute;

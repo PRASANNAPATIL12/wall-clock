@@ -1,0 +1,125 @@
+/* =========================================================================
+   PauseStopControl — glass pill fixed bottom-centre
+   Shows above TodaySummary (z-index 9) when a session is running or paused.
+   Idle-fades like all bottom controls.
+   ========================================================================= */
+
+.pause-stop-control {
+  position: fixed;
+  bottom: 72px; /* sit above TodaySummary (28px + 32px + 12px gap) */
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: fit-content;
+  z-index: 9;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  height: 36px;
+  border-radius: 999px;
+
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+
+  /* Fade-in on mount */
+  animation: psc-in 220ms var(--ease-apple) both;
+
+  transition:
+    background-color 320ms var(--ease-apple),
+    opacity 600ms var(--ease-apple),
+    transform 320ms var(--ease-apple);
+}
+
+@keyframes psc-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+/* Idle fade — same pattern as TodaySummary */
+body.idle .pause-stop-control {
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+}
+
+.pause-stop-control__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 16px;
+  border: none;
+  background: transparent;
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  border-radius: 999px;
+  transition:
+    background-color 180ms var(--ease-apple),
+    color 180ms var(--ease-apple),
+    transform 120ms var(--ease-apple);
+  white-space: nowrap;
+}
+
+.pause-stop-control__btn:hover {
+  background: var(--glass-bg-hover);
+  color: var(--fg);
+}
+
+.pause-stop-control__btn:active {
+  transform: scale(0.96);
+  transition-duration: 80ms;
+}
+
+/* Primary (Pause/Resume) button — slightly more prominent */
+.pause-stop-control__btn--primary {
+  color: var(--fg);
+}
+
+/* Paused state: resume button gets a green tint */
+.pause-stop-control__btn--primary.is-paused {
+  color: #2da44e;
+}
+
+.pause-stop-control__btn--primary.is-paused:hover {
+  background: color-mix(in srgb, #2da44e 12%, transparent);
+}
+
+/* Stop button — muted red */
+.pause-stop-control__btn--stop {
+  color: var(--fg-muted);
+}
+
+.pause-stop-control__btn--stop:hover {
+  color: #e0463f;
+  background: color-mix(in srgb, #e0463f 10%, transparent);
+}
+
+/* Divider between buttons */
+.pause-stop-control__sep {
+  width: 1px;
+  height: 18px;
+  background: var(--glass-border);
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  /* Sit above the TodaySummary which is at bottom:130px on mobile */
+  .pause-stop-control {
+    bottom: 172px;
+    height: 32px;
+    font-size: 11.5px;
+  }
+
+  .pause-stop-control__btn {
+    padding: 0 12px;
+    font-size: 11.5px;
+  }
+}

@@ -17,8 +17,8 @@
   width: 87%;
   height: 87%;
   border-radius: 50%;
-  /* Click-through: the face has no interactive content; letting the
-     focus ring's hit band extend behind the face fixes click 2 misses
+  /* Click-through: the analog face has no interactive content; letting the
+     focus ring's hit band extend behind the face fixes click-2 misses
      when the user clicked just inside the dashed track. */
   pointer-events: none;
   background: var(--bg-elev);
@@ -28,6 +28,11 @@
     inset 0 0 0 calc(3.5% + 1px) var(--bezel-strong);
   transition: background-color var(--d-theme) var(--ease-out),
     box-shadow var(--d-theme) var(--ease-out);
+}
+
+/* Digital face override — buttons inside need pointer events */
+.analog__face--interactive {
+  pointer-events: auto;
 }
 
 .analog__dial {

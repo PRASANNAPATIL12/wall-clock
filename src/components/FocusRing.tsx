@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { PointerEvent } from 'react';
 import { useNow } from '../hooks/useNow';
-import { useFocusTrack, type FocusSessionEnd } from '../hooks/useFocusTrack';
+import { useFocusTrack, type FocusSessionEnd, type FocusState } from '../hooks/useFocusTrack';
 import { getZonedTime } from '../lib/timezones';
 import { tick as hapticTick, prepareHaptic, celebrate } from '../lib/haptic';
 import { saveSession } from '../lib/sessionStore';
@@ -38,6 +38,29 @@ interface Props {
   onScheduleClose?: () => void;
   /** Called when a planned session is marked complete so the ring refresh fires. */
   onPlanSessionCompleted?: () => void;
+  /**
+   * Called whenever the focus state or controls change.
+   * App.tsx subscribes to mirror state into its own useState so
+   * PauseStopControl and DigitalClock can read it.
+   */
+  onFocusContext?: (ctx: {
+    state: FocusState;
+    pause: () => void;
+    resume: () => void;
+    stop: () => void;
+    /** Start a session AND pre-set the tag atomically (for digital timer). */
+    startWithGoalAndTag: (startMs: number, endMs: number, tag: string | null) => void;
+  }) => void;
+  /**
+   * When true, the ring is purely visual — only the colored progress arc
+   * (goal + bonus) and PlannedRingsLayer render. All analog-specific visual
+   * affordances are hidden: dotted track, drops (start/head/end), todo arc,
+   * comet, floating timer, hit circles, drag, onboarding hint, tag picker.
+   *
+   * The digital UI (Start Focus button, TagPicker, DurationPicker) handles
+   * session creation separately via portals to document.body.
+   */
+  digitalMode?: boolean;
 }
 
 /* viewBox geometry — all values in viewBox units (0..100). */
@@ -84,6 +107,8 @@ export const FocusRing = memo(function FocusRing({
   todayOnly = false,
   onScheduleClose,
   onPlanSessionCompleted,
+  onFocusContext,
+  digitalMode = false,
 }: Props) {
   const now = useNow('second');
   const svgRef = useRef<SVGSVGElement>(null);
@@ -137,8 +162,9 @@ export const FocusRing = memo(function FocusRing({
       })
         .then(() => {
           onSessionSaved?.();
-          // If this was a planned session, mark it complete in Supabase
-          if (activePlan) {
+          // If this was a real (non-synthetic) planned session, mark it complete in Supabase.
+          // Synthetic digital sessions have ids prefixed with 'digital-' — skip those.
+          if (activePlan && !activePlan.id.startsWith('digital-')) {
             markPlannedComplete(activePlan.id).then(() => {
               onPlanSessionCompleted?.();
             });
@@ -149,7 +175,76 @@ export const FocusRing = memo(function FocusRing({
     [timezone, onSessionSaved, onPlanSessionCompleted],
   );
 
-  const { state, handleClick, setDragEnd, startWithGoal } = useFocusTrack(timezone, handleSessionEnd);
+  const { state, handleClick, setDragEnd, startWithGoal, pause, resume, stop } = useFocusTrack(timezone, handleSessionEnd);
+
+  /**
+   * Start a session AND pre-set the tag so the TagPicker doesn't open.
+   * Used by the digital timer to pass tag + duration in one shot.
+   *
+   * Creates a **synthetic PlannedSession** and feeds it through the same
+   * state path as startFromPlan — so PlannedRingsLayer renders the
+   * countdown arc identically to an analog scheduled-task start.
+   */
+  const startWithGoalAndTag = useCallback((startMs: number, endMs: number, tag: string | null) => {
+    if (state.kind !== 'idle') return; // block if already tracking
+
+    // Build a synthetic PlannedSession — same shape the PlannedRingsLayer
+    // expects, but with a `digital-` prefixed id so handleSessionEnd can
+    // skip the Supabase markPlannedComplete call.
+    const durationMin = Math.round((endMs - startMs) / 60_000);
+    const d = new Date(startMs);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    const dateLocal = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    const syntheticSession: PlannedSession = {
+      id:                        `digital-${startMs}`,
+      user_id:                   userIdRef.current ?? '',
+      scheduled_date:            dateLocal,
+      start_time_local:          `${hh}:${mm}:00`,
+      duration_minutes:          durationMin,
+      tz:                        timezone,
+      tag:                       tag,
+      title:                     null,
+      sync_to_calendar:          false,
+      google_calendar_event_id:  null,
+      google_calendar_html_link: null,
+      completed:                 false,
+      linked_session_id:         null,
+      created_at:                new Date().toISOString(),
+      updated_at:                new Date().toISOString(),
+    };
+
+    // Tag — synchronously update ref so the TagPicker open-check sees it
+    sessionTagRef.current = tag;
+    setSessionTag(tag);
+
+    // Start the timer
+    startWithGoal(startMs, endMs);
+
+    // Capture minute-hand angle — countdown arc anchors here (same as startFromPlan)
+    const { minutes: nowMin, seconds: nowSec } = getZonedTime(new Date(startMs), timezone);
+    setArcStartMinAngle(((nowMin + nowSec / 60) * 6) % 360);
+
+    // Wire up the PlannedRingsLayer state — same path as startFromPlan
+    setActivePlanSession(syntheticSession);
+    activePlanSessionRef.current = syntheticSession;
+    planCompletionFiredRef.current = false;
+    setTagPickerOpen(false);
+    setSelectedPlanArc(null);
+
+    prepareHaptic();
+    // Note: "Session started" feedback is fired from the state-transition
+    // effect below (idle → targeted with activePlanSession set).
+  }, [state.kind, startWithGoal, timezone]);
+
+  // Publish focus state + controls to App.tsx so PauseStopControl and
+  // DigitalClock can read them without lifting useFocusTrack.
+  const onFocusContextRef = useRef(onFocusContext);
+  useEffect(() => { onFocusContextRef.current = onFocusContext; }, [onFocusContext]);
+  useEffect(() => {
+    onFocusContextRef.current?.({ state, pause, resume, stop, startWithGoalAndTag });
+  }, [state, pause, resume, stop, startWithGoalAndTag]);
 
   /* ---- Planned session "Start now" state ---- */
   /** The planned session currently running as a countdown arc. null = free session. */
@@ -223,8 +318,9 @@ export const FocusRing = memo(function FocusRing({
     const prev = prevKindRef.current;
     prevKindRef.current = state.kind;
     // Only react to the tracking→targeted transition; ignore drag updates
-    // (which keep state.kind == 'targeted' across renders).
-    if (prev !== 'targeted' && state.kind === 'targeted') {
+    // (which keep state.kind == 'targeted' across renders) and also ignore
+    // resume transitions (paused→targeted) since the tag is already set.
+    if (prev !== 'targeted' && prev !== 'paused' && state.kind === 'targeted') {
       if (userIdRef.current && sessionTagRef.current === null) {
         setTagPickerOpen(true);
       }
@@ -344,13 +440,31 @@ export const FocusRing = memo(function FocusRing({
       showFeedback('Tracking started', 3000);
     }
 
+    // Digital Start Focus: idle → targeted with activePlanSession already set
+    // (startWithGoalAndTag goes directly idle → targeted, skipping tracking)
+    if (prev === 'idle' && state.kind === 'targeted' && activePlanSessionRef.current) {
+      showFeedback('Session started', 2000);
+    }
+
     // Click 2: tracking → targeted (anonymous user — no tag picker)
-    if (prev !== 'targeted' && state.kind === 'targeted' && !userIdRef.current) {
+    // Also ignore paused→targeted (resume) — that's not a new goal
+    if (prev !== 'targeted' && prev !== 'paused' && state.kind === 'targeted' && !userIdRef.current) {
       const mins = Math.round((state.end - state.start) / 60000);
       if (mins > 0) startGoalHintSeq(`Goal set · ${mins} min`);
     }
 
-    // Click 3: any → idle (session cleared)
+    // Pause
+    if (prev === 'targeted' && state.kind === 'paused') {
+      clearHintSeq();
+      showFeedback('Paused', 2000);
+    }
+
+    // Resume
+    if (prev === 'paused' && state.kind === 'targeted') {
+      showFeedback('Resumed', 2000);
+    }
+
+    // Click 3 / stop: any → idle (session cleared)
     if (prev !== 'idle' && state.kind === 'idle') {
       clearHintSeq();
       showFeedback('Session cleared', 2000);
@@ -362,6 +476,7 @@ export const FocusRing = memo(function FocusRing({
     const wasOpen = prevTagPickerOpenRef.current;
     prevTagPickerOpenRef.current = tagPickerOpen;
 
+    // Only on the initial goal-set (not after resume from paused)
     if (wasOpen && !tagPickerOpen && state.kind === 'targeted' && userIdRef.current) {
       const mins = Math.round((state.end - state.start) / 60000);
       if (mins > 0) startGoalHintSeq(`Goal set · ${mins} min`);
@@ -384,9 +499,10 @@ export const FocusRing = memo(function FocusRing({
    */
   const arcLength = useMemo((): number | null => {
     if (!activePlanSession || arcStartMinAngle === null) return null;
-    if (state.kind !== 'targeted') return null;
-    const totalMs  = state.end - state.start;
-    const remainMs = Math.max(0, state.end - now.getTime());
+    if (state.kind !== 'targeted' && state.kind !== 'paused') return null;
+    const totalMs    = state.end - state.start;
+    const effectiveNow = state.kind === 'paused' ? state.pausedAt : now.getTime();
+    const remainMs   = Math.max(0, state.end - effectiveNow);
     return (remainMs / totalMs) * 360;
   }, [activePlanSession, arcStartMinAngle, state, now]);
 
@@ -447,7 +563,9 @@ export const FocusRing = memo(function FocusRing({
 
     const startZt = getZonedTime(new Date(state.start), timezone);
     const startAngle = ((startZt.minutes + startZt.seconds / 60) * 6) % 360;
-    const elapsedMs = now.getTime() - state.start;
+    // When paused, freeze all display calculations at the pause moment
+    const effectiveNow = state.kind === 'paused' ? state.pausedAt : now.getTime();
+    const elapsedMs = effectiveNow - state.start;
     const sweep = (elapsedMs / 60000) * 6;
     const realHead = (startAngle + sweep) % 360;
     const lap = Math.floor(elapsedMs / 3_600_000) + 1;
@@ -467,6 +585,7 @@ export const FocusRing = memo(function FocusRing({
       };
     }
 
+    // targeted or paused — both have start + end
     const endZt = getZonedTime(new Date(state.end), timezone);
     const endAngle = ((endZt.minutes + endZt.seconds / 60) * 6) % 360;
     const targetMs = state.end - state.start;
@@ -692,16 +811,18 @@ export const FocusRing = memo(function FocusRing({
         preserveAspectRatio="xMidYMid meet"
         role="presentation"
       >
-        {/* Ghost track — always there, faintly */}
-        <circle
-          cx={C}
-          cy={C}
-          r={RING_R}
-          fill="none"
-          className="track"
-          strokeWidth={STROKE * 0.65}
-          strokeDasharray="0.6 1.2"
-        />
+        {/* Ghost track — dotted ring, analog mode only */}
+        {!digitalMode && (
+          <circle
+            cx={C}
+            cy={C}
+            r={RING_R}
+            fill="none"
+            className="track"
+            strokeWidth={STROKE * 0.65}
+            strokeDasharray="0.6 1.2"
+          />
+        )}
 
         {/* Concentric day rings — visible during schedule view OR active plan countdown */}
         {showRingsOverlay && (
@@ -718,8 +839,8 @@ export const FocusRing = memo(function FocusRing({
           />
         )}
 
-        {/* To-do ghost arc — hidden during plan countdown (countdown arc takes over) */}
-        {data.end !== null && data.head !== null && !data.complete && !isInPlanSession && (
+        {/* To-do ghost arc — analog only, hidden during plan countdown */}
+        {!digitalMode && data.end !== null && data.head !== null && !data.complete && !isInPlanSession && (
           <path
             d={arcPath(data.head, data.end, RING_R)}
             className="todo"
@@ -729,8 +850,9 @@ export const FocusRing = memo(function FocusRing({
           />
         )}
 
-        {/* Goal arc — hidden during plan countdown (countdown arc is the visual) */}
-        {data.start !== null && data.goalEnd !== null && !isInPlanSession && (
+        {/* ── Goal / countdown arc ── */}
+        {/* Analog: growing arc from start angle to current progress (minute-hand based) */}
+        {!digitalMode && data.start !== null && data.goalEnd !== null && !isInPlanSession && (
           <path
             d={arcPath(data.start, data.goalEnd, RING_R)}
             className="progress goal"
@@ -740,8 +862,8 @@ export const FocusRing = memo(function FocusRing({
           />
         )}
 
-        {/* Bonus arc — only after target reached */}
-        {data.complete && data.end !== null && data.bonusHead !== null && (
+        {/* Bonus arc — only after target reached (analog only — digital arc shrinks to 0) */}
+        {!digitalMode && data.complete && data.end !== null && data.bonusHead !== null && (
           <path
             d={arcPath(data.end, data.bonusHead, RING_R)}
             className="progress bonus"
@@ -751,8 +873,8 @@ export const FocusRing = memo(function FocusRing({
           />
         )}
 
-        {/* Start drop */}
-        {data.start !== null &&
+        {/* Start drop — analog only */}
+        {!digitalMode && data.start !== null &&
           (() => {
             const p = polar(data.start, RING_R);
             return <circle cx={p.x} cy={p.y} r={DROP_R} className="drop drop-start" />;
@@ -761,8 +883,8 @@ export const FocusRing = memo(function FocusRing({
         {/* End drop is rendered AFTER the main hit area below — see comment
             there. Removed from this slot in the DOM. */}
 
-        {/* Drop head — current minute hand position */}
-        {data.head !== null &&
+        {/* Drop head — current minute hand position, analog only */}
+        {!digitalMode && data.head !== null &&
           (() => {
             const p = polar(data.head, RING_R);
             return <circle cx={p.x} cy={p.y} r={DROP_R * 0.78} className="drop drop-head" />;
@@ -781,12 +903,8 @@ export const FocusRing = memo(function FocusRing({
             );
           })()}
 
-        {/* Comet — one-shot orbit on session start.
-            Four stacked tail arcs of decreasing length, thickness, and opacity
-            create a properly tapered comet silhouette: dense at the leading
-            edge, fading to nothing at the far end. No head circle — the
-            rounded line-cap at the leading edge IS the head. */}
-        {comet && (
+        {/* Comet — one-shot orbit on session start (analog only). */}
+        {!digitalMode && comet && (
           <g
             key={comet.key}
             className="comet"
@@ -804,17 +922,19 @@ export const FocusRing = memo(function FocusRing({
           </g>
         )}
 
-        {/* Hit band — generous, only stroke catches pointer */}
-        <circle
-          cx={C}
-          cy={C}
-          r={RING_R}
-          className="hit"
-          fill="none"
-          stroke="transparent"
-          strokeWidth={HIT_STROKE}
-          onPointerDown={onPointerDown}
-        />
+        {/* Hit band — generous, only stroke catches pointer. Analog only. */}
+        {!digitalMode && (
+          <circle
+            cx={C}
+            cy={C}
+            r={RING_R}
+            className="hit"
+            fill="none"
+            stroke="transparent"
+            strokeWidth={HIT_STROKE}
+            onPointerDown={onPointerDown}
+          />
+        )}
 
         {/* End drop — rendered AFTER the main hit band so it sits ON TOP in
             DOM order. SVG hit-testing picks the topmost element, so
@@ -829,7 +949,8 @@ export const FocusRing = memo(function FocusRing({
               · The visible end-drop circle on top, pointer-events: none —
                 doesn't catch events itself (those pass through to the hit
                 zone below); just renders the visual marker. */}
-        {data.end !== null &&
+        {/* End drop — analog only (both hit zone and visual marker) */}
+        {!digitalMode && data.end !== null &&
           (() => {
             const p = polar(data.end, RING_R);
             return (
@@ -857,8 +978,8 @@ export const FocusRing = memo(function FocusRing({
           })()}
       </svg>
 
-      {/* Floating timer */}
-      {data.start !== null && timerPos && (
+      {/* Floating timer — analog only (digital mode uses its own HH:MM display) */}
+      {!digitalMode && data.start !== null && timerPos && (
         <div
           className="focus-timer"
           style={
@@ -877,6 +998,9 @@ export const FocusRing = memo(function FocusRing({
                 {data.target !== null && (
                   <span className="focus-timer__target"> /{fmt(data.target)}</span>
                 )}
+                {state.kind === 'paused' && (
+                  <span className="focus-timer__paused" aria-label="Paused"> ⏸</span>
+                )}
               </>
             ) : (
               <>
@@ -889,8 +1013,8 @@ export const FocusRing = memo(function FocusRing({
         </div>
       )}
 
-      {/* Onboarding hint — anonymous users see it every visit; logged-in once */}
-      <OnboardingHint visible={hintVisible} hintKind={hintKind} />
+      {/* Onboarding hint — analog only (teaches ring clicks, irrelevant in digital) */}
+      {!digitalMode && <OnboardingHint visible={hintVisible} hintKind={hintKind} />}
 
       {/* Subtle in-face feedback message — centered inside the clock face */}
       {feedback && (
@@ -923,8 +1047,8 @@ export const FocusRing = memo(function FocusRing({
         />
       )}
 
-      {/* End-drop tag tooltip — shows selected session tag on hover */}
-      {endDropHovered && userId && sessionTag && data.end !== null && svgRef.current && (() => {
+      {/* End-drop tag tooltip — analog only */}
+      {!digitalMode && endDropHovered && userId && sessionTag && data.end !== null && svgRef.current && (() => {
         const rect = svgRef.current!.getBoundingClientRect();
         const scale = rect.width / 100;
         const rad = ((data.end - 90) * Math.PI) / 180;
@@ -939,12 +1063,8 @@ export const FocusRing = memo(function FocusRing({
         );
       })()}
 
-      {/* Tag picker — rendered via portal to document.body so it escapes
-          any ancestor stacking context (mode-layer opacity transition
-          creates one, trapping z-index comparisons inside it). The portal
-          guarantees z-index 50 is evaluated in the root stacking context,
-          above ScheduleBadge (8) and TodaySummary (8) on all devices. */}
-      {tagPickerOpen && createPortal(
+      {/* Tag picker — analog only (digital mode uses its own tag flow) */}
+      {!digitalMode && tagPickerOpen && createPortal(
         <TagPicker
           endAngleDeg={data.end ?? undefined}
           onPick={(tag) => {
