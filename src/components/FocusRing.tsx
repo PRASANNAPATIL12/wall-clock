@@ -13,7 +13,7 @@ import { useOnboardingHint } from '../hooks/useOnboardingHint';
 import { TagPicker } from './TagPicker';
 import { TagIcon } from './TagIcon';
 import { getTag } from '../lib/tags';
-import { PlannedRingsLayer, tagColor } from './PlannedRingsLayer';
+import { PlannedRingsLayer, tagColor, hexToRgba } from './PlannedRingsLayer';
 import { PlanActionCard } from './PlanActionCard';
 import { useUpcomingPlanned } from '../hooks/usePlannedSessions';
 import { FocusMessage } from './FocusMessage';
@@ -457,8 +457,9 @@ export const FocusRing = memo(function FocusRing({
    * time passes. Uses the session tag's color from the PlannedRingsLayer
    * color system for visual consistency.
    *
-   * This is the digital equivalent of the PlannedRingsLayer countdown arc
-   * that shows for scheduled tasks in analog mode.
+   * Rendering uses the EXACT same technique as PlannedRingsLayer's
+   * ArcSegment: pathLength=1000, strokeDasharray/offset, ring-arc-draw
+   * animation, same glow filter, same stroke width/opacity.
    */
   const digitalCountdown = useMemo(() => {
     if (!digitalMode) return null;
@@ -469,8 +470,20 @@ export const FocusRing = memo(function FocusRing({
     const remainMs     = Math.max(0, state.end - effectiveNow);
     const degrees      = (remainMs / totalMs) * 360;
     const color        = tagColor(sessionTagRef.current);
-    return { degrees, color, complete: remainMs <= 0 };
+    return { degrees, color, complete: remainMs <= 0, remainMs };
   }, [digitalMode, state, now]);
+
+  // Stable key for the digital countdown arc — resets the draw-in animation
+  // only when a NEW session starts (not on every re-render as degrees change).
+  const digitalArcStartRef = useRef(0);
+  if (digitalMode && (state.kind === 'targeted' || state.kind === 'paused')) {
+    if (digitalArcStartRef.current !== state.start) {
+      digitalArcStartRef.current = state.start;
+    }
+  } else {
+    digitalArcStartRef.current = 0;
+  }
+  const digitalArcSessionKey = digitalArcStartRef.current;
 
   /* ---- "Start now" from a planned session ---- */
   const startFromPlan = useCallback((session: PlannedSession) => {
@@ -828,23 +841,49 @@ export const FocusRing = memo(function FocusRing({
           />
         )}
 
-        {/* Digital: SHRINKING countdown arc (360° → 0°), anchored at 12 o'clock.
-            Uses the session tag's color. Same visual style as PlannedRingsLayer
-            countdown but rendered at the main ring radius for ALL digital sessions. */}
-        {digitalMode && digitalCountdown && digitalCountdown.degrees > 0.5 && (
-          <path
-            d={arcPath(0, digitalCountdown.degrees, RING_R)}
-            fill="none"
-            strokeLinecap="round"
-            stroke={digitalCountdown.color}
-            strokeWidth={STROKE + 0.35}
-            strokeOpacity={0.92}
-            style={{
-              filter: `drop-shadow(0 0 4px ${digitalCountdown.color}66)`,
-              transition: 'stroke-width 220ms ease-out',
-            }}
-          />
-        )}
+        {/* Digital countdown arc — EXACT same rendering as PlannedRingsLayer's
+            ArcSegment: pathLength trick, ring-arc-draw animation, glow filter,
+            tag-based color. Shrinks from 360° → 0° anchored at 12 o'clock. */}
+        {digitalMode && digitalCountdown && digitalCountdown.degrees > 0.5 && (() => {
+          const cdColor = digitalCountdown.color;
+          const cdPath  = arcPath(0, digitalCountdown.degrees, RING_R);
+          if (!cdPath) return null;
+          const isVanishing = digitalCountdown.complete;
+          const cdAnimation = isVanishing
+            ? 'ring-arc-vanish 440ms cubic-bezier(0.4,0,1,1) both'
+            : `ring-arc-draw 580ms cubic-bezier(0.22,0.61,0.36,1) both`;
+          return (
+            <g
+              key={digitalArcSessionKey}
+              style={{
+                transformBox:    'view-box',
+                transformOrigin: `${C}px ${C}px`,
+                filter: `brightness(1.18) drop-shadow(0 0 4px ${hexToRgba(cdColor, 0.55)})`,
+                transition:      'filter 150ms ease-out',
+                pointerEvents:   'none',
+              }}
+            >
+              <path
+                d={cdPath}
+                fill="none"
+                strokeLinecap="round"
+                pathLength={1000}
+                style={{
+                  stroke:           cdColor,
+                  strokeWidth:      STROKE + 0.35,
+                  strokeOpacity:    0.92,
+                  strokeDasharray:  1000,
+                  strokeDashoffset: 1000,
+                  animation:        cdAnimation,
+                  transition:       isVanishing
+                    ? 'none'
+                    : 'stroke-width 220ms ease-out, stroke-opacity 200ms ease-out',
+                  pointerEvents:    'none',
+                }}
+              />
+            </g>
+          );
+        })()}
 
         {/* Bonus arc — only after target reached (analog only — digital arc shrinks to 0) */}
         {!digitalMode && data.complete && data.end !== null && data.bonusHead !== null && (

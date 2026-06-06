@@ -95,8 +95,29 @@
   transition: color var(--d-theme) var(--ease-apple);
 }
 
+/* Remaining-time label — shown below HH:MM in compact mode.
+   Replaces the analog clock-face pointers as the session progress text. */
+.d-remaining {
+  display: block;
+  margin-top: 0.15em;
+  font-family: var(--font-display);
+  font-size: clamp(11px, 1.6vmin, 15px);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--fg-muted);
+  opacity: 0.7;
+  transition: opacity var(--d-theme) var(--ease-apple);
+  animation: d-remaining-in 400ms var(--ease-apple) both;
+}
+
+@keyframes d-remaining-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 0.7; transform: translateY(0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .d-sep { animation: none; opacity: 1; }
+  .d-remaining { animation: none; }
   .digital { transition: color var(--d-theme) var(--ease-apple); }
 }
 

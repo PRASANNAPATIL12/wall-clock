@@ -195,6 +195,25 @@ export const DigitalClock = memo(function DigitalClock({
   const minDisplay = pad(minutes);
   const secDisplay = pad(seconds);
 
+  /* Remaining time text — shown below HH:MM in compact mode.
+     Replaces the analog clock-face pointers as session progress indicator. */
+  const remainingText = (() => {
+    if (focusState.kind !== 'targeted' && focusState.kind !== 'paused') return null;
+    const s = focusState as { start: number; end: number; pausedAt?: number };
+    const effectiveNow = focusState.kind === 'paused'
+      ? (s.pausedAt ?? now.getTime())
+      : now.getTime();
+    const remainMs = Math.max(0, s.end - effectiveNow);
+    const totalSec = Math.floor(remainMs / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    if (remainMs <= 0) return 'Complete';
+    if (h > 0 && m > 0) return `${h}h ${m}m left`;
+    if (h > 0) return `${h}h left`;
+    if (m > 1) return `${m}m left`;
+    return '< 1m left';
+  })();
+
   return (
     <div className="digital-face-content">
 
@@ -229,6 +248,13 @@ export const DigitalClock = memo(function DigitalClock({
           <span className="d-suffix">{suffix}</span>
         )}
       </div>
+
+      {/* ── Remaining time — replaces analog clock-face pointers ── */}
+      {isCompact && remainingText && (
+        <span className="d-remaining" aria-live="polite">
+          {isPaused ? `Paused · ${remainingText}` : remainingText}
+        </span>
+      )}
 
       {/* ── Start Focus CTA — portal to fixed bottom position ── */}
       {/*    Only renders when: digital mode active, logged-in,    */}
