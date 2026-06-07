@@ -48,7 +48,6 @@ export const Scene8Footer = memo(function Scene8Footer() {
             <h3 className="footer-col__title">Company</h3>
             <ul role="list">
               <li><a href="mailto:prasannagoudasp12@gmail.com">Contact</a></li>
-              <li><a href="https://github.com/PRASANNAPATIL12/wall-clock" rel="noopener noreferrer" target="_blank">GitHub</a></li>
             </ul>
           </section>
 
@@ -63,7 +62,6 @@ export const Scene8Footer = memo(function Scene8Footer() {
           <section className="footer-col">
             <h3 className="footer-col__title">Connect</h3>
             <ul role="list">
-              <li><a href="https://github.com/PRASANNAPATIL12/wall-clock" rel="noopener noreferrer" target="_blank">Source on GitHub</a></li>
               <li><a href="mailto:prasannagoudasp12@gmail.com">Email</a></li>
             </ul>
           </section>
