@@ -1,49 +1,171 @@
+/* =========================================================================
+   JoinPill — Liquid Glass CTA (reference-accurate)
+
+   Technique mirrors the reference Liquid-Glass implementation:
+     · The button itself is fully transparent
+     · ::before pseudo  = subtle white tint + crisp rim lighting (inset
+                          box-shadow: bright top-left highlight + soft
+                          all-around glow). Sits BEHIND text/arrow.
+     · ::after pseudo   = invisible plate that applies the SVG glass
+                          filter (defined in JoinPill.tsx) — displaces
+                          pixels of whatever is behind the pill, producing
+                          the real lens-distortion effect.
+
+   Position / behaviour: portaled to document.body in JoinPill.tsx,
+   fixed at top-left next to the ThemeToggle, anchored across every
+   scroll position.
+   ========================================================================= */
+
+
+/* ── 1. Keyframes ──────────────────────────────────────────────────────── */
+
+@keyframes pill-enter {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* Subtle "click me" halo — a soft brand-red glow that breathes
+   once every 5 s. Peak opacity 0.12, so it reads as ambient light
+   not a notification. Restrained, premium. */
+@keyframes pill-invite {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(200, 49, 43, 0); }
+  50%      { box-shadow: 0 0 22px 2px rgba(200, 49, 43, 0.12); }
+}
+
+
+/* ── 2. Root <button> ─────────────────────────────────────────────────── */
+
 .join-pill {
   position: fixed;
-  top: 24px;
+  top: 20px;
   left: 80px;
-  z-index: 9;
+  z-index: 9999;
+
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+
+  opacity: 0;
+  transform: translateY(-4px);
+  animation: pill-enter 600ms 300ms var(--ease-apple, cubic-bezier(0.32, 0.72, 0, 1)) forwards;
+}
+
+
+/* ── 3. Content wrapper — holds the glass effect + text + arrow ───────── */
+
+.join-pill__content {
+  position: relative;
   display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px 10px 18px;
+  border-radius: 999px;
+  background: transparent;
+
+  /* Establish a stacking context so ::after's z-index:-1 stays scoped
+     inside this content box (instead of falling below the whole pill). */
+  z-index: 0;
+  isolation: isolate;
+
+  /* The soft invitation halo — runs only after the page has settled
+     (3 s delay) and uses box-shadow so it composes cleanly with the
+     pill's transforms. */
+  animation: pill-invite 5s 3s ease-in-out infinite;
+
+  transition: transform 280ms var(--ease-apple, cubic-bezier(0.32, 0.72, 0, 1));
+}
+
+/* Pause the halo whenever the user is engaging with the pill — keeps
+   the visual conversation focused: motion only when idle. */
+.join-pill:hover .join-pill__content,
+.join-pill:focus-visible .join-pill__content,
+.join-pill:active .join-pill__content {
+  animation-play-state: paused;
+}
+
+
+/* ── 4. ::before — rim lighting + subtle white tint ───────────────────── */
+
+.join-pill__content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  pointer-events: none;
+
+  /* No tint — the pill body is ~98% transparent. Definition comes from
+     the rim + the backdrop frost on ::after, not from a coloured fill. */
+  background-color: transparent;
+
+  /* Rim recipe (kept):
+       layer 1: top-left specular crescent
+       layer 2: 1 px hairline glow around the whole pill */
+  box-shadow:
+    inset 2px 2px 0 -2px rgba(255, 255, 255, 0.65),
+    inset 0 0 3px 1px rgba(255, 255, 255, 0.55);
+}
+
+[data-theme='dark'] .join-pill__content::before {
+  background-color: transparent;
+  box-shadow:
+    inset 2px 2px 0 -2px rgba(255, 255, 255, 0.50),
+    inset 0 0 3px 1px rgba(255, 255, 255, 0.32);
+}
+
+
+/* ── 5. ::after — applies the SVG glass filter to the backdrop ────────── */
+
+.join-pill__content::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;                            /* sits behind text + ::before  */
+  border-radius: 999px;
+  overflow: hidden;
+
+  /* Real frosted glass — Apple recipe: blur + saturation lift.
+     The blur alone gives text-legibility over ANY backdrop without a
+     coloured tint, which keeps the pill ~98% transparent. */
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+          backdrop-filter: blur(14px) saturate(180%);
+
+  /* SVG displacement filter — adds a subtle "liquid" ripple to the
+     blurred backdrop. Scale lowered to 10 so it stays a hint, not a
+     distortion. Defined in JoinPill.tsx. */
+  -webkit-filter: url(#joinpill-glass);
+          filter: url(#joinpill-glass);
+}
+
+
+/* ── 6. Text block ─────────────────────────────────────────────────────── */
+
+.join-pill__text {
+  position: relative;
+  z-index: 1;
+  display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1px;
-  padding: 8px 14px;
-  border-radius: 12px;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  color: var(--fg);
-  font-family: var(--font-display);
-  text-align: left;
-  cursor: pointer;
-  transition:
-    background-color 260ms var(--ease-apple),
-    transform 260ms var(--ease-apple),
-    box-shadow 260ms var(--ease-apple),
-    opacity 600ms var(--ease-apple);
-}
-
-.join-pill:hover {
-  background: var(--glass-bg-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--glass-shadow-pop);
-}
-
-.join-pill:active {
-  transform: translateY(0) scale(0.985);
+  gap: 2px;
 }
 
 .join-pill__primary {
-  font-size: 12.5px;
-  font-weight: 500;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
   letter-spacing: -0.01em;
-  line-height: 1;
+  line-height: 1.15;
   color: var(--fg);
 }
 
 .join-pill__sub {
+  font-family: var(--font-display);
   font-size: 10.5px;
   font-weight: 400;
   letter-spacing: 0;
@@ -51,19 +173,118 @@
   color: var(--fg-muted);
 }
 
+
+/* ── 7. Arrow icon ─────────────────────────────────────────────────────── */
+
+.join-pill__arrow {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  /* Single accent for the whole pill — brand red. Quietly signals "this
+     is interactive" without colouring the text or the glass body. */
+  color: var(--hand-second, #c8312b);
+  transition:
+    transform 260ms var(--ease-apple, cubic-bezier(0.32, 0.72, 0, 1)),
+    color     260ms var(--ease-apple, cubic-bezier(0.32, 0.72, 0, 1));
+}
+
+
+/* ── 8. Hover ──────────────────────────────────────────────────────────── */
+
+.join-pill:hover .join-pill__content {
+  transform: translateY(-1px);
+}
+
+.join-pill:hover .join-pill__content::before {
+  background-color: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 2px 2px 0 -2px rgba(255, 255, 255, 0.85),
+    inset 0 0 4px 1px rgba(255, 255, 255, 0.80);
+}
+
+[data-theme='dark'] .join-pill:hover .join-pill__content::before {
+  background-color: rgba(255, 255, 255, 0.10);
+  box-shadow:
+    inset 2px 2px 0 -2px rgba(255, 255, 255, 0.70),
+    inset 0 0 4px 1px rgba(255, 255, 255, 0.55);
+}
+
+.join-pill:hover .join-pill__arrow {
+  transform: translateX(2px);
+  color: var(--fg);
+}
+
+
+/* ── 9. Active / pressed ───────────────────────────────────────────────── */
+
+.join-pill:active .join-pill__content {
+  transform: translateY(0) scale(0.975);
+  transition-duration: 100ms;
+}
+
+
+/* ── 10. Keyboard focus ────────────────────────────────────────────────── */
+
+.join-pill:focus-visible .join-pill__content {
+  outline: 2px solid var(--hand-second, #c8312b);
+  outline-offset: 3px;
+}
+
+
+/* ── 11. Idle hide (body.idle) ─────────────────────────────────────────── */
+
 body.idle .join-pill {
   opacity: 0;
   transform: translateY(-8px);
   pointer-events: none;
+  transition:
+    opacity   600ms var(--ease-apple, cubic-bezier(0.32, 0.72, 0, 1)),
+    transform 600ms var(--ease-apple, cubic-bezier(0.32, 0.72, 0, 1));
 }
+
+
+/* ── 12. Mobile ────────────────────────────────────────────────────────── */
 
 @media (max-width: 640px) {
   .join-pill {
-    top: 16px;
-    left: 64px;
-    padding: 6px 11px;
-    border-radius: 10px;
+    top: 14px;
+    left: 56px;
   }
-  .join-pill__primary { font-size: 11.5px; }
+
+  .join-pill__content {
+    padding: 8px 12px 8px 14px;
+    gap: 8px;
+  }
+
+  .join-pill__primary { font-size: 12px; }
   .join-pill__sub     { font-size: 9.5px; }
+
+  .join-pill__arrow svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+@media (max-width: 380px) {
+  .join-pill__sub { display: none; }
+  .join-pill__content { padding: 9px 14px; }
+}
+
+
+/* ── 13. Reduced motion ────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .join-pill {
+    animation: pill-enter 300ms 150ms linear forwards;
+  }
+  .join-pill__content {
+    animation: none;
+    transition: none;
+  }
+  .join-pill__arrow {
+    transition: none;
+  }
 }
