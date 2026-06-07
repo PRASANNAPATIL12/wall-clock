@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { UseAuth } from '../hooks/useAuth';
 import './AuthModal.css';
 
@@ -74,7 +75,7 @@ export function AuthModal({ auth, onClose }: Props) {
     // redirect takes over — no setBusy(false)
   };
 
-  return (
+  return createPortal(
     <div className="auth-modal__backdrop" onClick={onClose}>
       <div
         className="auth-modal"
@@ -171,6 +172,7 @@ export function AuthModal({ auth, onClose }: Props) {
         {auth.error && <p className="auth-modal__msg auth-modal__msg--error">{auth.error}</p>}
         {info && <p className="auth-modal__msg auth-modal__msg--info">{info}</p>}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
