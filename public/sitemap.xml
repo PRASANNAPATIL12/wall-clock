@@ -4,6 +4,7 @@
   <!-- Cinematic landing page (primary SEO surface) -->
   <url>
     <loc>https://focusclock.app/</loc>
+    <lastmod>2026-06-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://focusclock.app/" />
@@ -12,18 +13,21 @@
   <!-- Live focus clock application -->
   <url>
     <loc>https://focusclock.app/app</loc>
+    <lastmod>2026-06-07</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <!-- Privacy Policy -->
   <url>
     <loc>https://focusclock.app/privacy</loc>
+    <lastmod>2026-06-07</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <!-- Terms of Service -->
   <url>
     <loc>https://focusclock.app/terms</loc>
+    <lastmod>2026-06-07</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

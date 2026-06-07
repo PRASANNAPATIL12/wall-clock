@@ -1,15 +1,18 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useState } from 'react';
 
 /**
  * Scene 7.5 — FAQ
  *
- * Six common questions in a clean accordion. Each is also rendered into
- * a `FAQPage` schema JSON-LD block for Google rich results.
+ * Six common questions in a clean accordion.
  *
  * This is placed BEFORE the footer because:
  *   · Last thing users see before the credits roll
  *   · Catches "I almost converted but had one question" hesitations
- *   · FAQ schema lifts SEO for question-style queries
+ *
+ * SEO note: the FAQ `FAQPage` JSON-LD lives STATICALLY in index.html (not
+ * injected here) so search crawlers and AI agents that don't execute
+ * JavaScript can read it. The six Q&As below are kept verbatim in sync
+ * with that static schema so the markup matches the visible content.
  */
 
 interface QA {
@@ -58,34 +61,7 @@ const FAQS: readonly QA[] = [
   },
 ];
 
-/* JSON-LD schema for Google FAQ rich results */
-const FAQ_SCHEMA = {
-  '@context': 'https://schema.org',
-  '@type':    'FAQPage',
-  mainEntity: FAQS.map((qa) => ({
-    '@type': 'Question',
-    name:    qa.question,
-    acceptedAnswer: {
-      '@type': 'Answer',
-      text:    qa.answer,
-    },
-  })),
-};
-
 export const Scene75FAQ = memo(function Scene75FAQ() {
-  // Inject the JSON-LD schema into <head> on mount, remove on unmount
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
-    script.id   = 'faq-schema';
-    script.textContent = JSON.stringify(FAQ_SCHEMA);
-    document.head.appendChild(script);
-    return () => {
-      const el = document.getElementById('faq-schema');
-      if (el) el.remove();
-    };
-  }, []);
-
   const [openIdx, setOpenIdx] = useState<number | null>(0);
 
   return (

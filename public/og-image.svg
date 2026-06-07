@@ -43,8 +43,8 @@
 
   <!-- Text -->
   <g transform="translate(720 270)">
-    <text font-family="'Fraunces',serif" font-weight="500" font-size="78" fill="url(#title)" letter-spacing="-1">Wall Clock</text>
-    <text y="56" font-family="'Fraunces',serif" font-style="italic" font-size="28" fill="#8a8784">A beautiful minimalist online clock</text>
-    <text y="120" font-family="'JetBrains Mono',monospace" font-size="20" fill="#8a8784" letter-spacing="2">ANALOG · DIGITAL · WORLD TIMEZONES</text>
+    <text font-family="'Fraunces',serif" font-weight="500" font-size="78" fill="url(#title)" letter-spacing="-1">Focus Clock</text>
+    <text y="56" font-family="'Fraunces',serif" font-style="italic" font-size="28" fill="#8a8784">A calm focus timer &amp; productivity tracker</text>
+    <text y="120" font-family="'JetBrains Mono',monospace" font-size="20" fill="#8a8784" letter-spacing="2">FOCUS TIMER · STREAKS · HEATMAP</text>
   </g>
 </svg>
