@@ -31,6 +31,17 @@
   padding: 5vmin 4vmin;
 }
 
+/* During landing-page scroll, disable clock-ring clicks as soon as the user
+   starts scrolling (data-clock-locked set at p > 0.03). Controls (ThemeToggle,
+   JoinPill, etc.) remain interactive until the full lock at p > 0.35.
+   Must target both the container div AND all SVG descendants because SVG
+   children with explicit pointer-events (stroke, auto) override a parent
+   div's pointer-events: none — !important wins the specificity race. */
+[data-clock-locked] .clock-canvas-layer,
+[data-clock-locked] .clock-canvas-layer * {
+  pointer-events: none !important;
+}
+
 /* Each mode is a stacked layer covering the full stage, centering its own content */
 .mode-layer {
   position: absolute;

@@ -75,7 +75,12 @@ export const Scene1Hero = memo(function Scene1Hero() {
   // an already-dark background rather than fading in against a light one.
   const headlineOpacityT = mapRange(p, 0.72, 0.82, 0, 1);
 
-  // Interaction lock: once controls are gone (p > 0.35) nothing is clickable
+  // Clock ring lock: disable focus-ring clicks as soon as scrolling starts
+  // (p > 0.03 ≈ 60–90 px on mobile) so a scroll gesture can't accidentally
+  // trigger click 1 / 2 / 3 of the focus-tracking ring.
+  const clockLocked = p > 0.03;
+
+  // Full interaction lock: once controls are gone (p > 0.35) nothing is clickable
   const interactionsLocked = p > 0.35;
 
   /* ── Transform optimization ────────────────────────────────────
@@ -133,6 +138,7 @@ export const Scene1Hero = memo(function Scene1Hero() {
             ['--controls-opacity' as never]: controlsOpacityT,
           }}
           data-locked={interactionsLocked ? 'true' : 'false'}
+          data-clock-locked={clockLocked ? 'true' : undefined}
         >
           <FocusClockApp embedded />
         </div>
