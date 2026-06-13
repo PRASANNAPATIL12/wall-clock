@@ -7,7 +7,7 @@
   </sitemap>
   <!-- Blog / content site (Astro) -->
   <sitemap>
-    <loc>https://blog.focusclock.app/sitemap-index.xml</loc>
+    <loc>https://blog.focusclock.app/sitemap.xml</loc>
     <lastmod>2026-06-13</lastmod>
   </sitemap>
 </sitemapindex>
