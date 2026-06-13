@@ -1,8 +1,6 @@
 User-agent: *
 Allow: /
 
-# AI search & answer engines — explicitly welcomed so Focus Clock can be
-# cited in AI Overviews, ChatGPT, Perplexity, Gemini, Claude, and Copilot.
 User-agent: Googlebot
 Allow: /
 
@@ -36,9 +34,4 @@ Allow: /
 User-agent: Bingbot
 Allow: /
 
-# Sitemaps
-Sitemap: https://focusclock.app/sitemap-index.xml
-Sitemap: https://focusclock.app/sitemap.xml
-
-# Friendly note to crawlers
-# Focus Clock is a single-page web app — index the root URL.
+Sitemap: https://blog.focusclock.app/sitemap-index.xml

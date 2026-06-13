@@ -1,0 +1,59 @@
+---
+import GlossaryLayout from '../../layouts/GlossaryLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+
+const faqItems = [
+  {
+    question: 'What is context switching in productivity?',
+    answer: 'In productivity, context switching refers to the cognitive cost of moving your attention from one task or type of work to another. Each switch requires the brain to "unload" the context of the previous task and "load" the context of the new one — a process that takes time and reduces performance on the new task. Unlike a computer CPU, which can switch contexts in microseconds, the human brain takes minutes to reach full performance on a new context.',
+  },
+  {
+    question: 'How much productivity is lost to context switching?',
+    answer: 'Research from the University of California Irvine found it takes an average of 23 minutes and 15 seconds to fully return to a task after an interruption. A 2001 study by the American Psychological Association found that multitasking (repeated context switching) can reduce productivity by up to 40%. Knowledge workers who switch tasks every few minutes may be operating at 60% or less of their focused capacity.',
+  },
+  {
+    question: 'How do you reduce context switching at work?',
+    answer: 'The most effective strategies: (1) Time blocking — scheduling specific types of work at specific times, so you stay in one context for longer periods; (2) Task batching — grouping similar tasks together (all emails at once, all calls together); (3) Focus sessions — using a timer to create defined single-task blocks; (4) Notification management — turning off all non-urgent notifications during focus blocks; (5) Communication batching — checking messages on a schedule rather than reactively.',
+  },
+];
+---
+
+<GlossaryLayout
+  term="Context Switching"
+  definition="The cognitive cost of shifting attention from one task or type of work to another. Each switch requires the brain to unload one task's context and load another's, taking 15–25 minutes to reach full performance after a switch."
+  description="What is context switching? Definition, the productivity cost, and how to minimize context switching with task batching and focus sessions."
+  canonicalUrl="https://blog.focusclock.app/glossary/context-switching"
+  relatedTerms={[
+    { slug: 'attention-residue', label: 'Attention Residue' },
+    { slug: 'deep-work', label: 'Deep Work' },
+    { slug: 'task-batching', label: 'Task Batching' },
+    { slug: 'monotasking', label: 'Monotasking' },
+    { slug: 'cognitive-load', label: 'Cognitive Load' },
+  ]}
+  relatedArticles={[
+    { slug: '/learn/deep-work', label: 'Deep Work: Complete Guide' },
+    { slug: '/learn/productivity-tracking', label: 'Productivity Tracking' },
+  ]}
+>
+
+## Why Context Switching Costs More Than the Switch Itself
+
+The intuitive cost of context switching is the time of the switch — a few seconds to close one app and open another. The real cost is far larger: the attention residue that follows every switch, which can take 15–25 minutes to fully resolve.
+
+This means a 30-second context switch (checking a Slack message) can cost 15–25 minutes of degraded focus performance on the subsequent task. A knowledge worker who switches contexts 10 times per hour is paying a massive hidden tax on their cognitive output.
+
+## The Warm-Up Problem
+
+Complex cognitive tasks — programming, writing, analysis, design — require significant mental warm-up before reaching peak performance. This warm-up involves loading the relevant context into working memory: the problem state, the constraints, the partially-formed ideas, the decision history.
+
+When you're interrupted and return to the task, you have to rebuild this context. The deeper the work (the more context required), the longer the warm-up. A developer returning to a complex debugging problem after a meeting may need 20 minutes before they're back at the depth they were before the interruption.
+
+## Reducing Context Switching with Focus Sessions
+
+A focus timer is one of the most effective tools for reducing context switching because it creates an explicit permission boundary. When the timer is running, context switches are deferred — you note the interruption and return to it after the session.
+
+The result is fewer total context switches per day, longer sustained periods in a single context, and higher quality output from those focused periods.
+
+<FAQSchema items={faqItems} />
+
+</GlossaryLayout>

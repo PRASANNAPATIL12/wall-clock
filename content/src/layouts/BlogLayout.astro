@@ -1,0 +1,94 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import CTABlock from '../components/CTABlock.astro';
+
+export interface Props {
+  title: string;
+  description: string;
+  publishedDate: string;
+  updatedDate?: string;
+  pillar: string;
+  pillarSlug: string;
+  readingTime?: string;
+  canonicalUrl?: string;
+  schema?: object | object[];
+}
+
+const {
+  title,
+  description,
+  publishedDate,
+  updatedDate,
+  pillar,
+  pillarSlug,
+  readingTime = '8 min read',
+  canonicalUrl,
+  schema,
+} = Astro.props;
+
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: title,
+  description,
+  datePublished: publishedDate,
+  dateModified: updatedDate ?? publishedDate,
+  author: {
+    '@type': 'Organization',
+    name: 'Focus Clock',
+    url: 'https://focusclock.app',
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Focus Clock',
+    url: 'https://focusclock.app',
+    logo: {
+      '@type': 'ImageObject',
+      url: 'https://focusclock.app/favicon.svg',
+    },
+  },
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': canonicalUrl ?? Astro.url.href,
+  },
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Focus Clock', item: 'https://focusclock.app' },
+    { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://blog.focusclock.app' },
+    { '@type': 'ListItem', position: 3, name: pillar, item: `https://blog.focusclock.app/learn/${pillarSlug}` },
+    { '@type': 'ListItem', position: 4, name: title, item: canonicalUrl ?? Astro.url.href },
+  ],
+};
+
+const schemas = [articleSchema, breadcrumbSchema, ...(Array.isArray(schema) ? schema : schema ? [schema] : [])];
+---
+
+<BaseLayout {title} {description} {canonicalUrl} type="article" {publishedDate} schema={schemas}>
+  <Header />
+
+  <main style="max-width: var(--max-w); margin: 0 auto; padding: 2rem 1.25rem 4rem;">
+    <nav style="font-size: 0.8rem; color: var(--fg-muted); margin-bottom: 2rem;">
+      <a href="https://focusclock.app" style="color: var(--fg-muted);">Focus Clock</a>
+      <span style="margin: 0 0.4rem;">›</span>
+      <a href="https://blog.focusclock.app" style="color: var(--fg-muted);">Blog</a>
+      <span style="margin: 0 0.4rem;">›</span>
+      <a href={`/learn/${pillarSlug}`} style="color: var(--fg-muted);">{pillar}</a>
+      <span style="margin: 0 0.4rem;">›</span>
+      <span>{title}</span>
+    </nav>
+
+    <article class="prose">
+      <slot />
+    </article>
+
+    <CTABlock />
+  </main>
+
+  <Footer />
+</BaseLayout>

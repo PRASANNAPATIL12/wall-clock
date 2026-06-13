@@ -1,0 +1,66 @@
+---
+import GlossaryLayout from '../../layouts/GlossaryLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+
+const faqItems = [
+  {
+    question: 'What is cognitive load?',
+    answer: 'Cognitive load is the total amount of mental effort being used in working memory at any given time. Working memory has limited capacity — roughly 4±1 "chunks" of information at once. When cognitive load approaches capacity, performance on complex tasks degrades significantly. Managing cognitive load means reducing unnecessary mental demands so your capacity is available for the work that matters.',
+  },
+  {
+    question: 'What increases cognitive load?',
+    answer: 'Key cognitive load drivers: (1) Task complexity — more variables and dependencies mean more to hold in mind; (2) Multitasking — each additional task competes for working memory; (3) Distractions — monitoring notifications requires a persistent slice of attention; (4) Poorly organized information — having to reconstruct context that should be written down; (5) Decision fatigue — making many small decisions throughout the day depletes the cognitive resources needed for complex work.',
+  },
+  {
+    question: 'How do you reduce cognitive load for better focus?',
+    answer: 'Practical techniques: (1) Write things down — offload mental to-do lists to paper or a trusted system; (2) Monotask — one thing at a time; (3) Clear environment — physical and digital clutter both create passive cognitive load; (4) Close browser tabs — each open tab represents a potential context switch your brain monitors; (5) Use a focus timer — the timer externalizes the time-tracking function, removing it from working memory.',
+  },
+];
+---
+
+<GlossaryLayout
+  term="Cognitive Load"
+  definition="The total amount of mental effort used in working memory at a given time. Working memory has a limited capacity (~4 chunks of information), and when cognitive load exceeds this capacity, performance on complex tasks degrades significantly."
+  description="What is cognitive load? Definition, what increases it, and how to reduce cognitive load for better focus and deeper work."
+  canonicalUrl="https://blog.focusclock.app/glossary/cognitive-load"
+  relatedTerms={[
+    { slug: 'context-switching', label: 'Context Switching' },
+    { slug: 'attention-residue', label: 'Attention Residue' },
+    { slug: 'monotasking', label: 'Monotasking' },
+    { slug: 'deep-work', label: 'Deep Work' },
+    { slug: 'flow-state', label: 'Flow State' },
+  ]}
+  relatedArticles={[
+    { slug: '/learn/deep-work', label: 'Deep Work: Complete Guide' },
+    { slug: '/learn/focus-techniques', label: 'Focus Timer Techniques' },
+  ]}
+>
+
+## The Science of Working Memory
+
+Cognitive load theory was developed by educational psychologist John Sweller in the late 1980s to explain why students struggle to learn complex material. The theory is based on the architecture of working memory: unlike long-term memory (which has essentially unlimited capacity), working memory can hold only approximately 4±1 "chunks" of information simultaneously (George Miller's classic research found 7±2; more recent work by Nelson Cowan refined this to 4±1).
+
+When you exceed this limit — by multitasking, handling complexity, or allowing distractions — working memory begins to "overflow" and performance degrades: you make errors, you lose your place in complex reasoning chains, and you slow down.
+
+## Three Types of Cognitive Load
+
+Sweller identified three types:
+
+**Intrinsic load** — the inherent complexity of the task itself. Learning calculus has higher intrinsic load than learning arithmetic. You can reduce intrinsic load by breaking complex tasks into smaller steps.
+
+**Extraneous load** — mental effort caused by poor information presentation or environment. A cluttered screen, an interruption, a confusingly organized document — all create extraneous load that competes with the task without contributing to it.
+
+**Germane load** — cognitive effort devoted to building long-term understanding and schemas. This is the "productive" load — the part that results in learning and skill development.
+
+The goal in a focused work session: minimize intrinsic and extraneous load as much as possible, maximizing the capacity available for germane load (the actual work).
+
+## How Focus Timers Reduce Cognitive Load
+
+A focus timer removes two sources of extraneous cognitive load from your session:
+
+1. **Time monitoring** — without a timer, part of your attention is devoted to monitoring how long you've been working and when you should stop. The timer handles this externally.
+2. **Permission uncertainty** — without a defined session, you're continuously deciding whether it's okay to check email or take a break. The timer creates a clear rule: not until it rings.
+
+<FAQSchema items={faqItems} />
+
+</GlossaryLayout>

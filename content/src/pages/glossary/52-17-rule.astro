@@ -1,0 +1,61 @@
+---
+import GlossaryLayout from '../../layouts/GlossaryLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+
+const faqItems = [
+  {
+    question: 'What is the 52/17 rule?',
+    answer: 'The 52/17 rule is a focus technique where you work for 52 minutes and then rest for 17 minutes. It was identified by the Draugiem Group after analyzing employee productivity data from their DeskTime time-tracking app. The top 10% of most productive employees naturally worked in approximately 52-minute blocks followed by approximately 17-minute complete breaks.',
+  },
+  {
+    question: 'Is the 52/17 rule better than Pomodoro?',
+    answer: 'For many knowledge workers, yes. The 52-minute interval is long enough for deep analytical and creative work to warm up and reach flow, unlike the 25-minute Pomodoro interval where the timer often rings just as you\'re hitting your stride. The 17-minute break is also longer than Pomodoro\'s 5 minutes, allowing more complete cognitive recovery. The tradeoff: 52 minutes is more demanding for beginners who haven\'t built focus tolerance yet.',
+  },
+  {
+    question: 'Are the 52 and 17 minutes exact?',
+    answer: 'No — 52 and 17 minutes are statistical averages from the Draugiem Group dataset, not biological prescriptions. Your optimal interval may be 48 or 55 minutes of work with 15 or 20 minutes of rest. The key insight from the data is not the specific numbers but the principle: longer focused work (compared to 25-minute Pomodoro) followed by longer genuine rest (not 5 minutes) produces better sustained output.',
+  },
+];
+---
+
+<GlossaryLayout
+  term="52/17 Rule"
+  definition="A focus technique where you work for 52 minutes then rest for 17 minutes, derived from productivity data showing that the highest-performing employees naturally worked in approximately 52-minute focused intervals with 17-minute breaks."
+  description="What is the 52/17 rule? Where it came from, how it compares to the Pomodoro Technique, and who benefits most from this focus interval."
+  canonicalUrl="https://blog.focusclock.app/glossary/52-17-rule"
+  relatedTerms={[
+    { slug: 'pomodoro-technique', label: 'Pomodoro Technique' },
+    { slug: '90-minute-rule', label: '90-Minute Rule' },
+    { slug: 'focus-block', label: 'Focus Block' },
+    { slug: 'deep-work', label: 'Deep Work' },
+    { slug: 'flow-state', label: 'Flow State' },
+  ]}
+  relatedArticles={[
+    { slug: '/learn/focus-techniques', label: 'Focus Timer Techniques: Complete Guide' },
+    { slug: '/blog/pomodoro-technique-complete-guide', label: 'Pomodoro Technique Guide' },
+  ]}
+>
+
+## Origin: The DeskTime Study
+
+The 52/17 rule was published by the Draugiem Group, a Latvian software company, based on data from their DeskTime time-tracking application. The company analyzed the working patterns of employees in the top productivity decile and compared them to average-performing employees.
+
+The key finding: the most productive 10% of employees were not working longer hours or harder than others. They were working differently — in bursts of intense focus approximately 52 minutes long, followed by approximately 17-minute complete breaks where they disconnected from work entirely.
+
+The study was published in 2014 and gained significant attention in productivity circles because it provided empirical, behavioral data (as opposed to experimental lab data) about how high performers actually structure their time.
+
+## Why 52 Minutes Works
+
+The 52-minute interval is approximately twice the standard Pomodoro interval. This matters because many cognitively demanding tasks — programming, writing, design, analysis — require 15–20 minutes of warm-up before reaching full concentration. In a 25-minute Pomodoro, the warm-up consumes most of the available time. In a 52-minute block, you get 30–35 minutes of peak-performance time after warm-up.
+
+## Why 17 Minutes of Rest Works
+
+The Draugiem Group data showed that the high performers' breaks were genuinely restorative — they walked, socialized, or did physical activities, not just switched to lower-intensity screen tasks. The 17-minute break (compared to Pomodoro's 5 minutes) is long enough for meaningful cognitive recovery, reducing fatigue accumulation across a full day.
+
+## Using the 52/17 Rule with a Timer
+
+Any focus timer can implement the 52/17 rule — simply set the interval to 52 minutes and use a separate 17-minute break timer. Focus Clock's custom interval setting handles any duration. Track your sessions to see whether the 52-minute interval, or a nearby interval (48, 55 minutes), produces your best sustained output.
+
+<FAQSchema items={faqItems} />
+
+</GlossaryLayout>

@@ -1,0 +1,59 @@
+---
+export interface FAQItem {
+  question: string;
+  answer: string;
+}
+
+export interface Props {
+  items: FAQItem[];
+}
+
+const { items } = Astro.props;
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: items.map(item => ({
+    '@type': 'Question',
+    name: item.question,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: item.answer,
+    },
+  })),
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(schema)} />
+
+<section style="margin-top: 3rem;">
+  <h2 style="font-size: 1.35rem; font-weight: 600; margin-bottom: 1.5rem; letter-spacing: -0.02em;">Frequently Asked Questions</h2>
+  {items.map(item => (
+    <details style="
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 0.6rem;
+      overflow: hidden;
+    ">
+      <summary style="
+        padding: 1rem 1.25rem;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 0.95rem;
+        color: var(--fg);
+        list-style: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        user-select: none;
+      ">
+        {item.question}
+        <span style="color: var(--fg-muted); font-size: 1.2rem; flex-shrink: 0;">+</span>
+      </summary>
+      <div style="padding: 0 1.25rem 1rem; color: var(--fg-muted); font-size: 0.93rem; line-height: 1.7;">
+        {item.answer}
+      </div>
+    </details>
+  ))}
+</section>

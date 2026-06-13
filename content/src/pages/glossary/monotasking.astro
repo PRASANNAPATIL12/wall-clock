@@ -1,0 +1,66 @@
+---
+import GlossaryLayout from '../../layouts/GlossaryLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+
+const faqItems = [
+  {
+    question: 'What is monotasking?',
+    answer: 'Monotasking is the practice of focusing on one task at a time, giving it your full, undivided attention before moving to the next. It is the direct opposite of multitasking. Monotasking does not mean working slower — it means eliminating the cognitive overhead of task-switching so you work with greater depth and produce higher quality output on each task.',
+  },
+  {
+    question: 'Is multitasking actually bad?',
+    answer: 'For cognitive tasks, yes. Research from Stanford University (Ophir, Nass & Wagner, 2009) found that heavy multitaskers performed worse on cognitive tasks than those who rarely multitasked — even on tasks specifically designed to benefit from multitasking. A 2001 American Psychological Association study found task-switching reduced productivity by up to 40%. The human brain cannot genuinely process two cognitively demanding tasks simultaneously — it switches rapidly between them, paying context-switch costs on every switch.',
+  },
+  {
+    question: 'How do you practice monotasking?',
+    answer: 'Four practices: (1) Close everything except what you need for the current task — one browser window, relevant tabs only; (2) Use a focus timer that creates a clear session start and end, making it easier to resist task-switching impulses; (3) Keep a "capture" notepad beside you — when unrelated thoughts arise (things to do, things to check), write them down and return to your task; (4) Communicate your unavailability during focus sessions so interruptions are rare.',
+  },
+];
+---
+
+<GlossaryLayout
+  term="Monotasking"
+  definition="The practice of focusing on one task at a time with full, undivided attention, as opposed to multitasking (attempting to work on multiple tasks simultaneously). Monotasking reduces context switching overhead and produces higher quality output per hour."
+  description="What is monotasking? Definition, the evidence against multitasking, and how to practice single-tasking for better focus and output quality."
+  canonicalUrl="https://blog.focusclock.app/glossary/monotasking"
+  relatedTerms={[
+    { slug: 'context-switching', label: 'Context Switching' },
+    { slug: 'attention-residue', label: 'Attention Residue' },
+    { slug: 'deep-work', label: 'Deep Work' },
+    { slug: 'cognitive-load', label: 'Cognitive Load' },
+    { slug: 'focus-block', label: 'Focus Block' },
+  ]}
+  relatedArticles={[
+    { slug: '/learn/deep-work', label: 'Deep Work: Complete Guide' },
+    { slug: '/blog/pomodoro-technique-complete-guide', label: 'Pomodoro Technique Guide' },
+  ]}
+>
+
+## The Multitasking Myth
+
+The belief that multitasking is a productivity multiplier is one of the most persistent myths in modern work culture. The research is clear: what we call "multitasking" is actually rapid task-switching. The brain cannot simultaneously process two cognitively demanding tasks — it switches between them rapidly, paying a context-switch cost each time.
+
+A 2009 Stanford study by Ophir, Nass, and Wagner compared heavy multitaskers to light multitaskers and found that heavy multitaskers:
+- Were worse at filtering out irrelevant information
+- Were worse at managing working memory
+- Were worse at task-switching (paradoxically — more practice made them worse)
+
+The conclusion: multitasking doesn't just fail to help — it actively impairs the cognitive skills needed for focused work.
+
+## The Monotasking Advantage
+
+Monotasking produces three measurable advantages over multitasking:
+
+**Faster task completion.** Without context switching overhead, you complete each task in less total time. A task that takes 45 focused minutes might take 90 fragmented minutes (with switching costs) when multitasked.
+
+**Higher quality output.** Deep analytical or creative work requires sustained access to complex context in working memory. Multitasking fragments this access, producing shallower work. Monotasking maintains the context needed for depth.
+
+**Lower error rate.** Studies consistently show higher error rates in multitasked work. The mechanism: working memory is divided, reducing the cognitive resources available for error checking.
+
+## Monotasking as the Core of Focus Sessions
+
+A focus timer session is fundamentally a monotasking commitment: for the duration of the session, you work on one thing. The timer externalizes and enforces this commitment. Every impulse to switch tasks (check email, look something up that's tangentially related) can be captured in a note and deferred to after the session.
+
+<FAQSchema items={faqItems} />
+
+</GlossaryLayout>

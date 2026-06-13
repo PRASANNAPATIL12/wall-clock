@@ -1,0 +1,71 @@
+---
+import GlossaryLayout from '../../layouts/GlossaryLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+
+const faqItems = [
+  {
+    question: 'What is time blocking?',
+    answer: 'Time blocking is a scheduling method where you divide your workday into specific blocks of time, each assigned to a particular task or type of work. Instead of working from a to-do list and picking tasks reactively, you predetermine when you\'ll work on what — including focus blocks, email time, meetings, and even breaks. Cal Newport is its most prominent contemporary advocate.',
+  },
+  {
+    question: 'How is time blocking different from a to-do list?',
+    answer: 'A to-do list tells you what to do. Time blocking tells you when to do it. To-do lists leave timing decisions to the moment, which often means reactive work wins over important work. Time blocking pre-commits you to specific tasks at specific times, protecting important deep work from being displaced by incoming demands.',
+  },
+  {
+    question: 'How do I start time blocking?',
+    answer: 'Start the night before: look at tomorrow\'s calendar (existing meetings) and fill in the remaining time with specific tasks from your priority list. Schedule your most cognitively demanding work in your peak focus window (usually morning). Schedule email and messages in two batches. Leave buffer time between blocks. When a block runs over, rewrite the remaining schedule rather than cascading everything.',
+  },
+];
+---
+
+<GlossaryLayout
+  term="Time Blocking"
+  definition="A scheduling method where every hour of the workday is assigned in advance to a specific task or category of work, preventing reactive scheduling and protecting planned focus time from interruption."
+  description="What is time blocking? Definition, how it works, and how to implement time blocking to protect your deep work sessions."
+  canonicalUrl="https://blog.focusclock.app/glossary/time-blocking"
+  relatedTerms={[
+    { slug: 'deep-work', label: 'Deep Work' },
+    { slug: 'focus-block', label: 'Focus Block' },
+    { slug: 'task-batching', label: 'Task Batching' },
+    { slug: 'context-switching', label: 'Context Switching' },
+    { slug: '90-minute-rule', label: '90-Minute Rule' },
+  ]}
+  relatedArticles={[
+    { slug: '/learn/deep-work', label: 'Deep Work: Complete Guide' },
+    { slug: '/learn/focus-techniques', label: 'Focus Timer Techniques' },
+  ]}
+>
+
+## How Time Blocking Works
+
+Time blocking converts a to-do list into a calendar. Each task is assigned a specific start time and duration. The resulting schedule creates a plan for the entire day — not just a list of intentions.
+
+A typical time-blocked day might look like:
+
+- **7:00–9:00** — Deep work (most important cognitive task)
+- **9:00–9:30** — Email batch 1
+- **9:30–11:00** — Deep work (secondary task)
+- **11:00–12:00** — Meetings
+- **12:00–1:00** — Lunch (blocked, protected)
+- **1:00–2:30** — Focused project work
+- **2:30–3:00** — Email batch 2 + Slack
+- **3:00–4:30** — Reviews, planning, lighter cognitive work
+- **4:30–5:00** — Daily shutdown and next-day planning
+
+Every hour is assigned. Nothing is left to "whatever comes up."
+
+## Why It Works
+
+**Prevents reactive scheduling.** Without time blocking, the default is to respond to whatever arrives — email, Slack messages, walk-in questions. Time blocking creates a plan that actively competes with reactive demands.
+
+**Protects focus blocks.** By scheduling deep work as non-negotiable blocks, time blocking creates a structural defense against meeting creep and task interruptions.
+
+**Forces prioritization.** When you have to assign tasks to specific time slots, you confront the math: there are only so many hours, and you must choose. This forces prioritization that a to-do list (which can grow infinitely) doesn't.
+
+## Time Blocking + Focus Timers
+
+Time blocking plans when you'll focus. Focus timers enforce the plan. Used together, they form a complete system: the block schedule commits you to a task at a specific time, and the timer starts when you sit down to execute.
+
+<FAQSchema items={faqItems} />
+
+</GlossaryLayout>

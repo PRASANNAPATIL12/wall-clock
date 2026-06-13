@@ -1,0 +1,164 @@
+---
+import PillarLayout from '../../layouts/PillarLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+import CTABlock from '../../components/CTABlock.astro';
+
+const faqItems = [
+  {
+    question: 'What is productivity tracking?',
+    answer: 'Productivity tracking is the practice of measuring how you spend your working time — specifically, how much time you spend in focused, high-value work versus shallow or distracted work. Effective productivity tracking distinguishes between time logged and focus time: sitting at a desk for 8 hours is not productive if 6 of those hours are fragmented across email, social media, and context switching.',
+  },
+  {
+    question: 'How do I measure my focus time?',
+    answer: 'The most accurate method is using a dedicated focus timer that logs session data automatically. Each time you complete a focused work session, the timer records the duration, time of day, and optionally the type of work (activity tag). Over time this data reveals your peak focus hours, average session length, daily totals, and streaks. Manual logging (a paper notebook or spreadsheet) works but has much higher friction and worse compliance.',
+  },
+  {
+    question: 'What is a productivity streak?',
+    answer: 'A productivity streak is a consecutive-day counter that tracks how many days in a row you have logged at least one focus session (or met a minimum focus threshold). Streaks leverage the "don\'t break the chain" psychological phenomenon — the longer a streak grows, the more motivated you are to protect it. Research on habit formation suggests that tracking streaks is one of the most effective behavioral interventions for sustaining a new practice.',
+  },
+  {
+    question: 'What should I track to improve my productivity?',
+    answer: 'The four most actionable metrics: (1) Daily focused hours — how much time are you actually in deep work vs. shallow work? (2) Streak — how many consecutive days have you logged a session? (3) Peak focus window — what time of day do your longest sessions cluster? (4) Activity distribution — which types of work are you spending your focus on, and does that match your priorities? These four data points capture most of the signal you need to improve.',
+  },
+  {
+    question: 'Is tracking productivity counterproductive?',
+    answer: 'Tracking can become counterproductive if it replaces doing (you spend your session fiddling with the tracker instead of working) or creates perfectionism (you feel like failures because a session was "only" 45 minutes). The antidote is to use a timer that logs automatically and presents data passively — you review it after the fact, not during work. Focus Clock\'s design philosophy is exactly this: the timer logs silently, and you review your analytics at the end of the day.',
+  },
+];
+---
+
+<PillarLayout
+  title="Productivity Tracking: How to Measure Your Focus and Build a Better Work Habit"
+  description="Learn how to track your productivity scientifically — focus time measurement, streak systems, activity tagging, heatmap analytics, and the metrics that actually predict improvement."
+  canonicalUrl="https://blog.focusclock.app/learn/productivity-tracking"
+>
+
+  <h1>Productivity Tracking: How to Measure Your Focus and Build a Better Work Habit</h1>
+
+  <p><strong>You cannot improve what you don't measure.</strong> This is true in fitness, in business, and in focus. Most knowledge workers believe they're less productive than they could be — but they have no data to confirm what's actually happening or where the problem is. Productivity tracking provides that data.</p>
+
+  <p>This guide explains what to track, how to track it, and how to use the data to systematically improve your focused work output.</p>
+
+  ---
+
+  ## Why Tracking Matters More Than Planning
+
+  Most productivity advice is planning-focused: write a to-do list, time-block your calendar, prioritize ruthlessly. Planning is valuable, but it measures intent — what you plan to do. Tracking measures reality — what you actually did.
+
+  The gap between planning and tracking is where most productivity improvement stalls. A person can have a perfect daily plan and still spend 80% of their time reacting to incoming demands. Tracking exposes this gap. You can't lie to a timer log.
+
+  A 2019 study from the American Psychological Association found that workers who tracked their time identified an average of 2.7 hours per week of time previously spent on low-value tasks they weren't consciously aware of — simply by reviewing their logs. Awareness precedes change.
+
+  ---
+
+  ## The 4 Metrics That Actually Predict Improvement
+
+  ### 1. Daily Focused Hours
+
+  The single most important metric. How many hours per day did you spend in distraction-free, cognitively demanding work?
+
+  Most knowledge workers are shocked to find this number is under 2 hours, even on days that feel productive. Target: build toward 3–4 hours of genuine deep work daily. Track this number daily and weekly.
+
+  ### 2. Focus Streak
+
+  A streak counter tracks how many consecutive days you've logged at least one focus session. The psychological power of streaks is well-documented: Jerry Seinfeld's "don't break the chain" method, used to build a daily writing habit, is the most famous example. Behavioral economists call this "loss aversion applied to identity" — each day of the streak represents an investment you don't want to forfeit.
+
+  **The minimum threshold:** Even a single 25-minute session counts toward the streak on a hard day. This lowers the bar enough to maintain momentum during busy weeks without allowing genuine slack days.
+
+  ### 3. Peak Focus Window
+
+  Your brain is not uniformly productive throughout the day. Most people have a 2–4 hour window of peak cognitive capacity, usually in the morning but sometimes late afternoon. Tracking the time of day for each session, over 2–3 weeks, reveals this window clearly.
+
+  Once you know your peak window, you can schedule your most important deep work there and protect it from meetings and email. This single change often produces a larger productivity increase than any technique change.
+
+  ### 4. Activity Distribution
+
+  Tagging each session with the type of work you're doing (coding, writing, design, study, planning) creates a weekly breakdown of how your focus is actually distributed across activity types. This often reveals mismatches between what you think you're prioritizing and what you're actually spending focused time on.
+
+  ---
+
+  ## How to Track: The Right Tools and Methods
+
+  ### Manual tracking (notebook)
+
+  **Pros:** Low friction to start, no setup, no account.
+
+  **Cons:** High forgetting rate (you complete a session and forget to log it), no automatic calculation of totals or streaks, data is not searchable or graphable.
+
+  Best for: Getting started with tracking as a concept before committing to a tool.
+
+  ### Spreadsheet
+
+  **Pros:** Flexible, you control the structure.
+
+  **Cons:** High friction to maintain, requires formula work to get useful analytics, doesn't integrate with a timer.
+
+  Best for: Data enthusiasts who want complete control.
+
+  ### Dedicated focus timer with built-in tracking
+
+  **Pros:** Sessions are logged automatically when the timer ends, analytics are generated without manual entry, streaks and heatmaps are calculated for you.
+
+  **Cons:** You need to actually use the timer (not just start a session mentally).
+
+  **Best for:** Anyone who wants sustainable, low-friction tracking. This is what Focus Clock is built for.
+
+  ---
+
+  ## Reading Your Heatmap: What the Data Tells You
+
+  A focus heatmap is a calendar grid where each day is colored by the amount of focused time logged — lighter for less, darker for more. Heatmaps are borrowed from GitHub's contribution graph, which popularized the format.
+
+  **What to look for:**
+
+  - **Blank days:** Days with zero sessions. What happened? Was it a planned rest day, a meeting-heavy day, or a day you lost to distraction? Understanding blank days is as important as understanding productive days.
+  - **Long-session days:** What was different about your most focused days? Time of week? What work were you doing? What did you skip?
+  - **Consistency vs. peaks:** A consistent moderate performer (2 hours every day) almost always outproduces an inconsistent peak performer (6 hours once, then 3 blank days). Heatmap consistency is the real signal of a sustainable focus habit.
+  - **Week patterns:** Most people have a specific day of the week where focus drops. For knowledge workers, it's often Friday (when the social pull of the weekend creates distraction) or Monday (when meeting loads peak). Identifying your weak day lets you plan around it.
+
+  ---
+
+  ## Activity Tagging: Getting Granular
+
+  Once you've been tracking raw focus hours for 2–4 weeks, add activity tagging. For each session, tag what type of work you were doing. Common tags:
+
+  - Code / Engineering
+  - Writing
+  - Design
+  - Study / Learning
+  - Strategy / Planning
+  - Admin
+
+  After 4 weeks of tagged sessions, you'll have a clear picture of your focus distribution. Compare it to your stated priorities. If you claim "building the product" is your top priority but your session log shows 60% of focus time on "Admin", that's a structural problem you can now address.
+
+  ---
+
+  ## Building a Weekly Review Habit
+
+  The data only improves your work if you look at it. The minimum effective review: once per week, spend 10 minutes answering four questions:
+
+  1. **How many hours of deep work did I log this week?** (Is this going up over time?)
+  2. **What was my best focus day? Why?** (What conditions led to that? Replicate them.)
+  3. **What was my worst day? Why?** (What caused the loss? Prevent it next week.)
+  4. **Is my activity distribution matching my priorities?** (If not, what session slot will I protect for my top priority next week?)
+
+  This 10-minute review compounds dramatically over months. Most practitioners report that the review habit, more than any specific technique, is what drives long-term improvement.
+
+  ---
+
+  ## Related Articles
+
+  - [What is Deep Work?](/learn/deep-work)
+  - [Focus Timer Techniques](/learn/focus-techniques)
+  - [What is a productivity streak?](/glossary/productivity-tracking)
+  - [What is context switching?](/glossary/context-switching)
+  - [What is flow state?](/glossary/flow-state)
+
+  <FAQSchema items={faqItems} />
+
+  <CTABlock
+    heading="Start tracking your focus sessions today"
+    body="Focus Clock automatically logs every session with duration, activity tag, and timestamp. Your streak, heatmap, and daily totals update in real time. Free, browser-based, no download required."
+  />
+
+</PillarLayout>

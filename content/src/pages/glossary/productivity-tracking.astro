@@ -1,0 +1,66 @@
+---
+import GlossaryLayout from '../../layouts/GlossaryLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+
+const faqItems = [
+  {
+    question: 'What is productivity tracking?',
+    answer: 'Productivity tracking is the systematic measurement of how time is spent on work — specifically, how much time is spent in focused, high-value work versus shallow or distracted activity. Unlike simple time tracking (logging total hours worked), productivity tracking measures the quality of attention during those hours.',
+  },
+  {
+    question: 'What should I track to improve productivity?',
+    answer: 'The four most actionable metrics: (1) Daily focused hours — total time in distraction-free deep work; (2) Streak — consecutive days with logged focus sessions; (3) Peak focus window — what time of day your longest sessions cluster; (4) Activity distribution — which types of work receive your focused time. These four data points reveal most of the improvement opportunities in a typical knowledge worker\'s day.',
+  },
+  {
+    question: 'Does tracking productivity make you more productive?',
+    answer: 'Tracking alone does not improve productivity — but tracking combined with regular review does. A 2019 APA study found workers who tracked their time identified an average of 2.7 hours per week of low-value activity they weren\'t previously aware of. Awareness enables change. The key is a weekly review habit: spending 10 minutes looking at your logged data and asking "what does this reveal about how I could work better?"',
+  },
+];
+---
+
+<GlossaryLayout
+  term="Productivity Tracking"
+  definition="The systematic measurement and recording of how time is spent in focused work, including session duration, time of day, activity type, and consistency metrics (streaks). Used to identify patterns, measure improvement, and maintain accountability for focus habits."
+  description="What is productivity tracking? Definition, what metrics to track, and how session logging and analytics help build better focus habits."
+  canonicalUrl="https://blog.focusclock.app/glossary/productivity-tracking"
+  relatedTerms={[
+    { slug: 'focus-block', label: 'Focus Block' },
+    { slug: 'focus-timer', label: 'Focus Timer' },
+    { slug: 'deep-work', label: 'Deep Work' },
+    { slug: 'context-switching', label: 'Context Switching' },
+    { slug: 'time-blocking', label: 'Time Blocking' },
+  ]}
+  relatedArticles={[
+    { slug: '/learn/productivity-tracking', label: 'Productivity Tracking: Complete Guide' },
+    { slug: '/learn/focus-techniques', label: 'Focus Timer Techniques' },
+    { slug: '/blog/best-focus-timer-apps', label: 'Best Focus Timer Apps 2026' },
+  ]}
+>
+
+## Why Track, Not Just Do
+
+Most productivity methods are about planning and doing. Tracking adds a third dimension: measuring. Without measurement, you cannot answer "is my focus habit getting better over time?" or "what conditions produce my best work?"
+
+The measurement gap is real. In a 2021 survey by Adobe, knowledge workers estimated they spent 5 hours per day in deep, focused work. When asked to log actual focused sessions, the average was under 2 hours. The 3-hour gap was filled by shallow work and distraction that felt productive because it was busy.
+
+Tracking closes this gap by replacing estimated time with measured time.
+
+## Key Metrics
+
+**Daily focused hours.** The primary metric. How many hours today were spent in distraction-free, single-task focused work? Track this daily and review the weekly average.
+
+**Streak.** Consecutive days with at least one logged focus session. The streak creates daily accountability and leverages loss aversion: once a streak reaches 10+ days, breaking it feels genuinely costly.
+
+**Peak focus window.** After 2–3 weeks of session logging with timestamps, patterns emerge. Most people have a 2–4 hour window where their longest and highest-quality sessions cluster. Identifying this window lets you protect it from meetings.
+
+**Activity distribution.** Tagging sessions by work type (code, writing, design, study) reveals whether your focused time is going to your highest-priority work or drifting toward lower-value activity.
+
+## Passive vs. Active Tracking
+
+**Active tracking** — writing down what you worked on and for how long — works but has high friction. Most people maintain it for 2–3 weeks before the habit breaks.
+
+**Passive tracking** — a focus timer that logs sessions automatically when completed — has far lower friction. You run the session, the data is recorded. Focus Clock uses this approach: every completed session is automatically logged with duration, activity tag, and timestamp. No separate entry required.
+
+<FAQSchema items={faqItems} />
+
+</GlossaryLayout>

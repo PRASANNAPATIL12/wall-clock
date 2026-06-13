@@ -1,0 +1,64 @@
+---
+import GlossaryLayout from '../../layouts/GlossaryLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+
+const faqItems = [
+  {
+    question: 'What is a focus timer?',
+    answer: 'A focus timer is a countdown timer used to structure work into defined intervals of concentrated activity, typically followed by short breaks. The most popular focus timer method is the Pomodoro Technique (25-minute intervals with 5-minute breaks). Focus timers create a commitment boundary that makes distraction-free work easier to start and maintain.',
+  },
+  {
+    question: 'Do focus timers actually work?',
+    answer: 'Yes, research supports their effectiveness. A 2011 study in Cognition found that brief mental breaks during sustained tasks significantly improved attention compared to continuous work. A 2018 study in Psychological Science confirmed that structured work intervals with recovery periods outperform unstructured continuous work for attention-demanding tasks. The mechanisms: timers reduce procrastination (by shrinking the commitment horizon), structure recovery (preventing fatigue accumulation), and create measurable sessions (enabling tracking and improvement).',
+  },
+  {
+    question: 'What interval should I use for a focus timer?',
+    answer: 'The right interval depends on your focus capacity and the type of work. Beginners: 25 minutes (standard Pomodoro). Intermediate: 45–52 minutes. Experienced: 90 minutes (aligned with ultradian rhythms). Creative or analytical work (writing, coding) benefits from longer intervals because these tasks need 15–20 minutes of warm-up before reaching peak performance.',
+  },
+];
+---
+
+<GlossaryLayout
+  term="Focus Timer"
+  definition="A countdown timer used to structure work into defined intervals of concentrated activity, separated by short recovery breaks. Focus timers create explicit commitment boundaries that make distraction-free work easier to start and sustain."
+  description="What is a focus timer? Definition, how focus timers work, the research behind them, and how to choose the right interval for your work."
+  canonicalUrl="https://blog.focusclock.app/glossary/focus-timer"
+  relatedTerms={[
+    { slug: 'pomodoro-technique', label: 'Pomodoro Technique' },
+    { slug: '52-17-rule', label: '52/17 Rule' },
+    { slug: '90-minute-rule', label: '90-Minute Rule' },
+    { slug: 'focus-block', label: 'Focus Block' },
+    { slug: 'deep-work', label: 'Deep Work' },
+  ]}
+  relatedArticles={[
+    { slug: '/learn/focus-techniques', label: 'Focus Timer Techniques: Complete Guide' },
+    { slug: '/blog/best-focus-timer-apps', label: 'Best Focus Timer Apps 2026' },
+    { slug: '/blog/pomodoro-technique-complete-guide', label: 'Pomodoro Technique Guide' },
+  ]}
+>
+
+## How a Focus Timer Works
+
+A focus timer has three components:
+
+1. **Duration** — the length of the focused work interval (25, 45, 52, or 90 minutes)
+2. **Signal** — an alert (sound, visual, or haptic) when the interval ends
+3. **Recovery** — a defined break period before the next interval
+
+The timer creates a contract: for the duration of the session, you work only on the designated task. No context switching, no checking messages, no interruptions. When the timer ends, the contract is complete.
+
+## Physical vs. Digital Focus Timers
+
+**Physical timers** (kitchen timers, the Time Timer visual clock) have one advantage: the physical act of winding or setting the timer creates a ritual that signals the start of focused work. They have no screens and cannot distract you.
+
+**Digital timers** (browser apps, dedicated apps) add session logging, streak tracking, and analytics — converting individual sessions into a long-term tracking system. Focus Clock, for example, logs every session automatically, building a heatmap of your focus habit over time.
+
+## Why Focus Timers Reduce Procrastination
+
+The primary mechanism is reducing the psychological commitment horizon. The question "can I focus on this for an hour?" generates resistance. The question "can I focus for 25 minutes?" generates much less. Focus timers make starting easier by shrinking the apparent commitment to a manageable interval.
+
+This effect is related to what behavioral economists call "temporal myopia" — humans overweight immediate costs (starting a difficult task) relative to future rewards (finishing it). A focus timer shifts the psychology by making the session feel finite and achievable.
+
+<FAQSchema items={faqItems} />
+
+</GlossaryLayout>

@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+
+const terms = [
+  { slug: 'pomodoro-technique', term: 'Pomodoro Technique', summary: 'A time management method using 25-minute focus intervals with short breaks.' },
+  { slug: 'deep-work', term: 'Deep Work', summary: 'Distraction-free, cognitively demanding work that produces high-value output.' },
+  { slug: 'time-blocking', term: 'Time Blocking', summary: 'Scheduling every hour of the workday in advance to protect focus time.' },
+  { slug: 'flow-state', term: 'Flow State', summary: 'A state of complete absorption in a challenging task, characterized by effortless focus.' },
+  { slug: 'focus-timer', term: 'Focus Timer', summary: 'A countdown timer used to structure focused work intervals with defined breaks.' },
+  { slug: 'cognitive-load', term: 'Cognitive Load', summary: 'The total amount of mental effort being used in working memory at any given time.' },
+  { slug: 'context-switching', term: 'Context Switching', summary: 'The mental cost of moving between different tasks or types of work.' },
+  { slug: 'time-blindness', term: 'Time Blindness', summary: 'Difficulty perceiving the passage of time accurately, common in ADHD.' },
+  { slug: '90-minute-rule', term: '90-Minute Rule', summary: 'Working in 90-minute blocks aligned with the brain\'s natural ultradian rhythms.' },
+  { slug: 'focus-block', term: 'Focus Block', summary: 'A scheduled, uninterrupted period of time dedicated to a single task.' },
+  { slug: 'productivity-tracking', term: 'Productivity Tracking', summary: 'Measuring and recording focused work time to identify patterns and improve output.' },
+  { slug: '52-17-rule', term: '52/17 Rule', summary: 'A focus technique: 52 minutes of work followed by 17 minutes of complete rest.' },
+  { slug: 'task-batching', term: 'Task Batching', summary: 'Grouping similar tasks together to reduce context switching overhead.' },
+  { slug: 'monotasking', term: 'Monotasking', summary: 'Focusing on one task at a time, as opposed to multitasking.' },
+  { slug: 'attention-residue', term: 'Attention Residue', summary: 'Cognitive residue from a previous task that lingers after switching to a new task.' },
+];
+---
+
+<BaseLayout
+  title="Productivity & Focus Glossary — Focus Clock"
+  description="Definitions of key productivity, focus, and time management terms. Pomodoro Technique, deep work, flow state, attention residue, time blocking, and more."
+  canonicalUrl="https://blog.focusclock.app/glossary"
+>
+  <Header />
+
+  <main style="max-width: var(--max-w); margin: 0 auto; padding: 2rem 1.25rem 4rem;">
+    <nav style="font-size: 0.8rem; color: var(--fg-muted); margin-bottom: 2rem;">
+      <a href="https://focusclock.app" style="color: var(--fg-muted);">Focus Clock</a>
+      <span style="margin: 0 0.4rem;">›</span>
+      <a href="https://blog.focusclock.app" style="color: var(--fg-muted);">Blog</a>
+      <span style="margin: 0 0.4rem;">›</span>
+      <span>Glossary</span>
+    </nav>
+
+    <h1 style="font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 0.75rem;">Productivity & Focus Glossary</h1>
+    <p style="color: var(--fg-muted); margin-bottom: 2.5rem; max-width: 520px; line-height: 1.7;">Clear definitions for the terms that show up in productivity research, focus technique guides, and time management books.</p>
+
+    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+      {terms.map(t => (
+        <a href={`/glossary/${t.slug}`} style="
+          display: flex;
+          align-items: baseline;
+          gap: 1rem;
+          padding: 0.85rem 1.25rem;
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          text-decoration: none;
+        ">
+          <span style="font-weight: 600; font-size: 0.95rem; color: var(--fg); min-width: 180px;">{t.term}</span>
+          <span style="font-size: 0.875rem; color: var(--fg-muted);">{t.summary}</span>
+        </a>
+      ))}
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>

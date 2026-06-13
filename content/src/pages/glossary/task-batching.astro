@@ -1,0 +1,61 @@
+---
+import GlossaryLayout from '../../layouts/GlossaryLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+
+const faqItems = [
+  {
+    question: 'What is task batching?',
+    answer: 'Task batching is a productivity technique where you group similar tasks together and complete them in a single dedicated time block, rather than spreading them throughout the day. Examples: answering all emails in one 30-minute window rather than checking every 15 minutes; making all phone calls consecutively rather than one at a time between other work; processing all expense reports in a single sitting.',
+  },
+  {
+    question: 'Why does task batching improve productivity?',
+    answer: 'Task batching reduces context switching. Every time you switch task types, your brain must unload one context and load another — a process that takes 5–25 minutes before you reach full performance. By keeping similar tasks together, you stay in one cognitive mode, reducing the total time lost to context-loading. Email batching alone can save 1–2 hours per day for knowledge workers who currently check email continuously.',
+  },
+  {
+    question: 'What tasks are good candidates for batching?',
+    answer: 'Good batching candidates: email and messages (batch into 2–3 daily windows), phone calls (batch together), administrative tasks (expenses, forms, scheduling), code reviews, social media posting, and content creation tasks of the same type. Deep, creative work (writing, coding, design) generally should NOT be batched across projects — these benefit from extended single-project focus sessions rather than rapid context switching between projects.',
+  },
+];
+---
+
+<GlossaryLayout
+  term="Task Batching"
+  definition="A productivity technique where similar tasks are grouped together and completed in a single dedicated time block, reducing the cognitive cost of context switching between different types of work."
+  description="What is task batching? Definition, why it works, and which tasks to batch for maximum productivity gains."
+  canonicalUrl="https://blog.focusclock.app/glossary/task-batching"
+  relatedTerms={[
+    { slug: 'context-switching', label: 'Context Switching' },
+    { slug: 'time-blocking', label: 'Time Blocking' },
+    { slug: 'attention-residue', label: 'Attention Residue' },
+    { slug: 'monotasking', label: 'Monotasking' },
+    { slug: 'deep-work', label: 'Deep Work' },
+  ]}
+  relatedArticles={[
+    { slug: '/learn/deep-work', label: 'Deep Work: Complete Guide' },
+    { slug: '/learn/productivity-tracking', label: 'Productivity Tracking' },
+  ]}
+>
+
+## The Context-Switching Cost
+
+Task batching works by reducing context switching. Each time you change task types, the brain pays a context-loading cost: it must unload the previous task's state from working memory and load the new task's context. Research suggests this reloading takes 5–25 minutes to complete, during which performance on the new task is degraded.
+
+Continuous email checking throughout the day is a common example. Each time you switch to email and back to deep work, you pay the context switch cost both ways. For a knowledge worker who checks email 40 times per day, this could represent 1–3 hours of lost productive capacity.
+
+## The Email Batching Example
+
+The most high-impact application of task batching for most knowledge workers:
+
+**Without batching:** Email is checked throughout the day — in between tasks, at the start of every hour, when a notification appears. Each check generates attention residue that degrades the subsequent focus period.
+
+**With batching:** Email is checked twice per day — once at 9:30am (after the first focus block) and once at 4:30pm (before end of day). Outside these windows, the email client is closed. All messages from the 24-hour window are processed in one efficient sitting.
+
+The gain is not just the time saved from fewer email checks — it's the recovery of the deep focus capacity that was previously fragmented by email interruption.
+
+## Task Batching vs. Time Blocking
+
+Task batching is about what to group together. Time blocking is about when to schedule the groups. They're complementary: time blocking creates the schedule slots, task batching fills them with coherent sets of similar work.
+
+<FAQSchema items={faqItems} />
+
+</GlossaryLayout>

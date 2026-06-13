@@ -1,0 +1,71 @@
+---
+import GlossaryLayout from '../../layouts/GlossaryLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+
+const faqItems = [
+  {
+    question: 'How long is one Pomodoro?',
+    answer: 'The original Pomodoro Technique uses 25-minute work intervals followed by a 5-minute break. After four Pomodoros, a longer break of 15–30 minutes is taken.',
+  },
+  {
+    question: 'Who invented the Pomodoro Technique?',
+    answer: 'Francesco Cirillo, an Italian author and developer, invented the Pomodoro Technique in the late 1980s while a university student. He named it after the tomato-shaped kitchen timer he used.',
+  },
+  {
+    question: 'Does the Pomodoro Technique work for ADHD?',
+    answer: 'Yes — the Pomodoro Technique is frequently recommended for ADHD because its short, defined intervals make starting less overwhelming, and the timer provides an external structure that compensates for impaired internal time perception (time blindness). Some practitioners adapt the intervals to 15 or 20 minutes for ADHD.',
+  },
+];
+---
+
+<GlossaryLayout
+  term="Pomodoro Technique"
+  definition="A time management method developed by Francesco Cirillo that structures work into 25-minute focused intervals (Pomodoros) separated by 5-minute breaks, with a longer break after every four intervals."
+  description="What is the Pomodoro Technique? A clear definition, the history behind it, how it works, and how to start using it with a focus timer."
+  canonicalUrl="https://blog.focusclock.app/glossary/pomodoro-technique"
+  relatedTerms={[
+    { slug: 'focus-timer', label: 'Focus Timer' },
+    { slug: 'deep-work', label: 'Deep Work' },
+    { slug: 'attention-residue', label: 'Attention Residue' },
+    { slug: '52-17-rule', label: '52/17 Rule' },
+    { slug: 'time-blocking', label: 'Time Blocking' },
+  ]}
+  relatedArticles={[
+    { slug: '/blog/pomodoro-technique-complete-guide', label: 'Pomodoro Technique: Complete Guide' },
+    { slug: '/learn/focus-techniques', label: 'Focus Timer Techniques Guide' },
+    { slug: '/blog/pomofocus-alternative', label: 'Pomofocus Alternative' },
+  ]}
+>
+
+## How It Works
+
+The Pomodoro Technique divides work into four components:
+
+1. **The Pomodoro** — a 25-minute block of distraction-free, singular focus on one task
+2. **The short break** — a 5-minute recovery period after each Pomodoro (no cognitively demanding tasks)
+3. **The long break** — a 15–30 minute break after every four Pomodoros
+4. **The mark** — a record of each completed Pomodoro (traditionally a physical X on paper)
+
+The Pomodoro is treated as an atomic unit: indivisible. If the session is interrupted before the 25 minutes are up, it doesn't count — the Pomodoro is restarted.
+
+## Why It Works
+
+The Pomodoro Technique is effective because it addresses three core focus problems:
+
+**Procrastination.** The commitment horizon is only 25 minutes — small enough to feel non-threatening. Starting a task becomes easier when the question is "can I focus for 25 minutes?" rather than "can I finish this entire project today?"
+
+**Attention fatigue.** Sustained attention naturally degrades after 20–40 minutes of continuous effort. The 5-minute breaks prevent fatigue accumulation and restore focus capacity.
+
+**Distraction management.** When the timer is running, any distraction (a notification, an impulse to check email) is deferred. The timer externalizes the commitment to stay on task.
+
+## Origin
+
+Francesco Cirillo developed the method as a university student in Rome in the late 1980s, frustrated by his inability to maintain concentration during study sessions. He challenged himself to focus for just 10 minutes, using a tomato-shaped (*pomodoro* in Italian) kitchen timer as accountability. After refining the system through tutoring students, he published a detailed book on the method. The technique spread globally through the productivity community in the 2000s.
+
+## Using a Digital Focus Timer
+
+While Cirillo used a physical kitchen timer, digital timers work equally well and add session logging capabilities. A timer like Focus Clock starts a session in one click, logs the completed session automatically, and builds a streak and heatmap over time — turning the Pomodoro cycle into a long-term productivity tracking system.
+
+<FAQSchema items={faqItems} />
+
+</GlossaryLayout>
