@@ -1,0 +1,67 @@
+---
+import GlossaryLayout from '../../layouts/GlossaryLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+
+const faqItems = [
+  {
+    question: 'What does it feel like to be in flow state?',
+    answer: 'Flow state is characterized by complete absorption in the task, loss of self-consciousness, distorted time perception (an hour feels like minutes), effortless concentration, and a sense of intrinsic enjoyment. Many practitioners describe it as the work "doing itself" — you\'re executing without the usual internal friction or self-doubt.',
+  },
+  {
+    question: 'How long does it take to enter flow state?',
+    answer: 'Research suggests it typically takes 15–20 minutes of uninterrupted focus to enter flow. This is why the Pomodoro Technique\'s original 25-minute interval is considered borderline — you achieve only 5–10 minutes of peak flow before the timer breaks the state. Practitioners seeking flow often use 45–90 minute sessions.',
+  },
+  {
+    question: 'Can you force flow state?',
+    answer: 'You cannot force flow, but you can create conditions that make it more likely: choose a task that matches your skill level (neither too easy nor too hard), eliminate distractions before starting, set a clear goal for the session, and work in a consistent environment your brain associates with focus. A timer helps by creating a defined commitment horizon that reduces the urge to stop and check things.',
+  },
+];
+---
+
+<GlossaryLayout
+  term="Flow State"
+  definition="A mental state of complete absorption in a challenging task, characterized by effortless concentration, time distortion, and intrinsic enjoyment. First described by psychologist Mihaly Csikszentmihalyi in the 1970s."
+  description="What is flow state? Definition, conditions for entering flow, and how focus timers help create the environment where flow is more likely."
+  canonicalUrl="https://blog.focusclock.app/glossary/flow-state"
+  relatedTerms={[
+    { slug: 'deep-work', label: 'Deep Work' },
+    { slug: 'attention-residue', label: 'Attention Residue' },
+    { slug: 'cognitive-load', label: 'Cognitive Load' },
+    { slug: 'focus-block', label: 'Focus Block' },
+    { slug: '90-minute-rule', label: '90-Minute Rule' },
+  ]}
+  relatedArticles={[
+    { slug: '/learn/deep-work', label: 'Deep Work: Complete Guide' },
+    { slug: '/learn/focus-techniques', label: 'Focus Timer Techniques' },
+  ]}
+>
+
+## Origin
+
+The concept of flow was developed and named by Hungarian-American psychologist Mihaly Csikszentmihalyi (pronounced "cheeks-sent-me-high") over a 40-year research program beginning in the 1970s. Csikszentmihalyi studied what made activities intrinsically rewarding and found that the state of complete absorption — which he termed "flow" — was a universal human experience that correlated strongly with reported happiness and life satisfaction, regardless of the activity being performed.
+
+His 1990 book *Flow: The Psychology of Optimal Experience* brought the concept into mainstream consciousness.
+
+## The Flow Conditions
+
+Csikszentmihalyi identified the conditions that make flow most likely:
+
+**Clear goals.** You must know what you're trying to accomplish in the session. Vague work ("I'll work on the project") rarely leads to flow; specific goals ("I'll write the introduction and first two sections") do.
+
+**Immediate feedback.** You can tell whether you're making progress in real time. Writing produces visible output. Coding produces working or non-working code. Tasks with delayed or ambiguous feedback (strategy, planning) are harder to enter flow on.
+
+**Challenge-skill balance.** The task must be difficult enough to require full attention but not so difficult that anxiety overrides concentration. Tasks too easy produce boredom; tasks too hard produce anxiety. Both block flow.
+
+## Flow and Focus Timers
+
+A focus timer helps create flow conditions by:
+
+- **Eliminating the open-endedness** that creates resistance to starting
+- **Creating a defined commitment horizon** that reduces the urge to check email or take breaks prematurely
+- **Logging session data** so you can identify which sessions produced flow-like states (typically longer sessions with lower distraction rates)
+
+The key insight: you can't enter flow in 5 minutes. Maintaining 45–90 minute sessions (not the standard 25-minute Pomodoro) is usually necessary for deep flow in cognitively complex work.
+
+<FAQSchema items={faqItems} />
+
+</GlossaryLayout>

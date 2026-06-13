@@ -1,0 +1,61 @@
+---
+import GlossaryLayout from '../../layouts/GlossaryLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+
+const faqItems = [
+  {
+    question: 'What is time blindness?',
+    answer: 'Time blindness is the difficulty in accurately perceiving and tracking the passage of time. It is most commonly associated with ADHD, where it presents as a core symptom — people with ADHD often experience time as only "now" and "not now," without an intuitive sense of how much time has passed or how much is left. Time blindness can lead to chronic lateness, difficulty estimating task durations, and trouble meeting deadlines.',
+  },
+  {
+    question: 'Is time blindness a symptom of ADHD?',
+    answer: 'Yes — time blindness is considered a hallmark symptom of ADHD. ADHD researcher Russell Barkley describes it as one of the most impairing aspects of the disorder in adult life, affecting the ability to manage schedules, meet deadlines, and plan future tasks. Unlike attention difficulties (which can be masked in stimulating environments), time blindness is present regardless of interest level in the task.',
+  },
+  {
+    question: 'How do you compensate for time blindness?',
+    answer: 'The most effective compensation strategies: (1) External timers — rather than relying on internal time perception, use a visible timer that shows time passing (analog clock faces work especially well); (2) Time anchors — set multiple alarms for critical transitions, not just the final deadline; (3) "Time stamps" — regularly check the clock and record the current time while working; (4) Over-estimation — deliberately estimate all tasks will take twice as long as you think; (5) Body doubles — having another person present (or on video call) helps maintain time awareness.',
+  },
+];
+---
+
+<GlossaryLayout
+  term="Time Blindness"
+  definition="Difficulty accurately perceiving or tracking the passage of time. Most commonly associated with ADHD, where internal time perception is impaired, leading to chronic lateness, task duration underestimation, and deadline difficulties."
+  description="What is time blindness? Definition, its connection to ADHD, and practical strategies for compensating with external tools like visual timers."
+  canonicalUrl="https://blog.focusclock.app/glossary/time-blindness"
+  relatedTerms={[
+    { slug: 'focus-timer', label: 'Focus Timer' },
+    { slug: 'focus-block', label: 'Focus Block' },
+    { slug: 'time-blocking', label: 'Time Blocking' },
+    { slug: 'pomodoro-technique', label: 'Pomodoro Technique' },
+    { slug: 'productivity-tracking', label: 'Productivity Tracking' },
+  ]}
+  relatedArticles={[
+    { slug: '/learn/focus-techniques', label: 'Focus Timer Techniques' },
+    { slug: '/blog/pomodoro-technique-complete-guide', label: 'Pomodoro Technique Guide' },
+  ]}
+>
+
+## The Neuroscience of Time Perception
+
+Time perception relies on the brain's internal clock — a system involving the basal ganglia, cerebellum, and prefrontal cortex that tracks the passage of time by counting neural pulses. In ADHD, dysfunction in dopaminergic circuits disrupts this internal timing system, causing time perception to be unreliable.
+
+ADHD researcher Russell Barkley has argued that ADHD is fundamentally a disorder of time — the inability to see and manage time — rather than primarily an attention disorder. In his view, executive function deficits in ADHD are largely downstream effects of impaired time awareness.
+
+People without ADHD also experience time perception distortions, particularly during flow state (where time seems to speed up) and during boredom (where it seems to slow down). These are temporary variations on a normally functional time sense.
+
+## Why Analog Timers Help
+
+For people with time blindness, visual timers — particularly analog formats that show time as a spatial, shrinking arc — are significantly more effective than digital countdowns. This is because:
+
+**Spatial representation.** An analog clock face converts time from an abstract quantity to a visible, spatial resource. You can see how much is left, not just read a number. This engages spatial processing rather than purely numerical cognition.
+
+**Continuous visual feedback.** A digital countdown changes discretely (the number updates). An analog arc changes continuously, providing constant visual feedback about time's passage — the brain can perceive motion even peripherally.
+
+**Reduced cognitive load.** Interpreting "14:23 remaining" requires reading and mental calculation. Interpreting an arc that's about 25% of the way to zero is immediate and automatic.
+
+Focus Clock's analog clock interface was designed with this principle in mind: the timer is a shrinking arc on a clock face, giving continuous spatial representation of remaining time.
+
+<FAQSchema items={faqItems} />
+
+</GlossaryLayout>

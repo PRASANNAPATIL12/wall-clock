@@ -1,0 +1,61 @@
+---
+import GlossaryLayout from '../../layouts/GlossaryLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+
+const faqItems = [
+  {
+    question: 'What is attention residue?',
+    answer: 'Attention residue is the cognitive phenomenon where part of your attention remains focused on a previous task after you\'ve switched to a new one. Coined by researcher Sophie Leroy, it means that after checking Slack or email, your mind is partially still processing those messages even when you\'ve returned to your main work — reducing the quality of your focus.',
+  },
+  {
+    question: 'How long does attention residue last?',
+    answer: 'Research suggests attention residue can persist for up to 23 minutes after an interruption. This means a 2-minute phone check effectively costs 25 minutes of cognitive performance — 2 minutes of the interruption plus up to 23 minutes of degraded focus while the residue clears.',
+  },
+  {
+    question: 'How do you minimize attention residue?',
+    answer: 'Three strategies: (1) Use defined focus sessions with a timer — when you know you\'re in a 52-minute session, the mental permission to check messages isn\'t granted until the timer ends; (2) Complete tasks at natural stopping points before switching, rather than mid-thought; (3) Batch communication into two daily windows (mid-morning and end of day) rather than checking continuously.',
+  },
+];
+---
+
+<GlossaryLayout
+  term="Attention Residue"
+  definition="The cognitive phenomenon where attention remains partially focused on a previous task after switching to a new one, reducing the quality of focus on the current task. Described by researcher Sophie Leroy in a 2009 paper."
+  description="What is attention residue? Definition, how long it lasts, and how to minimize it using structured focus sessions."
+  canonicalUrl="https://blog.focusclock.app/glossary/attention-residue"
+  relatedTerms={[
+    { slug: 'context-switching', label: 'Context Switching' },
+    { slug: 'deep-work', label: 'Deep Work' },
+    { slug: 'cognitive-load', label: 'Cognitive Load' },
+    { slug: 'monotasking', label: 'Monotasking' },
+    { slug: 'focus-block', label: 'Focus Block' },
+  ]}
+  relatedArticles={[
+    { slug: '/learn/deep-work', label: 'Deep Work: Complete Guide' },
+    { slug: '/blog/pomodoro-technique-complete-guide', label: 'Pomodoro Technique Guide' },
+  ]}
+>
+
+## Origin
+
+The term was coined by Sophie Leroy, a professor at the University of Washington Foster School of Business, in a 2009 paper titled "Why Is It So Hard to Do My Work? The Challenge of Attention Residue When Switching Between Work Tasks." Leroy conducted experiments showing that when people switched tasks before completing the first one, they performed worse on the second task — because part of their cognitive resources remained "stuck" on the unfinished first task.
+
+## Why It Matters
+
+Attention residue is the mechanism that explains why multitasking is cognitively expensive. When you switch from writing code to answering a Slack message and back to code, the residue from the Slack conversation lingers in working memory and competes with the code problem for cognitive bandwidth.
+
+The implication: every task switch has a hidden cost beyond the time of the switch itself. A 5-minute interruption that takes 20 minutes of residue to clear is a 25-minute cost to your focus session.
+
+Cal Newport cites attention residue as a core reason why open-plan offices and persistent messaging tools (Slack, email) systematically destroy the focus capacity of knowledge workers — not because of the explicit time spent on messages, but because of the residue every message generates.
+
+## How Focus Sessions Reduce Attention Residue
+
+A structured focus session (using a timer) reduces attention residue through two mechanisms:
+
+**Permission architecture.** When you start a 52-minute session, you implicitly give yourself permission to ignore everything else for 52 minutes. The timer handles the boundary — you don't have to decide moment-to-moment whether to check your phone. This removes the temptation that triggers task switches.
+
+**Completion at natural stopping points.** The timer rings at a defined moment, which you can (and should) use as a natural stopping point in the work. Stopping at a natural break produces less residue than stopping mid-thought — because the brain doesn't need to maintain an "open loop" around an unfinished sentence or half-solved problem.
+
+<FAQSchema items={faqItems} />
+
+</GlossaryLayout>

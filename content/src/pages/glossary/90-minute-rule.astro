@@ -1,0 +1,63 @@
+---
+import GlossaryLayout from '../../layouts/GlossaryLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+
+const faqItems = [
+  {
+    question: 'What is the 90-minute rule for productivity?',
+    answer: 'The 90-minute rule is a focus technique that aligns work sessions with the brain\'s natural ultradian rhythms — 90-minute cycles of high alertness alternating with lower alertness that run throughout the day. By working in 90-minute blocks (matching the high-alertness phase) and taking genuine 20-30 minute recovery breaks (matching the lower-alertness phase), you work with your biology rather than against it.',
+  },
+  {
+    question: 'What are ultradian rhythms?',
+    answer: 'Ultradian rhythms are biological cycles shorter than 24 hours. The most relevant for productivity is the basic rest-activity cycle (BRAC): a 90–120 minute oscillation between states of higher and lower brain arousal that runs throughout the day, not just during sleep. Sleep researchers Nathaniel Kleitman and Peretz Lavie documented these cycles in waking subjects. During the high phase, alertness, concentration, and information processing are at their peak.',
+  },
+  {
+    question: 'Who should use the 90-minute rule?',
+    answer: 'The 90-minute rule is best suited to experienced focus practitioners who have already built a solid 45–60 minute focus baseline. Beginners attempting 90-minute sessions often spend the first 30 minutes distracted, then tire before the 90-minute mark. The progression: start with 25-minute Pomodoros, build to 45–52 minutes over 1–2 months, then extend to 90 minutes once 52-minute sessions feel comfortable.',
+  },
+];
+---
+
+<GlossaryLayout
+  term="90-Minute Rule"
+  definition="A focus technique that structures work into 90-minute sessions followed by 20–30 minute recovery breaks, aligned with the brain's natural ultradian rhythms (90–120 minute cycles of high and low alertness)."
+  description="What is the 90-minute rule? Definition, the ultradian rhythm science behind it, and how to implement 90-minute focus blocks for deep work."
+  canonicalUrl="https://blog.focusclock.app/glossary/90-minute-rule"
+  relatedTerms={[
+    { slug: 'focus-block', label: 'Focus Block' },
+    { slug: 'deep-work', label: 'Deep Work' },
+    { slug: 'flow-state', label: 'Flow State' },
+    { slug: '52-17-rule', label: '52/17 Rule' },
+    { slug: 'pomodoro-technique', label: 'Pomodoro Technique' },
+  ]}
+  relatedArticles={[
+    { slug: '/learn/focus-techniques', label: 'Focus Timer Techniques: Complete Guide' },
+    { slug: '/learn/deep-work', label: 'Deep Work Guide' },
+  ]}
+>
+
+## The Science: Ultradian Rhythms
+
+Ultradian rhythms are biological cycles that operate throughout the day. Sleep researcher Nathaniel Kleitman (who also discovered REM sleep) identified a basic rest-activity cycle (BRAC) of approximately 90–120 minutes in both sleeping and waking humans. During the high phase of the BRAC, the brain is in a state of peak alertness, focus, and information processing capacity. During the low phase, alertness decreases and the brain shifts toward more associative, less concentrated activity.
+
+The 90-minute rule takes advantage of the BRAC by aligning focused work sessions with the high phase and scheduling recovery during the low phase.
+
+## Who Uses This Approach
+
+Performance psychologist Jim Loehr and journalist Tony Schwartz documented the 90-minute pattern in their research on elite athletes and later applied it to corporate performance in their book *The Power of Full Engagement* (2003). They found that top performers across fields — athletes, musicians, executives — naturally worked in 90-minute blocks, often without knowing why.
+
+Cal Newport's deep work sessions are approximately this length. Elite musicians and academic researchers who produce the highest output per hour tend to cap their focused practice at 3–4 ninety-minute blocks per day (3–4 total hours of peak focus).
+
+## Implementing the 90-Minute Rule
+
+**Morning session:** Begin your first 90-minute session immediately after morning routine — before email, before news. This is typically the highest-alertness window for most people.
+
+**Recovery:** The 20–30 minute break after each session is not optional. It's the mechanism that makes the next session possible. True recovery means no screens, no cognitively demanding tasks. A walk, a meal, a nap, or light physical activity.
+
+**Afternoon session:** Most people have a second BRAC peak in the mid-to-late afternoon (1–3pm or 3–5pm, depending on chronotype). Schedule a second 90-minute block here.
+
+**Daily maximum:** 2–3 sessions (3–4.5 hours of deep focus) is the practical ceiling for sustained quality. More sessions are possible but produce diminishing returns in output quality.
+
+<FAQSchema items={faqItems} />
+
+</GlossaryLayout>

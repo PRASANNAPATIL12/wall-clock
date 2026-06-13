@@ -1,0 +1,56 @@
+---
+---
+
+<header style="
+  border-bottom: 1px solid var(--border);
+  padding: 0 1.25rem;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 100;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+">
+  <div style="
+    max-width: 900px;
+    margin: 0 auto;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+  ">
+    <a href="https://focusclock.app" style="
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--fg);
+      font-weight: 600;
+      font-size: 0.95rem;
+      letter-spacing: -0.01em;
+      text-decoration: none;
+    ">
+      <!-- Clock icon -->
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      Focus Clock
+    </a>
+
+    <nav style="display: flex; align-items: center; gap: 1.25rem;">
+      <a href="https://blog.focusclock.app" style="font-size: 0.85rem; color: var(--fg-muted);">Blog</a>
+      <a href="https://blog.focusclock.app/glossary" style="font-size: 0.85rem; color: var(--fg-muted);">Glossary</a>
+      <a href="https://focusclock.app/app" style="
+        font-size: 0.85rem;
+        background: var(--accent);
+        color: white;
+        padding: 0.35rem 0.85rem;
+        border-radius: 6px;
+        font-weight: 500;
+        white-space: nowrap;
+        text-decoration: none;
+      ">Try Free</a>
+    </nav>
+  </div>
+</header>

@@ -1,0 +1,161 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+const pillars = [
+  {
+    slug: 'deep-work',
+    title: 'Deep Work',
+    description: 'Master Cal Newport\'s deep work method. Build focus habits that survive distraction and produce your best work.',
+    icon: '🧠',
+  },
+  {
+    slug: 'focus-techniques',
+    title: 'Focus Timer Techniques',
+    description: 'Pomodoro, 52/17, time blocking, and more. Understand how focus timers work and which method fits your brain.',
+    icon: '⏱',
+  },
+  {
+    slug: 'focus-apps',
+    title: 'Focus Apps & Comparisons',
+    description: 'Honest comparisons of Pomofocus, Forest, Flocus, and other focus apps. Find the right tool for your workflow.',
+    icon: '📱',
+  },
+  {
+    slug: 'productivity-tracking',
+    title: 'Productivity Tracking',
+    description: 'Data-driven focus. Learn how to measure your output, track streaks, and use analytics to improve.',
+    icon: '📊',
+  },
+];
+
+const recentArticles = [
+  {
+    slug: 'blog/pomodoro-technique-complete-guide',
+    title: 'Pomodoro Technique: The Complete Guide for 2026',
+    description: 'The definitive guide to the Pomodoro Technique — history, science, step-by-step setup, and how to adapt it to your work style.',
+    pillar: 'Focus Techniques',
+    readingTime: '12 min',
+  },
+  {
+    slug: 'blog/pomofocus-alternative',
+    title: 'Pomofocus Alternative: 5 Better Apps for Serious Focus',
+    description: 'Looking for a Pomofocus alternative? We compare the top 5 options on analytics, flexibility, and distraction-free design.',
+    pillar: 'Comparisons',
+    readingTime: '8 min',
+  },
+  {
+    slug: 'blog/forest-app-alternative',
+    title: 'Forest App Alternative: Focus Without Planting Trees',
+    description: 'Forest is beautiful but limited. Here are the best Forest app alternatives for users who want real analytics and no paywalls.',
+    pillar: 'Comparisons',
+    readingTime: '7 min',
+  },
+  {
+    slug: 'blog/best-focus-timer-apps',
+    title: 'Best Focus Timer Apps in 2026: Ranked',
+    description: 'We tested 12 focus timer apps over 30 days. Here are the top picks across free, paid, minimal, and feature-rich categories.',
+    pillar: 'Comparisons',
+    readingTime: '10 min',
+  },
+];
+
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Focus Clock Blog',
+  url: 'https://blog.focusclock.app',
+  description: 'Guides, comparisons, and science-backed techniques for deep work, focus timers, and productivity.',
+  publisher: {
+    '@type': 'Organization',
+    name: 'Focus Clock',
+    url: 'https://focusclock.app',
+  },
+};
+---
+
+<BaseLayout
+  title="Focus Clock Blog — Deep Work, Pomodoro & Productivity Guides"
+  description="Science-backed guides on deep work, focus timer techniques, Pomodoro method, and productivity tracking. Written for people who take their focus seriously."
+  canonicalUrl="https://blog.focusclock.app"
+  schema={websiteSchema}
+>
+  <Header />
+
+  <main style="max-width: 900px; margin: 0 auto; padding: 3rem 1.25rem 5rem;">
+
+    <!-- Hero -->
+    <section style="text-align: center; margin-bottom: 4rem;">
+      <h1 style="font-size: 2.4rem; font-weight: 700; letter-spacing: -0.04em; line-height: 1.15; margin-bottom: 1rem;">
+        Focus better.<br />Understand why it works.
+      </h1>
+      <p style="font-size: 1.05rem; color: var(--fg-muted); max-width: 520px; margin: 0 auto 2rem; line-height: 1.7;">
+        Science-backed guides on deep work, focus timer techniques, and productivity — written for people who take their attention seriously.
+      </p>
+      <a href="https://focusclock.app/app" style="
+        display: inline-block;
+        background: var(--accent);
+        color: white;
+        padding: 0.7rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+      ">Try Focus Clock Free →</a>
+    </section>
+
+    <!-- Pillars -->
+    <section style="margin-bottom: 4rem;">
+      <h2 style="font-size: 1.1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-muted); margin-bottom: 1.25rem;">
+        Learning Pillars
+      </h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+        {pillars.map(p => (
+          <a href={`/learn/${p.slug}`} style="
+            display: block;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-decoration: none;
+            transition: border-color 200ms;
+          ">
+            <div style="font-size: 1.75rem; margin-bottom: 0.6rem;">{p.icon}</div>
+            <p style="font-weight: 600; font-size: 0.95rem; color: var(--fg); margin-bottom: 0.35rem;">{p.title}</p>
+            <p style="font-size: 0.82rem; color: var(--fg-muted); line-height: 1.55;">{p.description}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- Recent Articles -->
+    <section>
+      <h2 style="font-size: 1.1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-muted); margin-bottom: 1.25rem;">
+        Recent Articles
+      </h2>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        {recentArticles.map(a => (
+          <a href={`/${a.slug}`} style="
+            display: block;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            text-decoration: none;
+          ">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem;">
+              <span style="font-size: 0.75rem; font-weight: 500; background: var(--fg-faint); color: var(--fg-muted); padding: 0.15rem 0.6rem; border-radius: 4px;">{a.pillar}</span>
+              <span style="font-size: 0.75rem; color: var(--fg-muted);">{a.readingTime} read</span>
+            </div>
+            <p style="font-weight: 600; font-size: 1rem; color: var(--fg); margin-bottom: 0.3rem;">{a.title}</p>
+            <p style="font-size: 0.875rem; color: var(--fg-muted); line-height: 1.5;">{a.description}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+
+  </main>
+
+  <Footer />
+</BaseLayout>

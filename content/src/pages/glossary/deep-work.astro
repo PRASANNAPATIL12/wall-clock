@@ -1,0 +1,72 @@
+---
+import GlossaryLayout from '../../layouts/GlossaryLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+
+const faqItems = [
+  {
+    question: 'What is deep work, in simple terms?',
+    answer: 'Deep work means focusing completely on a hard task without any distractions — no phone, no notifications, no switching between tasks. It\'s the opposite of answering emails while also trying to write code. Cal Newport argues this kind of focused work is what produces the most valuable results.',
+  },
+  {
+    question: 'How is deep work different from working hard?',
+    answer: 'Working hard refers to effort and hours. Deep work refers to the quality of attention during those hours. You can work hard for 10 hours while multitasking and achieve less than someone who works deeply for 3 hours. Deep work is the subset of hard work where your cognitive capacity is fully engaged on a single demanding task.',
+  },
+  {
+    question: 'How many hours of deep work is achievable per day?',
+    answer: 'Research and practitioner reports consistently suggest 3–4 hours of genuine deep work is the practical ceiling for most knowledge workers. Cal Newport notes that top performers in cognitively demanding fields rarely sustain more than 4 hours of deep focus daily. Even 1–2 hours of true deep work can outperform a full day of fragmented, distracted work.',
+  },
+];
+---
+
+<GlossaryLayout
+  term="Deep Work"
+  definition="Professional activities performed in a state of distraction-free concentration that push cognitive capabilities to their limit, producing results that are difficult to replicate. Term coined by computer scientist and author Cal Newport."
+  description="What is deep work? Definition, examples, and how to practice Cal Newport's deep work methodology for maximum cognitive output."
+  canonicalUrl="https://blog.focusclock.app/glossary/deep-work"
+  relatedTerms={[
+    { slug: 'attention-residue', label: 'Attention Residue' },
+    { slug: 'flow-state', label: 'Flow State' },
+    { slug: 'focus-block', label: 'Focus Block' },
+    { slug: 'context-switching', label: 'Context Switching' },
+    { slug: 'monotasking', label: 'Monotasking' },
+  ]}
+  relatedArticles={[
+    { slug: '/learn/deep-work', label: 'Deep Work: Complete Guide' },
+    { slug: '/learn/focus-techniques', label: 'Focus Timer Techniques' },
+    { slug: '/learn/productivity-tracking', label: 'Productivity Tracking' },
+  ]}
+>
+
+## Origin
+
+The term was coined by Cal Newport, an associate professor of computer science at Georgetown University, in his 2016 book *Deep Work: Rules for Focused Success in a Distracted World*. Newport observed that the ability to focus intensely on demanding cognitive tasks was becoming both increasingly rare (due to distracted work culture) and increasingly valuable (because its outputs — complex software, original research, compelling writing — cannot be replicated by shallow work).
+
+## Deep Work vs. Shallow Work
+
+Newport divides professional activity into two categories:
+
+**Deep Work** — Cognitively demanding tasks performed in a state of full concentration. Produces new value, improves skill, and is hard to replicate. Examples: designing an algorithm, writing a book chapter, learning a complex framework, developing a business strategy.
+
+**Shallow Work** — Non-cognitively demanding logistical tasks, often performed while distracted. Low value, easily replicable. Examples: answering routine email, scheduling meetings, filling out forms.
+
+The modern knowledge work environment systemically favors shallow work: open offices, constant messaging, "always available" culture. Deep work requires deliberately resisting these defaults.
+
+## Why Deep Work Is Valuable
+
+Three reasons deep work produces disproportionate output:
+
+1. **Learning speed.** Intense focus during learning produces stronger myelin development (the neural mechanism behind skill acquisition) than distracted practice. Deep learners master new skills faster.
+
+2. **Output quality.** The relationship between focus intensity and output quality is non-linear. The best writing, code, and analysis is produced in flow states that only emerge after 15–20 minutes of sustained concentration — impossible if you're multitasking.
+
+3. **Scarcity premium.** As attention-fragmenting technology proliferates, sustained deep focus becomes rarer, driving up its market value.
+
+## How to Practice Deep Work
+
+The core practice: protect scheduled blocks of uninterrupted time for singular, cognitively demanding tasks. Newport identifies four scheduling strategies (see [Deep Work Complete Guide](/learn/deep-work) for full details): Monastic, Bimodal, Rhythmic, and Journalistic.
+
+For most knowledge workers: the Rhythmic philosophy (a fixed daily deep work block at the same time every day) is the most sustainable starting point.
+
+<FAQSchema items={faqItems} />
+
+</GlossaryLayout>

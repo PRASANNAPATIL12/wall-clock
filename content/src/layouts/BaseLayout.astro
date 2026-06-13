@@ -1,0 +1,132 @@
+---
+export interface Props {
+  title: string;
+  description: string;
+  canonicalUrl?: string;
+  ogImage?: string;
+  type?: 'website' | 'article';
+  publishedDate?: string;
+  schema?: object | object[];
+}
+
+const {
+  title,
+  description,
+  canonicalUrl,
+  ogImage = 'https://focusclock.app/og-image.png',
+  type = 'website',
+  publishedDate,
+  schema,
+} = Astro.props;
+
+const canonical = canonicalUrl ?? Astro.url.href;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonical} />
+  <meta name="robots" content="index, follow" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content={type} />
+  <meta property="og:site_name" content="Focus Clock" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={canonical} />
+  <meta property="og:image" content={ogImage} />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={ogImage} />
+
+  {publishedDate && <meta property="article:published_time" content={publishedDate} />}
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="https://focusclock.app/favicon.svg" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" />
+
+  <!-- Structured Data -->
+  {schema && (
+    <script type="application/ld+json" set:html={JSON.stringify(Array.isArray(schema) ? schema : [schema])} />
+  )}
+
+  <!-- BreadcrumbList injected by child layouts -->
+  <slot name="head" />
+
+  <style is:global>
+    :root {
+      --bg: #f4f1ec;
+      --fg: #1a1a1a;
+      --fg-muted: #6b6b6b;
+      --fg-faint: rgba(26,26,26,0.06);
+      --accent: #c8312b;
+      --border: rgba(26,26,26,0.12);
+      --card: #fafaf7;
+      --max-w: 760px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0e0e10;
+        --fg: #ece9e2;
+        --fg-muted: #8a8784;
+        --fg-faint: rgba(236,233,226,0.06);
+        --accent: #e0463f;
+        --border: rgba(236,233,226,0.14);
+        --card: #131315;
+      }
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Inter', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--fg);
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    img { max-width: 100%; height: auto; }
+
+    /* Prose styles */
+    .prose h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 1rem; }
+    .prose h2 { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.02em; margin: 2.5rem 0 0.75rem; padding-top: 0.25rem; border-top: 1px solid var(--border); }
+    .prose h3 { font-size: 1.1rem; font-weight: 600; margin: 1.75rem 0 0.5rem; }
+    .prose p { font-size: 1rem; line-height: 1.75; color: var(--fg-muted); margin-bottom: 1rem; }
+    .prose p strong { color: var(--fg); font-weight: 600; }
+    .prose ul, .prose ol { margin: 0.75rem 0 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 0.4rem; }
+    .prose li { font-size: 1rem; line-height: 1.65; color: var(--fg-muted); }
+    .prose li strong { color: var(--fg); font-weight: 500; }
+    .prose blockquote { border-left: 3px solid var(--accent); padding: 0.75rem 1.25rem; margin: 1.5rem 0; background: var(--fg-faint); border-radius: 0 8px 8px 0; }
+    .prose blockquote p { margin: 0; font-style: italic; }
+    .prose table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9rem; }
+    .prose th { text-align: left; padding: 0.6rem 1rem; background: var(--fg-faint); color: var(--fg); font-weight: 600; border-bottom: 2px solid var(--border); }
+    .prose td { padding: 0.55rem 1rem; border-bottom: 1px solid var(--border); color: var(--fg-muted); }
+    .prose tr:last-child td { border-bottom: none; }
+    .prose code { background: var(--fg-faint); padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.875em; }
+    .prose hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+    @media (max-width: 640px) {
+      .prose h1 { font-size: 1.6rem; }
+      .prose h2 { font-size: 1.15rem; }
+    }
+  </style>
+</head>
+<body>
+  <slot />
+</body>
+</html>

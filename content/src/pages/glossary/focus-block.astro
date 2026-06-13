@@ -1,0 +1,68 @@
+---
+import GlossaryLayout from '../../layouts/GlossaryLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+
+const faqItems = [
+  {
+    question: 'What is a focus block?',
+    answer: 'A focus block is a scheduled, uninterrupted period of time dedicated to a single, cognitively demanding task. Unlike an ad-hoc work session, a focus block is pre-planned (usually in a daily schedule), has a defined start and end time, a specific task assigned to it, and a rule against interruptions. Focus blocks are the execution unit of time blocking and deep work practices.',
+  },
+  {
+    question: 'How long should a focus block be?',
+    answer: 'Focus block length depends on your current focus capacity: beginners benefit from 25–45 minute blocks; intermediate practitioners from 52–60 minutes; experienced practitioners from 90 minutes. Start conservatively and extend by 10–15 minutes every 1–2 weeks as your focus tolerance grows. There is no benefit to a longer block if the quality of attention degrades in the second half.',
+  },
+  {
+    question: 'How many focus blocks per day should I schedule?',
+    answer: 'For most knowledge workers, 2–4 focus blocks per day (covering 2–4 hours of focused work total) is both achievable and sufficient. Research on expert performers suggests 3–4 hours of intense focus is the practical daily ceiling for sustained quality output. Scheduling more blocks than you can sustain leads to block abandonment, which undermines the habit.',
+  },
+];
+---
+
+<GlossaryLayout
+  term="Focus Block"
+  definition="A scheduled, pre-planned period of uninterrupted time dedicated to a single, high-priority, cognitively demanding task. Focus blocks are the core execution unit of time blocking and deep work practices."
+  description="What is a focus block? Definition, optimal length, how many to schedule per day, and how to make focus blocks work in practice."
+  canonicalUrl="https://blog.focusclock.app/glossary/focus-block"
+  relatedTerms={[
+    { slug: 'time-blocking', label: 'Time Blocking' },
+    { slug: 'deep-work', label: 'Deep Work' },
+    { slug: 'focus-timer', label: 'Focus Timer' },
+    { slug: '90-minute-rule', label: '90-Minute Rule' },
+    { slug: 'pomodoro-technique', label: 'Pomodoro Technique' },
+  ]}
+  relatedArticles={[
+    { slug: '/learn/deep-work', label: 'Deep Work: Complete Guide' },
+    { slug: '/learn/focus-techniques', label: 'Focus Timer Techniques' },
+    { slug: '/learn/productivity-tracking', label: 'Productivity Tracking' },
+  ]}
+>
+
+## Focus Block vs. Pomodoro
+
+A focus block and a Pomodoro are related but not identical:
+
+A **Pomodoro** is a timer-defined interval (25 minutes by convention) with breaks built in. The Pomodoro Technique is a system that strings multiple Pomodoros together.
+
+A **focus block** is a calendar-level commitment: a scheduled slot in your day dedicated to focused work. It may contain one or more Pomodoros, or use a different timer interval entirely.
+
+The distinction matters because: a Pomodoro tells you how long to focus. A focus block tells you when to focus and on what. The two work together — you schedule focus blocks in your daily plan, then use a timer within each block to structure the session.
+
+## The Anatomy of an Effective Focus Block
+
+**Pre-defined task.** Before the block begins, you know exactly what you're working on. "Work on the project" is not a valid block task; "write the first draft of the authentication module" is.
+
+**Distraction elimination.** The block starts with a brief setup ritual: close unnecessary tabs, silence phone, start a timer. This ritual signals to the brain that deep focus is beginning.
+
+**A timer.** Even within a pre-scheduled block, a timer within the session helps maintain structure and prevents the drift toward lower-quality work that often happens in long open-ended sessions.
+
+**A clear end.** The block has a defined end time. When it's over, it's over — whether the task is finished or not. This creates clear psychological separation between focused and non-focused periods.
+
+## Building a Focus Block Habit
+
+The most common failure mode: scheduling focus blocks but allowing them to be displaced by meetings, email, or perceived urgency. Focus blocks need to be treated with the same inflexibility as external meetings.
+
+Practical protection strategies: block the time in your shared calendar with "Busy" status, set status to "Do Not Disturb" in Slack, close email during the block. Communicate your block schedule to teammates so they know not to expect responses during those windows.
+
+<FAQSchema items={faqItems} />
+
+</GlossaryLayout>
