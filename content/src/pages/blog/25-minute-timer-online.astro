@@ -1,0 +1,109 @@
+---
+import BlogLayout from '../../layouts/BlogLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+import CTABlock from '../../components/CTABlock.astro';
+
+const faqItems = [
+  {
+    question: 'Why is the Pomodoro timer set to 25 minutes?',
+    answer: 'Francesco Cirillo set the original Pomodoro at 25 minutes based on his personal experimentation as a university student in the 1980s. He found that 25 minutes was long enough to make meaningful progress on a task but short enough to maintain full concentration. There is no neuroscientific law that makes 25 minutes optimal — it\'s a practical default that works for most people. Your ideal interval may be shorter or longer depending on the type of work.',
+  },
+  {
+    question: 'Is 25 minutes enough time to get deep work done?',
+    answer: 'Yes, with conditions. A single 25-minute session won\'t be enough for complex tasks that require long ramp-up time (like deep coding or writing). But multiple consecutive Pomodoros targeting the same task are highly effective. The key is treating a series of Pomodoros as one extended work block, not as separate isolated sprints. After 4 Pomodoros (100 minutes of work, 15 minutes of breaks), you\'ve completed a substantial deep work session.',
+  },
+  {
+    question: 'What should I do during the 5-minute break after a 25-minute timer?',
+    answer: 'Move. The 5-minute break is most effective when it involves physical movement — stand up, stretch, walk to another room, get water. Avoid screens: checking email or social media activates the same neural pathways as work, preventing the mental reset the break is supposed to provide. A screen-free movement break produces measurably better focus in the next session than a seated screen break.',
+  },
+  {
+    question: 'Can I extend the 25-minute timer if I\'m in flow?',
+    answer: 'Yes, but with discipline. If you\'re in a genuine flow state when the timer rings, it\'s reasonable to extend by 5-10 minutes to complete a thought or reach a natural stopping point. The danger is using "I\'m in flow" as a reason to skip breaks indefinitely — which leads to degraded focus in later sessions. A better rule: you can extend once per 4-session block, but you still take the break eventually.',
+  },
+  {
+    question: 'What if 25 minutes feels too short or too long?',
+    answer: '25 minutes is a starting point, not a rule. If 25 minutes feels too short and you\'re constantly interrupted mid-thought, try 45 or 52 minutes. If 25 minutes feels too long and your attention drifts, try 15-20 minutes. The right interval is the longest session where you can maintain genuine focus without significant drift. Find your number through experimentation, not by following the default.',
+  },
+];
+---
+
+<BlogLayout
+  title="25 Minute Timer Online: The Science Behind the Pomodoro Interval"
+  description="Why 25 minutes? The science behind the Pomodoro interval, how to use a 25-minute online timer effectively, and when to adjust the interval for your work type."
+  canonicalUrl="https://blog.focusclock.app/blog/25-minute-timer-online"
+  pillar="Focus Techniques"
+  pillarUrl="/learn/focus-techniques"
+>
+
+  <h1>25 Minute Timer Online: The Science Behind the Pomodoro Interval</h1>
+
+  <p>The 25-minute timer is the most searched-for focus interval on the internet. It comes from the Pomodoro Technique — a time management method developed by Francesco Cirillo in the late 1980s, named after a tomato-shaped kitchen timer he used as a university student.</p>
+
+  <p>But why 25 minutes? And is it actually the best interval for focus work?</p>
+
+  ---
+
+  ## The Origin of the 25-Minute Interval
+
+  Francesco Cirillo didn't arrive at 25 minutes through scientific research. He experimented with different durations while studying, found that 25 minutes struck the right balance between sustained effort and mental fatigue, and built his system around that number.
+
+  The interval has since been validated by decades of anecdotal evidence from millions of users — not because neuroscience declared it optimal, but because it's short enough to feel manageable and long enough to accomplish something real.
+
+  ---
+
+  ## What Happens in Your Brain During a 25-Minute Focus Session
+
+  **Minutes 0-5: Ramp-up.** Your prefrontal cortex is activating. This is the hardest part — the urge to check your phone, the sensation of resistance. Push through. This phase gets easier with repeated Pomodoros.
+
+  **Minutes 5-20: Active focus.** You're in the work. Attention is engaged, working memory is loaded with the task. This is the productive core of the session.
+
+  **Minutes 20-25: Vigilance decrement begins.** Research on sustained attention shows that focus quality starts declining around the 20-25 minute mark in most people. This is the science behind the 25-minute interval: you stop *before* quality degrades significantly.
+
+  **Break: Neural reset.** The 5-minute break allows your default mode network (the "resting state" brain) to process what you just worked on. This consolidation effect means breaks aren't wasted time — they're part of the learning and problem-solving process.
+
+  ---
+
+  ## How to Use a 25-Minute Timer Effectively
+
+  **Define the task before starting.** "I will write the introduction paragraph" is better than "I will write." Knowing exactly what you're doing prevents the first 5 minutes from being spent deciding what to do.
+
+  **Clear your environment before starting.** Phone face-down and silenced, notifications off, browser tabs closed except what you need. Do this before starting the timer — not after.
+
+  **Don't stop mid-session.** If an interruption occurs (someone knocks, a notification appears), write it down and return. The Pomodoro is either complete or it isn't. An interrupted Pomodoro doesn't count.
+
+  **Track your sessions.** Four Pomodoros completed today? That's 100 minutes of real focused work. Over weeks, watching this number grow is one of the most motivating things in productivity.
+
+  ---
+
+  ## When to Adjust Away from 25 Minutes
+
+  The 25-minute default works well for most tasks. But some work types benefit from different intervals:
+
+  | Work type | Suggested interval |
+  |---|---|
+  | Email / admin | 25 min (standard) |
+  | Writing | 45-52 min |
+  | Deep coding | 52-90 min |
+  | Studying new material | 25 min (shorter aids retention) |
+  | Creative brainstorming | 25 min |
+  | Reading / research | 45 min |
+
+  The general principle: tasks with long ramp-up time (where you need to reload context) benefit from longer intervals. Tasks where novelty drives focus do fine at 25 minutes.
+
+  ---
+
+  ## Related Reading
+
+  - [The Complete Guide to the Pomodoro Technique](/blog/pomodoro-technique-complete-guide)
+  - [Focus Timer Techniques: Choosing the Right Interval](/learn/focus-techniques)
+  - [What is the Pomodoro Technique?](/glossary/pomodoro-technique)
+  - [What is the 52/17 Rule?](/glossary/52-17-rule)
+
+  <FAQSchema items={faqItems} />
+
+  <CTABlock
+    heading="Start a 25-minute focus session right now"
+    body="Focus Clock runs a 25-minute Pomodoro timer in your browser — no download, no account. Your sessions are logged automatically so you can track your focus over time."
+  />
+
+</BlogLayout>

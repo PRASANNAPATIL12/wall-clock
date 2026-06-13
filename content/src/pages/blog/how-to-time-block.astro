@@ -1,0 +1,142 @@
+---
+import BlogLayout from '../../layouts/BlogLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+import CTABlock from '../../components/CTABlock.astro';
+
+const faqItems = [
+  {
+    question: 'What is time blocking?',
+    answer: 'Time blocking is a scheduling method where you assign every hour of your workday to a specific task or task type in advance — rather than working from a to-do list and choosing what to do next. Popularized by Cal Newport and used by Elon Musk, Bill Gates, and Warren Buffett, time blocking converts an unstructured day into a planned sequence of focused sessions. Each block has a defined start time, end time, and purpose.',
+  },
+  {
+    question: 'How is time blocking different from a to-do list?',
+    answer: 'A to-do list tells you what to do; time blocking tells you when to do it and for how long. To-do lists have no friction — anything can be added, tasks have no time cost attached, and the list grows without limit. Time blocking creates constraints: a day has finite hours, and assigning tasks to blocks forces prioritization and realistic scoping. The most important difference: time blocking assigns your most valuable hours to your most important work, preventing reactive tasks (email, Slack) from consuming all available time.',
+  },
+  {
+    question: 'How do I start time blocking if my schedule is unpredictable?',
+    answer: 'Block what you can control and leave buffers for what you can\'t. If you have meetings you can\'t refuse, block around them. Schedule 1-2 "flex" hours per day for reactive work and unplanned requests — this prevents reactive work from overflowing into your deep work blocks. On genuinely chaotic days, even blocking one protected 90-minute deep work block in the morning gives you meaningful output before the day becomes unpredictable.',
+  },
+  {
+    question: 'Should I time block every day or just my deep work?',
+    answer: 'Time blocking everything is ideal but takes practice to implement. Start by blocking only your deep work (the 2-4 hours of most important cognitively demanding work) and leave the rest unstructured. Once that becomes habit, add shallow work blocks. Full day time blocking — where every hour has an assigned purpose — is the advanced version practiced by the most productive knowledge workers, but it takes months to implement comfortably.',
+  },
+  {
+    question: 'How does time blocking work with the Pomodoro Technique?',
+    answer: 'They complement each other perfectly. Time blocking operates at the day level: it determines which hours are assigned to which type of work. Pomodoro operates at the session level: it structures how you work within each block. A typical approach: block a 3-hour deep work slot in your calendar, then use Pomodoro sessions (25 or 45 minutes) within that block to maintain focus and take structured breaks. Time blocking protects the time; Pomodoro fills it productively.',
+  },
+];
+---
+
+<BlogLayout
+  title="How to Time Block Your Day: A Practical Guide for Knowledge Workers"
+  description="Time blocking explained — what it is, how to start, how to combine it with the Pomodoro Technique, and how to handle an unpredictable schedule. A step-by-step guide for knowledge workers."
+  canonicalUrl="https://blog.focusclock.app/blog/how-to-time-block"
+  pillar="Focus Techniques"
+  pillarUrl="/learn/focus-techniques"
+>
+
+  <h1>How to Time Block Your Day: A Practical Guide for Knowledge Workers</h1>
+
+  <p>Most knowledge workers manage their day with a to-do list and reactive decision-making: they look at what needs to be done and choose the next thing based on energy, urgency, or habit. The problem with this approach is that reactive work — email, Slack, small requests — is always more immediately compelling than important-but-not-urgent deep work. Without explicit protection, deep work gets perpetually deferred.</p>
+
+  <p>Time blocking is the antidote. By assigning specific hours to specific types of work before the day starts, you prevent reactive tasks from claiming your best cognitive hours.</p>
+
+  ---
+
+  ## How Time Blocking Works
+
+  Time blocking treats your calendar as the master task list. Instead of maintaining a separate list of things to do and then figuring out when to do them, each task or task type is assigned a specific time block.
+
+  A simple example:
+
+  | Time | Block |
+  |---|---|
+  | 8:00-8:30 | Planning / review yesterday |
+  | 8:30-10:30 | Deep work block 1 (most important project) |
+  | 10:30-11:00 | Email + communications |
+  | 11:00-12:00 | Deep work block 2 |
+  | 12:00-13:00 | Lunch (protected, no work) |
+  | 13:00-14:00 | Meetings / calls |
+  | 14:00-15:30 | Shallow work (reviews, admin, planning) |
+  | 15:30-16:00 | Email + communications |
+  | 16:00-16:30 | Daily review + plan tomorrow |
+
+  This is a planned day, not a reactive one. The most important work (deep work block 1) is assigned the best cognitive hours (morning), before decision fatigue and reactive demands accumulate.
+
+  ---
+
+  ## Step-by-Step: Starting Time Blocking
+
+  **Step 1: Categorize your work.**
+
+  Before you can block time, you need to know what types of work you do. Most knowledge workers have roughly three categories:
+  - **Deep work:** Cognitively demanding, requires full focus, generates the most value
+  - **Shallow work:** Coordination, email, admin, reviews — necessary but doesn't require deep focus
+  - **Meetings:** Scheduled conversations
+
+  **Step 2: Identify your peak cognitive hours.**
+
+  Most people have 2-4 hours per day when their focus and cognitive performance are at their highest — usually in the morning, sometimes late afternoon. These are your deep work hours. Guard them.
+
+  **Step 3: Block deep work first.**
+
+  Before adding anything else, claim your peak hours for deep work. Make these blocks recurring in your calendar so they're visible to anyone scheduling meetings.
+
+  **Step 4: Batch your shallow work.**
+
+  Instead of leaving email and Slack open all day, designate specific windows for checking and responding — typically 2-3 windows of 30-45 minutes each. Outside those windows, communications are closed.
+
+  **Step 5: Add buffer blocks.**
+
+  Leave 30-60 minutes of unscheduled "flex" time in your day for unplanned requests and overruns. Without buffer, one meeting overrun cascades and ruins the rest of the day's blocks.
+
+  ---
+
+  ## The Daily Planning Ritual
+
+  Time blocking is a daily practice, not a one-time setup. Each morning (or the previous evening), spend 10 minutes reviewing your calendar and to-do list and assigning tasks to the available blocks.
+
+  The planning ritual answers three questions:
+  1. What is the most important thing I need to accomplish today?
+  2. Which block will I use for it?
+  3. What goes in the remaining blocks?
+
+  This 10-minute investment prevents the decision fatigue of "what should I work on now?" that derails reactive workers throughout the day.
+
+  ---
+
+  ## Combining Time Blocking with Pomodoro
+
+  Time blocking and the Pomodoro Technique operate at different levels and complement each other:
+
+  **Time blocking:** Calendar level. Determines which hours are assigned to which type of work. Prevents reactive work from consuming deep work hours.
+
+  **Pomodoro:** Session level. Structures how you work within each block. Maintains focus and provides recovery breaks.
+
+  In practice: block 3 hours for deep work. Within that block, run 3 Pomodoro sessions (45 minutes each + 5-minute breaks). The block ensures the time exists; the Pomodoro sessions ensure the time is used well.
+
+  ---
+
+  ## What to Do When Plans Fall Apart
+
+  Time blocking doesn't mean rigid adherence to a schedule. It means intentional allocation of time that you update as reality changes.
+
+  When an unplanned meeting appears, revise your plan rather than abandoning it. The skill being built is not perfect execution of a predetermined schedule — it's the habit of always knowing the intended use of the next hour and consciously deciding whether to follow it.
+
+  ---
+
+  ## Related Reading
+
+  - [What is Time Blocking?](/glossary/time-blocking)
+  - [What is Deep Work?](/learn/deep-work)
+  - [How to Do the Pomodoro Technique](/blog/how-to-do-pomodoro-technique)
+  - [Productivity Tracking: Measure Your Focus](/learn/productivity-tracking)
+
+  <FAQSchema items={faqItems} />
+
+  <CTABlock
+    heading="Track your time-blocked sessions with Focus Clock"
+    body="Use Focus Clock within each time block to structure your sessions, log focused hours, and see your daily deep work output. Free, browser-based, no account required."
+  />
+
+</BlogLayout>

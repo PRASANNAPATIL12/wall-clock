@@ -1,0 +1,152 @@
+---
+import BlogLayout from '../../layouts/BlogLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+import CTABlock from '../../components/CTABlock.astro';
+
+const faqItems = [
+  {
+    question: 'What is the Pomodoro Technique in simple terms?',
+    answer: 'The Pomodoro Technique is a time management method where you work for 25 minutes on a single task with zero distractions, then take a 5-minute break. After completing 4 of these work sessions (called Pomodoros), you take a longer break of 15-30 minutes. The name comes from the tomato-shaped kitchen timer used by its creator, Francesco Cirillo, in the late 1980s.',
+  },
+  {
+    question: 'How do I start the Pomodoro Technique today?',
+    answer: 'Open a focus timer, pick one task to work on, set the timer to 25 minutes, and start. That\'s it. Don\'t spend time setting up a system, choosing the perfect app, or reading more about the technique first. The technique is learned by doing, not by preparation. Your first Pomodoro will be imperfect. Do it anyway.',
+  },
+  {
+    question: 'What counts as an interruption in the Pomodoro Technique?',
+    answer: 'Any break in single-task focus counts as an interruption: checking your phone, opening a new browser tab unrelated to your task, responding to a message, or mentally switching to think about a different task. If an interruption occurs, the Pomodoro is void — you restart the 25 minutes. This rule sounds harsh but it\'s the mechanism that makes the technique work: the cost of interruption (restarting) makes you more resistant to giving in to interruption urges.',
+  },
+  {
+    question: 'Can I do the Pomodoro Technique without a physical timer?',
+    answer: 'Yes. Any timer works — a phone timer, a browser-based timer, or a desktop app. The original technique used a physical kitchen timer (Cirillo\'s tomato timer), and there is a psychological argument for physical timers: winding a physical timer creates a tactile commitment to the session. But for most people, a browser-based or phone timer works just as well. The key is that the timer is audible — a silent timer doesn\'t create the urgency that makes the technique work.',
+  },
+  {
+    question: 'What should I do if I finish a task before the 25 minutes is up?',
+    answer: 'Use the remaining time for over-learning or task continuation: review what you just did, refine it, or start planning the next task. Never start a completely new task mid-Pomodoro — this would defeat the single-task purpose. If this happens frequently (you consistently finish tasks before 25 minutes), either your tasks are too small and need to be grouped, or you need to be doing more thorough work on each task.',
+  },
+];
+---
+
+<BlogLayout
+  title="How to Do the Pomodoro Technique: A Step-by-Step Guide"
+  description="A complete beginner's guide to the Pomodoro Technique — exactly how to do it, what to do during breaks, how to handle interruptions, and the common mistakes that prevent it from working."
+  canonicalUrl="https://blog.focusclock.app/blog/how-to-do-pomodoro-technique"
+  pillar="Focus Techniques"
+  pillarUrl="/learn/focus-techniques"
+>
+
+  <h1>How to Do the Pomodoro Technique: A Step-by-Step Guide</h1>
+
+  <p>The Pomodoro Technique has more written about it than almost any other productivity method. Most of that writing overcomplicates it. This guide gives you the exact steps to start today, the reasoning behind each step, and the mistakes that make it stop working.</p>
+
+  ---
+
+  ## The Complete Pomodoro System in 6 Steps
+
+  **Step 1: Pick one task.**
+
+  Write down a single specific task on paper or a task list. Not "work on project" — something specific: "draft the introduction section" or "fix the login bug" or "review chapters 4 and 5." The task should be accomplishable within 1-4 Pomodoros.
+
+  **Step 2: Remove all distractions.**
+
+  - Phone: silent and face-down, ideally in another room
+  - Notifications: off for all apps
+  - Browser tabs: close everything unrelated to the task
+  - Inform anyone nearby that you're in a focus session
+
+  Do this *before* starting the timer. Trying to resist distractions during the session is harder than removing them beforehand.
+
+  **Step 3: Set your timer to 25 minutes and start.**
+
+  Start working on the one task. Nothing else.
+
+  **Step 4: Work until the timer rings.**
+
+  When distractions arise (and they will), write them on a notepad — "email Sarah," "check if the meeting moved" — and return immediately to work. The notepad captures the thought so your brain can release it without you actually doing the thing.
+
+  If an external interruption occurs (someone speaks to you, your phone rings), acknowledge it briefly and reschedule: "I'll get to that in [X] minutes." If the interruption is truly urgent and unavoidable, the Pomodoro is void — restart after handling it.
+
+  **Step 5: Take a 5-minute break.**
+
+  When the timer rings, stop immediately — even mid-sentence. Stand up, stretch, walk around. Don't check your phone. The break is a genuine reset, not a multi-task opportunity.
+
+  **Step 6: After 4 Pomodoros, take a 20-30 minute break.**
+
+  Four completed 25-minute sessions (100 minutes of focused work) earns a longer break. Walk outside, eat something, have a conversation. Then reset the Pomodoro counter and start again.
+
+  ---
+
+  ## The Pomodoro Cycle Visualized
+
+  ```
+  [25 min work] → [5 min break] → [25 min work] → [5 min break]
+  → [25 min work] → [5 min break] → [25 min work] → [20-30 min break]
+  ```
+
+  That's one full Pomodoro cycle: 4 sessions, approximately 130 minutes total.
+
+  ---
+
+  ## What to Do During Pomodoro Breaks
+
+  The break is as important as the work session. What you do during it affects how productive the next session is.
+
+  **Good break activities:**
+  - Walk to another room and back
+  - Drink water
+  - Look out a window (eye rest for screen workers)
+  - Do 10 jumping jacks or push-ups
+  - Breathe slowly for 2 minutes
+
+  **Bad break activities:**
+  - Checking social media or news
+  - Reading emails
+  - Starting a conversation that will run long
+  - Watching YouTube "just one video"
+
+  The goal is mental disengagement from the work task, not stimulation from another source. Your brain needs the break to consolidate what it just processed.
+
+  ---
+
+  ## Tracking Your Pomodoros
+
+  The Pomodoro Technique's original design included a tracking sheet — writing an X on paper for each completed Pomodoro. This serves a specific purpose: it makes your daily output visible.
+
+  Modern focus timers track sessions automatically. Over days and weeks, this data shows you:
+  - How many Pomodoros you're actually completing per day
+  - What time of day you do your best sessions
+  - Whether your session count is growing over time
+
+  Most people who start tracking are surprised to find they're completing fewer focused sessions than they thought — and then motivated to improve.
+
+  ---
+
+  ## The Most Common Pomodoro Mistakes
+
+  **Not fully stopping at the timer ring.** "I'll just finish this sentence" turns into 5 extra minutes. The timer must be obeyed. The discipline of stopping on time builds the discipline of starting on time.
+
+  **Using breaks for social media.** This undoes the focus effect of the session before it.
+
+  **Starting too many Pomodoros on different tasks.** One task per Pomodoro. Multi-tasking across sessions is still multi-tasking.
+
+  **Giving up after one failed session.** An interrupted or abandoned Pomodoro is normal, especially when starting. The technique is a practice, not a binary pass/fail. Restart and try again.
+
+  **Treating the 25-minute interval as immovable.** If 25 minutes consistently doesn't fit your work, adjust. The method is the structure, not the specific number.
+
+  ---
+
+  ## Related Reading
+
+  - [The Complete Guide to the Pomodoro Technique](/blog/pomodoro-technique-complete-guide)
+  - [What is the Pomodoro Technique?](/glossary/pomodoro-technique)
+  - [Pomodoro Technique for Studying](/blog/pomodoro-technique-for-studying)
+  - [Focus Timer Techniques](/learn/focus-techniques)
+
+  <FAQSchema items={faqItems} />
+
+  <CTABlock
+    heading="Start your first Pomodoro right now"
+    body="Focus Clock is a free online Pomodoro timer — set it to 25 minutes, click start, and begin. Your sessions are logged automatically so you can track your Pomodoro count over time."
+  />
+
+</BlogLayout>

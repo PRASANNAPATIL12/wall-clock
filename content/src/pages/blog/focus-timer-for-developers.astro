@@ -1,0 +1,136 @@
+---
+import BlogLayout from '../../layouts/BlogLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+import CTABlock from '../../components/CTABlock.astro';
+
+const faqItems = [
+  {
+    question: 'Does the Pomodoro Technique work for programming?',
+    answer: 'Yes, with adaptation. The standard 25-minute interval is often too short for complex coding tasks because loading a large codebase into working memory takes 5-15 minutes. Most developers find 45-52 minute sessions work better. The core principle — distraction-free, time-boxed work — is highly compatible with programming because coding requires sustained, uninterrupted attention.',
+  },
+  {
+    question: 'How do I handle Slack and PR reviews during a focus session?',
+    answer: 'Set status to "in a focus session" with an estimated return time. Most teams accept a 45-60 minute response delay for non-urgent messages. Treat PR review requests the same way — unless a colleague is blocked, it can wait one session. The key insight: very few messages that feel urgent actually are. A 45-minute response delay almost never causes real problems; it only feels urgent because of notification conditioning.',
+  },
+  {
+    question: 'What is flow state in programming, and how does a timer help?',
+    answer: 'Flow state in programming is the experience of full immersion in a coding problem — time passes unnoticed, solutions emerge fluidly, cognitive capacity feels expanded. Getting into flow requires roughly 15-20 minutes of uninterrupted focus on a single problem. A timer helps by creating the protected time flow needs: you commit to the interval, block distractions, and let the ramp-up period run without abandoning the task.',
+  },
+  {
+    question: 'How should I size programming tasks for Pomodoro sessions?',
+    answer: 'Size tasks to be completable in 1-3 sessions. "Implement authentication" is too large. "Write the JWT validation middleware" is about right for 1-2 sessions. "Add the email field to the registration form" is a 1-session task. If a task takes more than 4 sessions, break it down further. The act of breaking tasks down is itself a valuable planning process that clarifies scope before you start coding.',
+  },
+  {
+    question: 'What should I do during coding breaks?',
+    answer: 'Walk away from the screen. The break between coding sessions is when your subconscious continues solving the problem you just stopped working on. Many developers report their best solutions appearing in the shower, on a walk, or right when they return from a break. This is not a coincidence — the default mode network (active during rest) is highly effective at pattern-matching and creative problem-solving. Screen-heavy breaks (Twitter, YouTube) suppress this process.',
+  },
+];
+---
+
+<BlogLayout
+  title="Focus Timer for Developers: Deep Work in a World of Interruptions"
+  description="How software developers can use focus timers to protect coding flow, handle Slack and PR interruptions, size tasks for Pomodoro sessions, and build a sustainable deep work habit."
+  canonicalUrl="https://blog.focusclock.app/blog/focus-timer-for-developers"
+  pillar="Deep Work"
+  pillarUrl="/learn/deep-work"
+>
+
+  <h1>Focus Timer for Developers: Deep Work in a World of Interruptions</h1>
+
+  <p>Software development is cognitively demanding, context-dependent work that requires sustained uninterrupted attention. It is also performed in environments engineered for interruption: open offices, persistent Slack channels, PR review queues, standups, and notification systems that alert you every time someone mentions your name.</p>
+
+  <p>The gap between the conditions good coding requires and the conditions most developers actually work in is large. A focus timer is one of the simplest tools for closing that gap.</p>
+
+  ---
+
+  ## Why Interruptions Are Especially Costly for Developers
+
+  A 2008 study by Gloria Mark at UC Irvine found that after an interruption, it takes an average of 23 minutes to fully return to a task. For most work types, this is a meaningful but tolerable cost. For programming, it's devastating.
+
+  When you're working on a complex software problem, you build a mental model of the system: the state of variables, the call stack, the logic flow, the edge cases you haven't handled yet. This model lives in working memory. Interruption flushes it.
+
+  Rebuilding the model after returning to the task takes 5-15 minutes depending on complexity. A developer who experiences 4 significant interruptions per day loses 20-60 minutes just to context reload — before counting the time lost to the interruption itself.
+
+  ---
+
+  ## Adapting Pomodoro Intervals for Coding
+
+  The standard 25-minute interval is a poor fit for most coding work. Here's why:
+
+  - Loading context into working memory: 5-15 minutes
+  - Active productive coding at full capacity: 10-20 minutes
+  - Total in a 25-minute session: you've just hit your stride when the timer ends
+
+  Better intervals for development work:
+
+  | Task type | Suggested interval |
+  |---|---|
+  | Bug fixes (small, isolated) | 25-30 min |
+  | Feature implementation | 45-52 min |
+  | Architecture / design work | 60-90 min |
+  | Code review | 25-30 min |
+  | Writing documentation | 45 min |
+  | Learning / reading code | 45 min |
+
+  ---
+
+  ## Managing Slack, Email, and PRs During Focus Blocks
+
+  The biggest obstacle most developers face isn't willpower — it's social expectation. Colleagues expect fast responses. Ignoring a message feels rude. This expectation, left unmanaged, makes distraction-free work feel like social misbehavior.
+
+  The solution is explicit communication:
+
+  **Set a Slack status** with "Focus — back at [time]" before starting a session. This signals availability expectations without requiring individual explanations.
+
+  **Batch async communication** into two windows per day: one in the morning before deep work, one in the afternoon. Outside those windows, communications wait.
+
+  **Define response SLAs with your team.** Most Slack cultures have implicit expectations of near-instant response. Making the expectation explicit ("45-minute response time for non-urgent messages") lets you focus without social anxiety.
+
+  **PR reviews:** Unless a colleague is blocked, a PR can wait one session. If someone is blocked, that's genuinely urgent — break the session. Otherwise, batch PR reviews into their own scheduled blocks.
+
+  ---
+
+  ## Sizing Coding Tasks for Timer Sessions
+
+  Task sizing is where most developers underinvest. "Work on the user dashboard" is a shapeless task that resists completion tracking and causes decision fatigue at session start.
+
+  Before each focus block, write the specific deliverable: the function, test, endpoint, or component you're building in this session. This serves two purposes:
+
+  1. It forces you to decompose large tasks into concrete units
+  2. It gives the session a clear done condition
+
+  A good Pomodoro-sized coding task:
+  - Has a clear completion criteria ("the function passes all tests")
+  - Is completable in 1-3 sessions (45-150 minutes)
+  - Doesn't require switching between multiple unrelated codebases or systems
+
+  ---
+
+  ## Using a Timer During Debugging
+
+  Debugging is the task type where timers provide the most value and developers use them least. Debugging without time structure turns into open-ended rabbit holes that consume entire afternoons.
+
+  Apply the following structure:
+  - **Session 1 (45 min):** Reproduce the bug consistently, identify all symptoms, form a hypothesis
+  - **Session 2 (45 min):** Test the hypothesis, rule it in or out, form the next hypothesis
+  - **After 2 sessions without resolution:** Write a clear description of what you know and what you've tried, take a genuine break. Come back fresh.
+
+  The mandatory break after two debugging sessions serves a specific purpose: many intractable bugs get solved in the break, when the subconscious continues processing with the default mode network.
+
+  ---
+
+  ## Related Reading
+
+  - [What is Deep Work?](/learn/deep-work)
+  - [What is Flow State?](/glossary/flow-state)
+  - [What is Attention Residue?](/glossary/attention-residue)
+  - [What is Context Switching?](/glossary/context-switching)
+
+  <FAQSchema items={faqItems} />
+
+  <CTABlock
+    heading="Protect your coding flow with a focus timer"
+    body="Focus Clock lets you set custom session lengths (45, 52, 90 minutes), log each session with a task tag, and track your daily focused coding hours. Free, browser-based, no login."
+  />
+
+</BlogLayout>

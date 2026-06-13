@@ -1,0 +1,129 @@
+---
+import BlogLayout from '../../layouts/BlogLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+import CTABlock from '../../components/CTABlock.astro';
+
+const faqItems = [
+  {
+    question: 'How do focus timers help writers?',
+    answer: 'Focus timers help writers in two specific ways. First, they convert the open-ended task of "writing" into a time-bounded commitment, which lowers the activation energy needed to start. Second, they externalize the permission to stop: when the timer ends, you have completed a session regardless of word count, which reduces the perfectionism and completion anxiety that blocks many writers. The timer turns writing from a quality judgment into a time commitment.',
+  },
+  {
+    question: 'What is the best Pomodoro interval for writing?',
+    answer: 'For drafting (generating new content), 45-52 minute sessions tend to work better than 25 minutes because writing requires sustained immersion and the first few minutes are often spent finding your voice. For editing (revising existing content), 25-30 minute sessions work well because editing is easier to interrupt and resume. For outlining and planning, 25 minutes is usually sufficient.',
+  },
+  {
+    question: 'How do I beat writer\'s block with a timer?',
+    answer: 'The most effective timer technique for writer\'s block is the "closed-eyes draft": set a 20-minute timer, and write continuously without stopping, editing, or rereading. Write badly on purpose. The goal is not quality — it\'s to generate raw material. Writer\'s block is almost always caused by the inner editor blocking the inner writer. A time-constrained, quality-free draft session bypasses the editor. You\'ll produce something you can work with. You can\'t edit a blank page.',
+  },
+  {
+    question: 'Should I track word count or time when writing?',
+    answer: 'Track both, but use them for different purposes. Use time (session count and duration) to measure your habit — whether you showed up to write. Use word count to measure output per session. Over time, you\'ll learn your typical words-per-session rate, which lets you estimate project timelines accurately. Time tracking is more important for habit formation; word count is more important for deadline planning.',
+  },
+  {
+    question: 'How many writing sessions should I do per day?',
+    answer: 'Most professional writers who have written about their practice settle on 2-4 hours of actual writing per day as the sustainable maximum — not time at desk, but time actively drafting or revising. That translates to 2-4 Pomodoros if you use 52-minute sessions, or 4-8 Pomodoros at 25 minutes. Start with one session per day and build the habit before adding more. One consistent session every day beats irregular marathon sessions.',
+  },
+];
+---
+
+<BlogLayout
+  title="Focus Timer for Writers: Beat Writer's Block with Timed Sessions"
+  description="How writers can use focus timers to overcome writer's block, build a daily writing habit, separate drafting from editing, and track writing output over time."
+  canonicalUrl="https://blog.focusclock.app/blog/focus-timer-for-writers"
+  pillar="Deep Work"
+  pillarUrl="/learn/deep-work"
+>
+
+  <h1>Focus Timer for Writers: Beat Writer's Block with Timed Sessions</h1>
+
+  <p>Writer's block is not a creativity problem. It's a starting problem, a permission problem, and an attention problem — usually all three at once.</p>
+
+  <p>A focus timer addresses all three: it forces a start, grants permission to stop, and protects the attention the work requires. Here's how to use one effectively as a writer.</p>
+
+  ---
+
+  ## Why Writing Is Especially Vulnerable to Distraction
+
+  Writing requires holding two things in mind simultaneously: the specific words you're forming right now, and the larger structure of what you're building. This dual-level mental load is fragile. A single interruption — a notification, a sudden thought about dinner — can collapse the working state that took minutes to build.
+
+  Research on task-switching (Jonathan Schooler's work on "mind wandering") shows that writers are particularly susceptible to losing their train of thought because the task requires verbal working memory, which is the same cognitive resource that processes language from external sources (messages, notifications, overheard conversations). Every word you read or hear while writing competes directly with the words you're trying to form.
+
+  This is why a fully distraction-free environment matters more for writing than for almost any other knowledge work.
+
+  ---
+
+  ## The Two Modes of Writing (and Why They Need Different Timers)
+
+  All writing involves two fundamentally different cognitive modes that should never happen simultaneously:
+
+  **Drafting:** Generating new content. Forward momentum only. The goal is raw material.
+
+  **Editing:** Revising existing content. Backward-looking. The goal is quality.
+
+  Switching between these modes mid-session is the primary cause of the "stuck" feeling. When you draft a sentence, pause, decide it's bad, rewrite it, pause again, decide the paragraph structure is wrong, restructure it — you're oscillating between modes and making no forward progress.
+
+  **Use different timer sessions for each mode:**
+
+  - **Draft sessions (45-52 min):** Write forward only. No rereading, no editing. The cursor only moves right.
+  - **Edit sessions (25-30 min):** Read what you wrote and improve it. No new sections added.
+
+  This separation produces more output and higher quality output than blended sessions.
+
+  ---
+
+  ## The Closed-Eyes Draft: A Timer Technique for Breaking Blocks
+
+  When you're completely stuck — blank page, no words coming, growing dread — try this:
+
+  1. Set a timer for 20 minutes
+  2. Start writing and do not stop until the timer ends
+  3. Do not reread, correct, or evaluate while writing
+  4. If you have nothing to say, write "I have nothing to say about this because..." and keep going
+
+  The constraint forces the inner writer to override the inner editor. The output will be messy and partially unusable — that's fine. You'll have raw material to work with, and working material is infinitely more useful than a blank page.
+
+  This technique comes from the "freewriting" tradition developed by Peter Elbow. The timer makes it structured and repeatable.
+
+  ---
+
+  ## Building a Daily Writing Habit
+
+  The writers who produce the most — across fiction, nonfiction, journalism, and content — almost universally write daily, not in bursts.
+
+  Anthony Trollope wrote 250 words every 15 minutes for 3 hours every morning before his day job at the post office. Stephen King writes 2,000 words every morning before noon. E.B. White wrote for 2 hours every morning.
+
+  The pattern isn't the word count or the exact time — it's the daily commitment at a protected time.
+
+  **To build this habit:**
+  1. Choose a fixed time (morning works best for most writers — before decision fatigue accumulates)
+  2. Start with one 25-minute session per day
+  3. Track your streak — consecutive days writing, regardless of output
+  4. Add a second session only after the first feels automatic (usually 3-4 weeks)
+
+  ---
+
+  ## Tracking Your Writing Output
+
+  A focus timer that logs sessions gives you two useful data points over time:
+
+  - **Total writing hours per day/week:** Are you actually writing, or just planning to?
+  - **Output per session:** How many words per 45-minute session? This number stabilizes after a few weeks and becomes your planning baseline. If you typically write 500 words per session, a 5,000-word article will take approximately 10 sessions — a timeline you can commit to.
+
+  ---
+
+  ## Related Reading
+
+  - [What is Deep Work?](/learn/deep-work)
+  - [What is Flow State?](/glossary/flow-state)
+  - [What is Context Switching?](/glossary/context-switching)
+  - [Productivity Tracking: Measure Your Focus](/learn/productivity-tracking)
+
+  <FAQSchema items={faqItems} />
+
+  <CTABlock
+    heading="Build your daily writing habit with a focus timer"
+    body="Focus Clock logs every writing session automatically. Track your words-per-day, build your writing streak, and see your output grow week over week. Free, no account required."
+  />
+
+</BlogLayout>

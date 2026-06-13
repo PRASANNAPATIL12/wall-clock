@@ -1,0 +1,128 @@
+---
+import BlogLayout from '../../layouts/BlogLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+import CTABlock from '../../components/CTABlock.astro';
+
+const faqItems = [
+  {
+    question: 'Does the Pomodoro Technique work for ADHD?',
+    answer: 'Yes — the Pomodoro Technique is one of the most ADHD-compatible productivity methods because it provides the external structure and time boundaries that ADHD brains struggle to generate internally. The ticking timer creates urgency (activating the ADHD brain\'s dopamine system), the short intervals reduce the overwhelm of open-ended tasks, and the mandatory breaks prevent hyperfocus burnout. Many ADHD coaches recommend it specifically for this reason.',
+  },
+  {
+    question: 'What is the best Pomodoro interval length for ADHD?',
+    answer: 'The standard 25-minute interval works for many people with ADHD, but shorter sessions (15-20 minutes) often work better, especially when starting out. The key is to find the longest interval where you can sustain attention without drifting, then build from there. Some people with ADHD do well with the 52/17 method (52 minutes work, 17 minutes break) once their focus habit is established.',
+  },
+  {
+    question: 'Why do ADHD brains respond to timers?',
+    answer: 'ADHD is associated with impaired time perception — people with ADHD have difficulty sensing how much time has passed or how much time remains. A visible, ticking timer externalizes time perception, making time tangible rather than abstract. This is why visible timers (where you can see the countdown moving) work better than silent timers for most people with ADHD. The visual representation of time passing activates the same urgency system that deadlines activate.',
+  },
+  {
+    question: 'How do I handle ADHD hyperfocus with a timer?',
+    answer: 'Hyperfocus — getting deeply absorbed in a task and losing track of time — is actually a strength when directed at the right task. Use the timer to enter hyperfocus intentionally: clear all other distractions, set a longer block (60-90 minutes), and let yourself go deep. The timer serves as a safety net that pulls you out before you miss something important. If you\'re in a productive hyperfocus state when the timer goes off, it\'s okay to extend the session — the goal is awareness, not rigid rules.',
+  },
+  {
+    question: 'What should I do during Pomodoro breaks if I have ADHD?',
+    answer: 'The break is as important as the work session for ADHD brains. Avoid screens during breaks — scrolling Instagram or Twitter activates the same reward system as the work you\'re trying to do, making it much harder to return. Better break activities: walk around, get water, do 10 push-ups, look out a window. Physical movement during breaks helps regulate dopamine and makes the return to focus easier.',
+  },
+];
+---
+
+<BlogLayout
+  title="Pomodoro Timer for ADHD: Why It Works and How to Adapt It"
+  description="The Pomodoro Technique is one of the most effective focus methods for ADHD. Learn why timers work for ADHD brains, how to adapt the intervals, and how to build a sustainable focus habit."
+  canonicalUrl="https://blog.focusclock.app/blog/pomodoro-timer-for-adhd"
+  pillar="Focus Techniques"
+  pillarUrl="/learn/focus-techniques"
+>
+
+  <h1>Pomodoro Timer for ADHD: Why It Works and How to Adapt It</h1>
+
+  <p>If you have ADHD, you've probably experienced both ends of the attention spectrum: the hours-long hyperfocus sessions where time disappears, and the inability to start a task that should take five minutes. Both are symptoms of the same underlying challenge — ADHD brains struggle to self-regulate attention and perceive time accurately.</p>
+
+  <p>The Pomodoro Technique, built around a physical countdown timer, is one of the few productivity methods that addresses this directly. Here's why it works, and how to adapt it specifically for the ADHD brain.</p>
+
+  ---
+
+  ## Why ADHD Makes Time Management Hard
+
+  ADHD (Attention Deficit Hyperactivity Disorder) is not a deficit of attention — it's a deficit of *regulated* attention. People with ADHD can focus intensely when a task is novel, urgent, or rewarding. The problem is sustaining focus on tasks that aren't inherently stimulating.
+
+  The neurological mechanism is dopamine regulation. ADHD brains have lower baseline dopamine activity, which means they need higher stimulation to engage the prefrontal cortex (the brain's executive control center). Deadlines, competition, interest, and urgency all spike dopamine. Routine, low-stakes tasks don't.
+
+  A ticking countdown timer addresses this by creating artificial urgency — the same dopamine trigger as a deadline, but one you control.
+
+  ---
+
+  ## How the Pomodoro Technique Fits the ADHD Brain
+
+  **1. External time structure**
+
+  ADHD is associated with impaired time perception — the inability to accurately sense how much time has passed or how much remains. This is why people with ADHD are often chronically late, underestimate task durations, and struggle with planning. A visible timer externalizes time, making it tangible rather than abstract.
+
+  **2. Task decomposition**
+
+  One of the biggest ADHD task-initiation barriers is open-ended scope. "Work on the report" is paralyzing. "Work on the report for 25 minutes" is manageable. The Pomodoro interval gives every task a defined endpoint, which lowers the activation energy needed to start.
+
+  **3. Mandatory permission to stop**
+
+  Many people with ADHD feel guilty stopping a task even when they need a break, leading to ineffective grinding. The Pomodoro timer gives explicit permission to stop — the alarm is external authority, which is easier to obey than internal willpower.
+
+  **4. Structured rewards**
+
+  The break at the end of each interval is a built-in reward. This aligns with how ADHD brains respond to immediate rewards more strongly than delayed ones.
+
+  ---
+
+  ## Adapting Pomodoro Intervals for ADHD
+
+  The standard 25-minute work / 5-minute break interval is a good starting point, but not sacred. The right interval is the longest session where you can maintain focus without significant drift.
+
+  **Starting out:** Try 15-20 minute sessions if 25 feels too long. Build up gradually over weeks.
+
+  **Once established:** Many people with ADHD find 25/5 works well. Others do better with 45/15 or 52/17 for deeper tasks.
+
+  **The test:** If you're checking your phone, drifting to unrelated thoughts, or physically restless before the timer ends, your interval is too long. Shorten it.
+
+  ---
+
+  ## The Most Common ADHD-Pomodoro Mistakes
+
+  **Using a silent timer.** Silent timers don't create urgency. Use an audible timer, or better, a visible countdown you can glance at. Seeing time move activates the same system as a deadline.
+
+  **Scrolling during breaks.** Social media and YouTube activate the same dopamine system you're trying to reset. After a 25-minute focus session, 5 minutes of TikTok makes the next session harder, not easier. Use breaks for physical movement.
+
+  **Skipping the break.** "I'm in flow, I'll skip the break." This works once. After three skipped breaks, focus collapses. ADHD brains need the reset even more than neurotypical brains.
+
+  **Too many tasks per session.** Assign one task to one Pomodoro. Task-switching mid-session defeats the purpose.
+
+  **Starting with the hardest task.** ADHD brains need a warmup. Start your first Pomodoro with something you know how to do — a small, familiar task. Use the second Pomodoro for the hard work.
+
+  ---
+
+  ## Building the Habit
+
+  The goal isn't to do 8 Pomodoros a day from day one. The goal is to make one Pomodoro feel automatic.
+
+  Week 1: Do one Pomodoro per day, same time, same place. Don't worry about productivity yet.
+
+  Week 2-3: Add a second Pomodoro. Track your streak — the "don't break the chain" mechanic is especially powerful for ADHD because it makes the habit visible and gamified.
+
+  Month 2+: Let the session count grow naturally. Most people with ADHD settle at 3-5 quality Pomodoros per day, which is 75-125 minutes of real focused work — significantly above the average knowledge worker.
+
+  ---
+
+  ## Related Reading
+
+  - [The Complete Guide to the Pomodoro Technique](/blog/pomodoro-technique-complete-guide)
+  - [Focus Timer Techniques: Pomodoro, 52/17, and 90-Minute Blocks](/learn/focus-techniques)
+  - [What is attention residue?](/glossary/attention-residue)
+  - [What is cognitive load?](/glossary/cognitive-load)
+
+  <FAQSchema items={faqItems} />
+
+  <CTABlock
+    heading="A focus timer built for real attention challenges"
+    body="Focus Clock's visible countdown and automatic session logging work exactly the way ADHD brains need — external time structure, streak tracking, and no-login simplicity. Free, browser-based, starts in seconds."
+  />
+
+</BlogLayout>

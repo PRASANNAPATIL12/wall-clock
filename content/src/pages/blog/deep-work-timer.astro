@@ -1,0 +1,124 @@
+---
+import BlogLayout from '../../layouts/BlogLayout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+import CTABlock from '../../components/CTABlock.astro';
+
+const faqItems = [
+  {
+    question: 'What is a deep work timer?',
+    answer: 'A deep work timer is a focus timer used specifically to structure Cal Newport\'s Deep Work methodology — distraction-free, cognitively demanding work performed in extended blocks. Unlike a basic Pomodoro timer (25 minutes), deep work timers typically support longer intervals (60-90 minutes) to accommodate the higher ramp-up cost of cognitively complex tasks like writing, coding, analysis, and research.',
+  },
+  {
+    question: 'How long should a deep work session be?',
+    answer: 'Cal Newport recommends 1-4 hour deep work blocks for most people. Research on ultradian rhythms suggests 90 minutes as a natural limit before a meaningful break is needed. For beginners, start with 60-minute blocks and build toward 90 minutes over weeks. Professional practitioners often work in 2-hour blocks with a 20-30 minute break between them.',
+  },
+  {
+    question: 'Can you do deep work with the Pomodoro Technique?',
+    answer: 'Yes, with modification. The standard Pomodoro (25 min work / 5 min break) can undermine deep work for tasks with high context-loading cost — every break forces you to reload the mental model you were building. The solution is to use longer Pomodoro intervals (52-90 minutes) for deep work, or to treat 4 consecutive standard Pomodoros as a single deep work block, only fully disengaging after the 4th.',
+  },
+  {
+    question: 'How many hours of deep work can a person do per day?',
+    answer: 'Cal Newport cites research suggesting 4 hours as the practical maximum for most knowledge workers. Elite performers (professional writers, researchers) sometimes sustain 5-6 hours, but this requires years of developed focus capacity. Most people start at 1-2 hours of genuine deep work per day and build from there. The goal is quality, not quantity — 2 hours of true deep work outperforms 6 hours of shallow, interrupted work.',
+  },
+  {
+    question: 'What should I do during a deep work break?',
+    answer: 'The break between deep work sessions should involve activities that restore directed attention without stimulating it. Walking (especially outdoors) is the most researched restorative activity — it activates the default mode network and allows subconscious processing of the problem you were working on. Avoid email, social media, and news during deep work breaks — these are shallow cognitive activities that erode the focus state you\'re trying to maintain.',
+  },
+];
+---
+
+<BlogLayout
+  title="Deep Work Timer: How to Structure 90-Minute Focus Blocks"
+  description="How to use a focus timer for Cal Newport's Deep Work methodology — the right session lengths, how to build deep work capacity, and why 90-minute blocks outperform scattered Pomodoros for complex work."
+  canonicalUrl="https://blog.focusclock.app/blog/deep-work-timer"
+  pillar="Deep Work"
+  pillarUrl="/learn/deep-work"
+>
+
+  <h1>Deep Work Timer: How to Structure 90-Minute Focus Blocks</h1>
+
+  <p>A kitchen timer and a deep work timer are structurally identical. What separates them is what happens around the timer: the depth of preparation before it starts, the quality of attention during it, and the discipline of the break afterward.</p>
+
+  <p>Cal Newport's Deep Work framework is about producing rare, valuable cognitive output — the kind of work that moves careers and builds expertise. A timer is the simplest tool for protecting the time it requires.</p>
+
+  ---
+
+  ## Why Deep Work Needs Longer Blocks
+
+  Standard Pomodoro sessions (25 minutes) work well for tasks with low context-loading cost — email, admin, simple problem sets. But deep work — original research, complex writing, architectural design, hard engineering problems — has a high ramp-up cost.
+
+  Loading a complex problem into working memory takes 10-15 minutes. In a 25-minute session, you're spending half your time just getting up to speed, then breaking before you've fully used that loaded state. This is attention residue: the cognitive residue that prevents full engagement with the next task.
+
+  Longer blocks (60-90 minutes) amortize the ramp-up cost. You spend 10-15 minutes loading context, then have 45-75 minutes of actual productive deep work.
+
+  ---
+
+  ## The 90-Minute Block: Why This Number
+
+  Nathaniel Kleitman — the sleep researcher who discovered REM sleep — also identified the ultradian rhythm: a 90-minute cycle that governs periods of higher and lower brain alertness throughout the day. During the high phase, focused cognitive work is easier. During the low phase, lighter tasks and rest are more appropriate.
+
+  Structuring work in 90-minute blocks aligns with this natural rhythm. After 90 minutes, your brain enters a biological rest phase — fighting it produces diminishing returns. A 20-30 minute break allows the cycle to reset before the next deep work block.
+
+  Most people can complete 2-3 high-quality 90-minute blocks per day. That's 180-270 minutes of genuine deep work — far above the average knowledge worker's output.
+
+  ---
+
+  ## How to Use a Timer for Deep Work
+
+  **The pre-session ritual (10 minutes before starting):**
+  - Write the specific output you're targeting: not "work on project" but "write the methodology section"
+  - Clear your environment: close email, silence phone, close irrelevant browser tabs
+  - Do a 2-minute review of where you left off — reload the context before the clock starts
+
+  **During the session:**
+  - The timer is running; don't check it. Trust the alarm.
+  - When a distraction thought appears, capture it on a notepad without engaging
+  - If stuck, write out the problem — "I don't know how to..." — rather than abandoning the session
+
+  **The break (non-negotiable):**
+  - 20-30 minutes after a 90-minute block
+  - Walk, move, don't screen-browse
+  - The break is when your subconscious continues processing — don't interrupt it
+
+  ---
+
+  ## Building Deep Work Capacity
+
+  Deep work capacity is a skill, not a trait. Most people start with 30-60 minutes as their genuine deep work ceiling — the point where focus collapses and the urge to check something becomes overwhelming.
+
+  Build gradually:
+
+  - **Week 1-2:** 45-minute deep work blocks. One per day.
+  - **Week 3-4:** 60-minute blocks. One per day.
+  - **Month 2:** 90-minute blocks. One per day.
+  - **Month 3+:** Two 90-minute blocks per day, separated by a long break.
+
+  Track your sessions. The act of logging creates accountability and shows you your real capacity versus your assumed capacity.
+
+  ---
+
+  ## Deep Work vs. Shallow Work: The Timer as a Separator
+
+  One of the most useful applications of a timer is creating a hard boundary between deep and shallow work.
+
+  Designate certain blocks as deep work: timer on, no interruptions, single task. Designate other blocks as shallow work: open communication, multi-tasking allowed, email and Slack open.
+
+  Without this separation, shallow work expands to fill all available time, displacing deep work entirely. The timer makes the boundary real.
+
+  ---
+
+  ## Related Reading
+
+  - [What is Deep Work?](/learn/deep-work)
+  - [What is the 90-Minute Rule?](/glossary/90-minute-rule)
+  - [What is Attention Residue?](/glossary/attention-residue)
+  - [What is Flow State?](/glossary/flow-state)
+
+  <FAQSchema items={faqItems} />
+
+  <CTABlock
+    heading="Log your deep work sessions and build the habit"
+    body="Focus Clock supports custom session lengths from 5 to 120 minutes — set your 90-minute deep work block, log your sessions, and watch your deep work capacity grow over weeks and months."
+  />
+
+</BlogLayout>
