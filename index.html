@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -12,8 +12,8 @@
 
     <!-- Primary SEO
          IMPORTANT: <title> starts with the exact OAuth consent screen app name
-         "Wall Clock" so Google's name-matching algorithm finds it immediately. -->
-    <title>Focus Clock — Focus Timer &amp; Productivity Tracker</title>
+         "Focus Clock" so Google's name-matching algorithm finds it immediately. -->
+    <title>Focus Clock â€” Focus Timer &amp; Productivity Tracker</title>
     <meta name="description" content="Focus Clock is a free focus timer and productivity tracker. Set timed focus sessions on a beautiful analog clock, tag your work, track streaks, and analyse your focus patterns." />
     <meta name="keywords" content="focus clock, focus timer, productivity tracker, pomodoro, session tracker, focus ring, analog clock, digital clock, world timezones, dark mode, fullscreen clock, streak tracker, heatmap, time tracking" />
     <meta name="author" content="Prasannagouda Patil" />
@@ -36,22 +36,22 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Focus Clock" />
-    <meta property="og:title" content="Focus Clock — Focus Timer & Productivity Tracker" />
+    <meta property="og:title" content="Focus Clock â€” Focus Timer & Productivity Tracker" />
     <meta property="og:description" content="A free focus timer and productivity tracker. Set timed sessions on a beautiful analog clock, track streaks, and analyse your focus patterns." />
     <meta property="og:url" content="https://focusclock.app/" />
     <meta property="og:image" content="https://focusclock.app/og-image.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Focus Clock — a minimalist analog focus timer glowing red on a dark background" />
+    <meta property="og:image:alt" content="Focus Clock â€” a minimalist analog focus timer glowing red on a dark background" />
     <meta property="og:locale" content="en_US" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Focus Clock — Focus Timer & Productivity Tracker" />
+    <meta name="twitter:title" content="Focus Clock â€” Focus Timer & Productivity Tracker" />
     <meta name="twitter:description" content="A free focus timer and productivity tracker. Set timed sessions, track streaks, and analyse your focus patterns." />
     <meta name="twitter:image" content="https://focusclock.app/og-image.png" />
-    <meta name="twitter:image:alt" content="Focus Clock — a minimalist analog focus timer glowing red on a dark background" />
+    <meta name="twitter:image:alt" content="Focus Clock â€” a minimalist analog focus timer glowing red on a dark background" />
 
     <!-- Icons & manifest -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -128,7 +128,7 @@
       }
     </script>
 
-    <!-- FAQ structured data — STATIC (in raw HTML) so search crawlers and
+    <!-- FAQ structured data â€” STATIC (in raw HTML) so search crawlers and
          AI agents that do NOT execute JavaScript (GPTBot, ClaudeBot,
          PerplexityBot, Google-Extended) can read it. The same six Q&As are
          rendered visibly in the React FAQ accordion (Scene75FAQ), so the
@@ -152,7 +152,7 @@
             "name": "Do I need an account?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "No. The clock and focus ring work fully without an account. Sessions only persist across visits if you sign in — anonymous sessions are not saved."
+              "text": "No. The clock and focus ring work fully without an account. Sessions only persist across visits if you sign in â€” anonymous sessions are not saved."
             }
           },
           {
@@ -176,7 +176,7 @@
             "name": "Can I export my data?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes. Signed-in users can export their entire session history as JSON at any time from Settings → Account. Your data belongs to you."
+              "text": "Yes. Signed-in users can export their entire session history as JSON at any time from Settings â†’ Account. Your data belongs to you."
             }
           },
           {
@@ -191,7 +191,7 @@
       }
     </script>
 
-    <!-- HowTo structured data — the signature "three clicks to focus" flow.
+    <!-- HowTo structured data â€” the signature "three clicks to focus" flow.
          Eligible for Google rich results and frequently surfaced verbatim by
          AI search engines answering "how to start a focus session" queries. -->
     <script type="application/ld+json">
@@ -200,7 +200,7 @@
         "@type": "HowTo",
         "@id": "https://focusclock.app/#howto",
         "name": "How to start a focus session on Focus Clock",
-        "description": "Start tracking deep work in three clicks on the Focus Clock analog ring — no account required.",
+        "description": "Start tracking deep work in three clicks on the Focus Clock analog ring â€” no account required.",
         "totalTime": "PT1M",
         "tool": [{ "@type": "HowToTool", "name": "Any modern web browser" }],
         "step": [
@@ -232,21 +232,21 @@
       WHY THIS EXISTS:
       Google's OAuth verification bot visits the homepage but does NOT execute JavaScript.
       It reads the raw HTML only. It checks that the app name on the OAuth consent screen
-      ("Wall Clock") matches a VISIBLE heading on the homepage.
+      ("Focus Clock") matches a VISIBLE heading on the homepage.
 
-      Previously: the static content had opacity:0 — Google classified it as "hidden text"
-      and ignored it. The bot saw NO visible app name → verification failed.
+      Previously: the static content had opacity:0 â€” Google classified it as "hidden text"
+      and ignored it. The bot saw NO visible app name â†’ verification failed.
 
       Now: the static content is FULLY VISIBLE with proper styling. When JavaScript loads,
       a synchronous inline script hides it instantly (before paint), and the React app
       renders on top via position:fixed z-index:1. Users with JS see only the clock app.
-      Google's bot (no JS) sees the styled landing page with "Wall Clock" as a visible H1.
+      Google's bot (no JS) sees the styled landing page with "Focus Clock" as a visible H1.
     -->
     <style>
       html, body { margin: 0; background: #f4f1ec; }
       @media (prefers-color-scheme: dark) { html, body { background: #0e0e10; } }
 
-      /* Static landing page — visible to bots, hidden from JS users by inline script below */
+      /* Static landing page â€” visible to bots, hidden from JS users by inline script below */
       #app-landing {
         max-width: 640px;
         margin: 0 auto;
@@ -332,24 +332,24 @@
   </head>
   <body>
     <!--
-      Static landing page — VISIBLE to Google's OAuth bot and search crawlers.
-      Content is real, styled, and renders the app name "Wall Clock" as a
+      Static landing page â€” VISIBLE to Google's OAuth bot and search crawlers.
+      Content is real, styled, and renders the app name "Focus Clock" as a
       prominent H1. When JavaScript loads, the inline <script> below hides
       this div instantly before the first paint, and the React app covers
       the entire viewport via position:fixed.
 
       Users with JavaScript: see only the clock app (this div is hidden).
       Users without JavaScript: see this landing page + noscript block.
-      Google's bot (no JS): sees this page → reads "Wall Clock" as H1 → passes verification.
+      Google's bot (no JS): sees this page â†’ reads "Focus Clock" as H1 â†’ passes verification.
     -->
     <div id="app-landing">
-      <h1>Focus Clock — Focus Timer &amp; Productivity Tracker</h1>
+      <h1>Focus Clock â€” Focus Timer &amp; Productivity Tracker</h1>
       <p class="subtitle">A calm, browser-based focus timer that respects your attention.</p>
 
       <p>
         Focus Clock is a free, browser-based focus timer and productivity tracking
         application. Set timed focus sessions directly on a beautiful analog clock
-        interface — start with a single click, set a goal, and track your progress
+        interface â€” start with a single click, set a goal, and track your progress
         in real time. Unlike a rigid Pomodoro timer, Focus Clock observes your
         natural rhythm and records it, so experienced deep workers get data instead
         of enforcement.
@@ -363,7 +363,7 @@
       </p>
 
       <h2>How focus tracking works</h2>
-      <p>Start tracking deep work in three clicks — no account required:</p>
+      <p>Start tracking deep work in three clicks â€” no account required:</p>
       <ol>
         <li><strong>Start tracking.</strong> Click anywhere on the clock ring to begin a focus session.</li>
         <li><strong>Set your goal.</strong> Click again where the minute hand should land to set the session end time. The arc fills toward it.</li>
@@ -372,9 +372,9 @@
 
       <h2>Features</h2>
       <h3>Tag your work</h3>
-      <p>Code, Study, Design, Read — 14 tags ready out of the box. Add your own. Each session is coloured to match.</p>
+      <p>Code, Study, Design, Read â€” 14 tags ready out of the box. Add your own. Each session is coloured to match.</p>
       <h3>Build a streak</h3>
-      <p>A daily rhythm. Miss a day, lose your streak. Honest, not punitive — an accurate reflection of your work.</p>
+      <p>A daily rhythm. Miss a day, lose your streak. Honest, not punitive â€” an accurate reflection of your work.</p>
       <h3>See a year of focus</h3>
       <p>Twelve months of focused hours in one glance through an interactive heatmap. Spot the rhythms you didn't know you had.</p>
       <h3>Plan in advance</h3>
@@ -384,22 +384,22 @@
 
       <h2>Coming soon</h2>
       <ul>
-        <li><strong>Ambient sounds</strong> — rain, café murmur, and slow waves looped gently in-tab.</li>
-        <li><strong>Themes &amp; wallpapers</strong> — dress the clock for your room, subtle and never noisy.</li>
-        <li><strong>Export integrations</strong> — send your session log to Notion, Obsidian, and Apple Notes.</li>
+        <li><strong>Ambient sounds</strong> â€” rain, cafÃ© murmur, and slow waves looped gently in-tab.</li>
+        <li><strong>Themes &amp; wallpapers</strong> â€” dress the clock for your room, subtle and never noisy.</li>
+        <li><strong>Export integrations</strong> â€” send your session log to Notion, Obsidian, and Apple Notes.</li>
       </ul>
 
       <h2>Frequently asked questions</h2>
       <p class="faq-q">Is Focus Clock free?</p>
       <p>Yes. Focus Clock is free to use, with no ads, no tracking, and no data selling. Every feature on the landing page is included at no cost.</p>
       <p class="faq-q">Do I need an account?</p>
-      <p>No. The clock and focus ring work fully without an account. Sessions only persist across visits if you sign in — anonymous sessions are not saved.</p>
+      <p>No. The clock and focus ring work fully without an account. Sessions only persist across visits if you sign in â€” anonymous sessions are not saved.</p>
       <p class="faq-q">Does it work offline?</p>
       <p>The clock and focus timer run entirely in your browser, so they continue to work when you lose connectivity. Saving sessions to your account requires a connection.</p>
       <p class="faq-q">How does focus tracking work?</p>
       <p>You set a goal by clicking the ring three times: click 1 starts tracking, click 2 sets the end time, click 3 ends the session. Digital mode offers a Start Focus button with tag and duration pickers instead.</p>
       <p class="faq-q">Can I export my data?</p>
-      <p>Yes. Signed-in users can export their entire session history as JSON at any time from Settings → Account. Your data belongs to you.</p>
+      <p>Yes. Signed-in users can export their entire session history as JSON at any time from Settings â†’ Account. Your data belongs to you.</p>
       <p class="faq-q">Why isn't this a Pomodoro timer?</p>
       <p>Pomodoro imposes a fixed 25-minute structure on every task. Focus Clock observes your natural rhythm and records it. We believe experienced deep workers benefit more from data than from enforcement.</p>
 
@@ -417,14 +417,14 @@
 
     <!--
       Hide the static landing page the moment JavaScript is available.
-      This is a SYNCHRONOUS script (not type="module") — it runs before
+      This is a SYNCHRONOUS script (not type="module") â€” it runs before
       the browser paints, so users never see the landing page flash.
       Google's bot does NOT execute JS, so it never runs this line and
       the landing page remains fully visible for the bot to read.
     -->
     <script>document.getElementById('app-landing').style.display='none';</script>
 
-    <!-- React SPA root — renders on top via position:fixed in App.css -->
+    <!-- React SPA root â€” renders on top via position:fixed in App.css -->
     <div id="root"></div>
 
     <noscript>
@@ -436,7 +436,7 @@
           track streaks, and analyse your focus patterns.
         </p>
         <p style="color:#6b6b6b;">Please enable JavaScript to use Focus Clock.</p>
-        <p style="font-size:13px;"><a href="/privacy" style="color:#c8312b;">Privacy Policy</a> &nbsp;·&nbsp; <a href="/terms" style="color:#c8312b;">Terms of Service</a></p>
+        <p style="font-size:13px;"><a href="/privacy" style="color:#c8312b;">Privacy Policy</a> &nbsp;Â·&nbsp; <a href="/terms" style="color:#c8312b;">Terms of Service</a></p>
       </div>
     </noscript>
 
